@@ -5,15 +5,15 @@ resource "aws_key_pair" "auth" {
   public_key = "${var.public_key}"
 }
 
-# Security group to access the instances over SSH
+# Security group to access the instances over WinRM
 resource "aws_security_group" "terrafirm" {
   name        = "terrafirm_sg"
   description = "Used in terrafirm"
 
   # SSH access from anywhere
   ingress {
-    from_port   = 22
-    to_port     = 22
+    from_port   = 5986
+    to_port     = 5986
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -27,7 +27,7 @@ resource "aws_security_group" "terrafirm" {
   }
 }
 
-resource "aws_instance" "centos" {
+resource "aws_instance" "windows" {
   ami = "${var.ami}"
   #ami = "ami-658ce61f" #spel-minimal-centos-6.9-hvm-2017.12.1.x86_64-gp2
   #ami = "ami-55ef662f"  #amazon linux 2017.09.1
@@ -36,18 +36,24 @@ resource "aws_instance" "centos" {
   vpc_security_group_ids = ["${aws_security_group.terrafirm.id}"]
   #subnet_id = "${aws_subnet.default.id}"
   user_data = <<USERDATA
-#!/bin/sh
-PIP_URL=https://bootstrap.pypa.io/get-pip.py
-PYPI_URL=https://pypi.org/simple
+<powershell>
+$BootstrapUrl = "https://raw.githubusercontent.com/plus3it/watchmaker/master/docs/files/bootstrap/watchmaker-bootstrap.ps1"
+$PythonUrl = "https://www.python.org/ftp/python/3.6.3/python-3.6.3-amd64.exe"
+$PypiUrl = "https://pypi.org/simple"
 
-# Install pip
-curl "$PIP_URL" | python - --index-url="$PYPI_URL" wheel==0.29.0
+# Download bootstrap file
+$BootstrapFile = "${Env:Temp}\$(${BootstrapUrl}.split('/')[-1])"
+(New-Object System.Net.WebClient).DownloadFile("$BootstrapUrl", "$BootstrapFile")
+
+# Install python
+& "$BootstrapFile" -PythonUrl "$PythonUrl" -Verbose -ErrorAction Stop
 
 # Install watchmaker
-pip install --index-url="$PYPI_URL" --upgrade pip setuptools watchmaker
+pip install --index-url="$PypiUrl" --upgrade pip setuptools watchmaker
 
 # Run watchmaker
-/usr/local/bin/watchmaker -n --log-level debug --log-dir=/var/log/watchmaker
+watchmaker --log-level debug --log-dir=C:\Watchmaker\Logs
+</powershell>
 USERDATA
   
   timeouts {
@@ -60,11 +66,12 @@ USERDATA
     user     = "${var.ssh_user}"
     private_key = "${var.private_key}"
     timeout   = "3m"
+    type     = "winrm"
   }
   
   
   provisioner "remote-exec" {
-    script = "watchmaker.sh"
+    script = "watchmaker_test.bat"
     #inline = [
     #  "sleep 120",
     #  "/usr/bin/watchmaker --version",
