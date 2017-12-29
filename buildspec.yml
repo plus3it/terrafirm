@@ -60,7 +60,7 @@ phases:
       - echo "NOTE, this will fail if remote execute calls fail"
       - ./terraform apply -input=false tfplan
       - ./terraform state pull -target=aws_instance.windows -input=false
-      - AWS_INSTANCE_ID="$(./terraform state pull -target=aws_instance.windows -input=false | ./jq.dms '.modules[0].resources."aws_instance.centos".primary.id')"
+      - AWS_INSTANCE_ID="$(./terraform state pull -target=aws_instance.windows -input=false | ./jq.dms '.modules[0].resources."aws_instance.windows".primary.id')"
       - export AWS_INSTANCE_ID
       - echo "Instance ID, ${AWS_INSTANCE_ID}"
   post_build:
