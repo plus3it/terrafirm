@@ -60,6 +60,7 @@ phases:
       - echo "NOTE, this will fail if remote execute calls fail"
       - ./terraform apply -input=false tfplan
       - ./terraform state pull -target=aws_instance.windows -input=false
+      - echo "Direct id? ${aws_instance.windows.id}"
       - AWS_INSTANCE_STATE="$(./terraform state pull -target=aws_instance.windows -input=false)" ; export AWS_INSTANCE_STATE
       - AWS_INSTANCE_ID="$(echo $AWS_INSTANCE_STATE | ./jq.dms -r '.modules[0].resources."aws_instance.windows".primary.id')" ; export AWS_INSTANCE_ID
       - AWS_INSTANCE_IP="$(echo $AWS_INSTANCE_STATE | ./jq.dms -r '.modules[0].resources."aws_instance.windows".primary.attributes.public_ip')" ; export AWS_INSTANCE_IP
@@ -68,8 +69,9 @@ phases:
       - echo $SSH_KEY > private_key
       - cat private_key
       - chmod 600 private_key
+      - aws ec2 get-password-data --instance-id $AWS_INSTANCE_ID
       - #aws ec2 get-password-data --instance-id $AWS_INSTANCE_ID --priv-launch-key private_key.pem --dry-run
-      - chmod +x password_wait.sh ; ./password_wait.sh
+      - #chmod +x password_wait.sh ; ./password_wait.sh
       - echo "********"
       - echo $DEC_PASSWORD
       - echo "********"
