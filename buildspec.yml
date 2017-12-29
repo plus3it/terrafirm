@@ -7,8 +7,8 @@ env:
     TERRAFIRM_DESC_URL: https://github.com/YakDriver/terrafirm_win
     JQ_INSTALL: https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
   parameter-store:
-    SSH_KEY: "/CodeBuild/terrafirm/ssh_key"
-    PUBLIC_KEY: "/CodeBuild/terrafirm/public_key"
+    SSH_KEY: "/CodeBuild/terrafirm/aws_private_key"
+    PUBLIC_KEY: "/CodeBuild/terrafirm/aws_public_key"
 
 phases:
   install:
