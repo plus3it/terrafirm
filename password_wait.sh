@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 wait_seconds=90 #waits 10 seconds per so x*10 seconds; 90 = 900s = 15m
 
 until test $((wait_seconds--)) -eq 0 -o -n "$DEC_PASSWORD" ; do #waits for timeout or password to not be empty
