@@ -24,8 +24,8 @@ phases:
       - echo "Installed Terraform."
       - echo "Installing pip & python & pywinrm..."
       - apt -y install python3
-      - easy_install pip
-      - pip install pywinrm
+      - easy_install pip3
+      - pip3 install pywinrm
   pre_build:
     commands:
       - |
