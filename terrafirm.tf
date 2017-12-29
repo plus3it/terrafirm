@@ -45,6 +45,7 @@ resource "aws_instance" "windows" {
     private_key = "${var.private_key}"
     timeout   = "3m"
     type     = "winrm"
+    https    = true
   }
   
   
