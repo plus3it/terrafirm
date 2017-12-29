@@ -66,8 +66,8 @@ phases:
       - echo "Instance ID, ${AWS_INSTANCE_ID}"
       - echo "Instance IP, ${AWS_INSTANCE_IP}"
       - echo $SSH_KEY > private_key.pem
-      - aws ec2 get-password-data --instance-id $AWS_INSTANCE_ID --priv-launch-key private_key.pem --dry-run
-      - #chmod +x password_wait.sh ; ./password_wait.sh
+      - #aws ec2 get-password-data --instance-id $AWS_INSTANCE_ID --priv-launch-key private_key.pem --dry-run
+      - chmod +x password_wait.sh ; ./password_wait.sh
       - echo "********"
       - echo $DEC_PASSWORD
       - echo "********"
