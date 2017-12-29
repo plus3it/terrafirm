@@ -68,6 +68,10 @@ USERDATA
   
   
   provisioner "remote-exec" {
-    script = "watchmaker_test.bat"
+    #script = "watchmaker_test.bat"
+    inline = [
+      "Start-Sleep -s 120",
+      "watchmaker --version",
+    ]
   }
 }
