@@ -68,7 +68,9 @@ phases:
       - echo $SSH_KEY > private_key.pem
       - PASSWORD_DATA="$(aws ec2 get-password-data --instance-id $AWS_INSTANCE_ID --priv-launch-key private_key.pem)" ; export $PASSWORD_DATA
       - DEC_PASSWORD="$(echo $PASSWORD_DATA | ./jq.dms -r '."PasswordData"')" ; export DEC_PASSWORD
+      - echo "********"
       - echo $DEC_PASSWORD
+      - echo "********"
   post_build:
     commands:
       - echo "Destroying everything..."
