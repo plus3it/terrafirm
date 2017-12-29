@@ -18,11 +18,11 @@ echo "Got encrypted password from AWS"
 
 #Windows or AWS or someone is padding encrypted password with a Windows newline
 #Get rid of this newline for decryption to work
-if [ "${ENC_PASSWORD:0:4}" = "\r\n"]; then
+if [ "${ENC_PASSWORD:0:4}" = "\r\n" ]; then
   ENC_PASSWORD="${ENC_PASSWORD:4}"
 fi
 
-if [ "${ENC_PASSWORD:(-4)}" = "\r\n"]; then
+if [ "${ENC_PASSWORD:(-4)}" = "\r\n" ]; then
   ENC_PASSWORD="${ENC_PASSWORD:0:${#ENC_PASSWORD}-4}"
 fi
 echo "Fixed encrypted password"
