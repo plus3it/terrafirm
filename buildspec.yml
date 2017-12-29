@@ -42,7 +42,7 @@ phases:
       - echo "AWS Profile setup..."
       - AWS_PROFILE=$NAMED_PROFILE ; export AWS_PROFILE
       - echo "Creating a key pair "
-      - #aws ec2 import-key-pair --key-name "${KEY_PAIR_NAME}" --public-key-material "${PUBLIC_KEY}"
+      - aws ec2 import-key-pair --key-name "${KEY_PAIR_NAME}" --public-key-material "${PUBLIC_KEY}"
       - echo "Terraform version " ; ./terraform --version
       - TF_VAR_key_pair_name="${KEY_PAIR_NAME}" ; export TF_VAR_key_pair_name
       - TF_VAR_private_key="${SSH_KEY}" ; export TF_VAR_private_key
@@ -65,14 +65,14 @@ phases:
       - AWS_INSTANCE_IP="$(echo $AWS_INSTANCE_STATE | ./jq.dms -r '.modules[0].resources."aws_instance.windows".primary.attributes.public_ip')" ; export AWS_INSTANCE_IP
       - echo "Instance ID, ${AWS_INSTANCE_ID}"
       - echo "Instance IP, ${AWS_INSTANCE_IP}"
-      - echo $SSH_KEY > private_key.pem
-      - chmod 600 private_key.pem
+      - echo $SSH_KEY > private_key
+      - chmod 600 private_key
       - #aws ec2 get-password-data --instance-id $AWS_INSTANCE_ID --priv-launch-key private_key.pem --dry-run
       - chmod +x password_wait.sh ; ./password_wait.sh
       - echo "********"
       - echo $DEC_PASSWORD
       - echo "********"
-      - rm private_key.pem
+      - rm private_key
   post_build:
     commands:
       - echo "Destroying everything..."
