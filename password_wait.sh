@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #create a private key file
-echo $SSH_KEY > private_key
+echo "${SSH_KEY}" > private_key
 chmod 600 private_key
 echo "Created key file"
 
@@ -29,7 +29,9 @@ echo "Fixed encrypted password"
 
 #Decrypt the password with the private key
 echo "${ENC_PASSWORD}" > encryptedpassword
-echo $SSH_KEY
+echo "++++++++"
+cat private_key
+echo "------------"
 base64 -d -i encryptedpassword | openssl rsautl -decrypt -inkey private_key -out decryptedpassword
 echo "Decrypted password"
 
