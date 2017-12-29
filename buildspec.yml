@@ -70,6 +70,7 @@ phases:
       - echo $SSH_KEY > private_key
       - #cat private_key
       - chmod 600 private_key
+      - sleep 120
       - aws ec2 get-password-data --instance-id $AWS_INSTANCE_ID
       - #aws ec2 get-password-data --instance-id $AWS_INSTANCE_ID --priv-launch-key private_key.pem --dry-run
       - #chmod +x password_wait.sh ; ./password_wait.sh
