@@ -32,9 +32,6 @@ echo "${ENC_PASSWORD}" > encryptedpassword
 base64 -d -i encryptedpassword | openssl rsautl -decrypt -inkey private_key -out decryptedpassword
 echo "Decrypted password"
 
-DEC_PASSWORD="$(cat decryptedpassword)" ; export DEC_PASSWORD
-
 #Get rid of temp files
 rm encryptedpassword
-rm decryptedpassword
 rm private_key
