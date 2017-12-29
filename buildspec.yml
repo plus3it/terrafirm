@@ -71,6 +71,7 @@ phases:
       - echo "********"
       - echo $DEC_PASSWORD
       - echo "********"
+      - rm private_key.pem
   post_build:
     commands:
       - echo "Destroying everything..."
