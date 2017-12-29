@@ -29,7 +29,7 @@ echo "Fixed encrypted password"
 
 #Decrypt the password with the private key
 echo "${ENC_PASSWORD}" > encryptedpassword
-base64 -D -i encryptedpassword | openssl rsautl -decrypt -inkey private_key -out decryptedpassword
+base64 -d -i encryptedpassword | openssl rsautl -decrypt -inkey private_key -out decryptedpassword
 echo "Decrypted password"
 
 DEC_PASSWORD="$(cat decryptedpassword)" ; export DEC_PASSWORD
