@@ -29,9 +29,6 @@ echo "Fixed encrypted password"
 
 #Decrypt the password with the private key
 echo "${ENC_PASSWORD}" > encryptedpassword
-echo "++++++++"
-cat private_key
-echo "------------"
 base64 -d -i encryptedpassword | openssl rsautl -decrypt -inkey private_key -out decryptedpassword
 echo "Decrypted password"
 
