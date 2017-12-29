@@ -39,12 +39,6 @@ phases:
         then
           aws configure set region $REGION --profile $NAMED_PROFILE
         fi
-      #- |
-      #  if [ -z "${ACCESS_KEY}" ]
-      #  then
-      #    aws configure set aws_access_key_id "${ACCESS_KEY_ID}" --profile $NAMED_PROFILE
-      #    aws configure set aws_secret_access_key "${SECRET_KEY}" --profile $NAMED_PROFILE
-      #  fi
       - echo "AWS Profile setup..."
       - AWS_PROFILE=$NAMED_PROFILE ; export AWS_PROFILE
       - echo "Creating a key pair "
@@ -56,8 +50,6 @@ phases:
       - TF_VAR_ami="${AMI}" ; export TF_VAR_ami
       - TF_VAR_ssh_user="${SSH_USER}" ; export TF_VAR_ssh_user
       - echo "AMI ${TF_VAR_ami}"
-      #- echo "Terraform config file " ; cat terrafirm.tf
-      #- echo "Initializing Terraform " ; TF_VAR_private_key="${SSH_KEY}" ./terraform init -input=false
       - echo "Initializing Terraform " ; ./terraform init -input=false
       - echo "Importing key pair " ; ./terraform import aws_key_pair.auth "${KEY_PAIR_NAME}"
       - echo "Create provisiong plan " ; ./terraform plan -out=tfplan -input=false
@@ -67,16 +59,14 @@ phases:
       - echo "Applying Terraform plan (which installs watchmaker) "
       - echo "NOTE, this will fail if remote execute calls fail"
       - ./terraform apply -input=false tfplan
-      - ./terraform state pull -target=aws_instance.centos -input=false
-      - AWS_INSTANCE_ID="$(./terraform state pull -target=aws_instance.centos -input=false | ./jq.dms '.modules[0].resources."aws_instance.centos".primary.id')"
+      - ./terraform state pull -target=aws_instance.windows -input=false
+      - AWS_INSTANCE_ID="$(./terraform state pull -target=aws_instance.windows -input=false | ./jq.dms '.modules[0].resources."aws_instance.centos".primary.id')"
       - export AWS_INSTANCE_ID
       - echo "Instance ID, ${AWS_INSTANCE_ID}"
   post_build:
     commands:
       - echo "Destroying everything..."
       - ./terraform destroy -input=false -force
-      #- ./terraform destroy -target=aws_instance.centos -input=false -force
-      #- ./terraform destroy -target=aws_security_group.terrafirm -input=false -force
       - echo "Terrafirm completed on $(date)"
 
 artifacts:
