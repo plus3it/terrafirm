@@ -69,7 +69,7 @@ phases:
       - echo "Instance IP, ${AWS_INSTANCE_IP}"
       - chmod +x password_wait.sh ; ./password_wait.sh
       - echo "********"
-      - echo "${DEC_PASSWORD}"
+      - cat decryptedpassword
       - echo "********"
   post_build:
     commands:
