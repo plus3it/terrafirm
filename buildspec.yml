@@ -48,7 +48,7 @@ phases:
       - TF_VAR_private_key="${SSH_KEY}" ; export TF_VAR_private_key
       - TF_VAR_public_key="${PUBLIC_KEY}" ; export TF_VAR_public_key
       - TF_VAR_ami="${AMI}" ; export TF_VAR_ami
-      - TF_VAR_ssh_user="${SSH_USER}" ; export TF_VAR_ssh_user
+      - TF_VAR_ssh_user="${WINRM_USER}" ; export TF_VAR_ssh_user
       - echo "AMI ${TF_VAR_ami}"
       - echo "Initializing Terraform " ; ./terraform init -input=false
       - echo "Importing key pair " ; ./terraform import aws_key_pair.auth "${KEY_PAIR_NAME}"
