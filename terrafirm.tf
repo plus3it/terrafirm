@@ -42,7 +42,6 @@ resource "aws_instance" "windows" {
   connection {
     #winrm connection to tier-2 instance
     user     = "${var.ssh_user}"
-    private_key = "${var.private_key}"
     timeout   = "3m"
     type     = "winrm"
     https    = true
