@@ -14,5 +14,5 @@ $BootstrapFile = "${Env:Temp}\$(${BootstrapUrl}.split('/')[-1])"
 pip install --index-url="$PypiUrl" --upgrade pip setuptools watchmaker
 
 # Run watchmaker
-watchmaker --log-level debug --log-dir=C:\Watchmaker\Logs
+watchmaker -n --log-level debug --log-dir=C:\Watchmaker\Logs
 </powershell>
