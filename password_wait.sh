@@ -9,12 +9,14 @@ echo "Created key file"
 #loop/sleep until the instance is ready, i.e., can provide a password
 wait_seconds=90 #waits 10 seconds per so x*10 seconds; 90 = 900s = 15m
 
+start_time=$SECONDS
 until test $((wait_seconds--)) -eq 0 -o -n "$ENC_PASSWORD" ; do #waits for timeout or password to not be empty
   PASSWORD_DATA="$(aws ec2 get-password-data --instance-id "$AWS_INSTANCE_ID")"
   ENC_PASSWORD="$(echo "$PASSWORD_DATA" | ./jq.dms -r '."PasswordData"')"
   sleep 10
 done
-echo "Got encrypted password from AWS"
+elapsed_time=$(($SECONDS - $start_time))
+echo "Got encrypted password from AWS in $elapsed_time sec"
 
 #Windows or AWS or someone is padding encrypted password with a Windows newline
 #Get rid of this newline for decryption to work
