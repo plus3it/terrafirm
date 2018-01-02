@@ -36,7 +36,7 @@ resource "aws_instance" "windows" {
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.auth.id}"
   vpc_security_group_ids = ["${aws_security_group.terrafirm.id}"]
-  user_data = "${file("userdata.ps1")}"
+  user_data = "${file("userdata2.ps1")}"
   #user_data = "${template_file.userdata.rendered}"
   
   timeouts {
