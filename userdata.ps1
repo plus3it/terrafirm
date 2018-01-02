@@ -9,7 +9,7 @@ netsh advfirewall firewall add rule name="WinRM in" protocol=TCP dir=in profile=
 
 # Set Administrator password
 $admin = [adsi]("WinNT://./administrator, user")
-$admin.psbase.invoke("SetPassword", "${var.term_passwd}")
+$admin.psbase.invoke("SetPassword", "THIS_IS_NOT_THE_PASSWORD")
 
 # Setup watchmaker
 $BootstrapUrl = "https://raw.githubusercontent.com/plus3it/watchmaker/master/docs/files/bootstrap/watchmaker-bootstrap.ps1"
