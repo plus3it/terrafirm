@@ -54,7 +54,7 @@ resource "aws_instance" "windows" {
   }
   
   provisioner "local-exec" {
-    command = "sleep 20"
+    command = "sleep 120"
   }
   
   provisioner "file" {
