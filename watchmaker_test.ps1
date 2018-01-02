@@ -17,14 +17,14 @@ function Retry-Command
     while (-not $completed) {
         try {
             & $command @args
-            Write-Output ("Command [{0}] succeeded." -f $command) -foreground Green
+            Write-Host ("Command [{0}] succeeded." -f $command) -foreground Green
             $completed = $true
         } catch {
             if ($retrycount -ge $retries) {
-                Write-Output ("Command [{0}] failed the maximum number of {1} times." -f $command, $retrycount) -foreground Red
+                Write-Host ("Command [{0}] failed the maximum number of {1} times." -f $command, $retrycount) -foreground Red
                 throw
             } else {
-                Write-Output ("Command [{0}] failed. Retrying in {1} seconds." -f $command, $secondsDelay) -foreground Blue
+                Write-Host ("Command [{0}] failed. Retrying in {1} seconds." -f $command, $secondsDelay) -foreground Blue
                 Start-Sleep $secondsDelay
                 $retrycount++
             }
