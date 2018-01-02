@@ -53,13 +53,15 @@ resource "aws_instance" "windows" {
     #https    = true
   }
   
+  provisioner "local-exec" {
+    command = "sleep 120"
+  }
   
   provisioner "remote-exec" {
-    #script = "watchmaker_test.bat"
-    inline = [
-      "hostname",
-      "sleep 120",
-      "watchmaker --version",
-    ]
+    script = "watchmaker_test.ps1"
+    #inline = [
+    #  "hostname",
+    #  "powershell.exe -version 4 watchmaker --version",
+    #]
   }
 }
