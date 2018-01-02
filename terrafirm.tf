@@ -57,8 +57,9 @@ resource "aws_instance" "windows" {
   provisioner "remote-exec" {
     #script = "watchmaker_test.bat"
     inline = [
-      "timeout 120",
-      "watchmaker --version",
+      "hostname",
+      #"timeout 120",
+      #"watchmaker --version",
     ]
   }
 }
