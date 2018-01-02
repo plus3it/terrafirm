@@ -48,7 +48,7 @@ resource "aws_instance" "windows" {
     #winrm connection to tier-2 instance
     type     = "winrm"
     user     = "${var.term_user}"
-    password = "${var.term_password}"
+    password = "${var.term_passwd}"
     timeout   = "3m"
     #https    = true
   }
