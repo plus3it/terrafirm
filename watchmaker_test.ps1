@@ -1,3 +1,12 @@
+$Logfile = "terrafirm_win.log"
+
+Function LogWrite
+{
+   Param ([string]$logstring)
+
+   Add-content $Logfile -value $logstring
+}
+
 function Retry-Command
 {
     param (
@@ -18,14 +27,14 @@ function Retry-Command
         try {
             .$profile
             & $command @args
-            Write-Host ("Command [{0}] succeeded." -f $command) -foreground Green
+            LogWrite ("Command [{0}] succeeded." -f $command)
             $completed = $true
         } catch {
             if ($retrycount -ge $retries) {
-                Write-Host ("Command [{0}] failed the maximum number of {1} times." -f $command, $retrycount) -foreground Red
+                LogWrite ("Command [{0}] failed the maximum number of {1} times." -f $command, $retrycount)
                 throw
             } else {
-                Write-Host ("Command [{0}] failed. Retrying in {1} seconds." -f $command, $secondsDelay) -foreground Blue
+                LogWrite ("Command [{0}] failed. Retrying in {1} seconds." -f $command, $secondsDelay)
                 Start-Sleep $secondsDelay
                 $retrycount++
             }
