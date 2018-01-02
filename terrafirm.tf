@@ -44,20 +44,21 @@ resource "aws_instance" "windows" {
     delete = "30m"
   }
   
-  #connection {
-  #  #winrm connection to tier-2 instance
-  #  user     = "${var.ssh_user}"
-  #  timeout   = "3m"
-  #  type     = "winrm"
-  #  https    = true
-  #}
+  connection {
+    #winrm connection to tier-2 instance
+    type     = "winrm"
+    user     = "${var.term_user}"
+    password = "${var.term_password}"
+    timeout   = "3m"
+    #https    = true
+  }
   
   
-  #provisioner "remote-exec" {
-  #  #script = "watchmaker_test.bat"
-  #  inline = [
-  #    "Start-Sleep -s 120",
-  #    "watchmaker --version",
-  #  ]
-  #}
+  provisioner "remote-exec" {
+    #script = "watchmaker_test.bat"
+    inline = [
+      "Start-Sleep -s 120",
+      "watchmaker --version",
+    ]
+  }
 }
