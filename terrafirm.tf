@@ -5,9 +5,9 @@ resource "aws_key_pair" "auth" {
   public_key = "${var.public_key}"
 }
 
-resource "template_file" "userdata" {
-  filename = "userdata.ps1"
-}
+#resource "template_file" "userdata" {
+#  filename = "userdata.ps1"
+#}
 
 # Security group to access the instances over WinRM
 resource "aws_security_group" "terrafirm" {
@@ -36,8 +36,8 @@ resource "aws_instance" "windows" {
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.auth.id}"
   vpc_security_group_ids = ["${aws_security_group.terrafirm.id}"]
-  #user_data = "${file("userdata.ps1")}"
-  user_data = "${template_file.userdata.rendered}"
+  user_data = "${file("userdata.ps1")}"
+  #user_data = "${template_file.userdata.rendered}"
   
   timeouts {
     create = "30m"
