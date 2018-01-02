@@ -55,6 +55,7 @@ phases:
       - echo "${TF_VAR_term_passwd}"
       - echo "USERDATA "
       - cat userdata.ps1
+      - chmod +rw userdata.ps1
       - sed -i '' -e "s/THIS_IS_NOT_THE_PASSWORD/${TF_VAR_term_passwd}/" userdata.ps1
       - echo "AMI ${TF_VAR_ami}"
       - echo "Creating a key pair "
