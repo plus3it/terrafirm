@@ -53,9 +53,9 @@ resource "aws_instance" "windows" {
     #https    = true
   }
   
-  provisioner "local-exec" {
-    command = "sleep 120"
-  }
+  #provisioner "local-exec" {
+  #  command = "sleep 120"
+  #}
   
   provisioner "file" {
     source = "watchmaker_test.ps1"
