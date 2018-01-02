@@ -32,4 +32,4 @@ function Retry-Command
     }
 }
 
-Retry-Command -Command 'watchmaker' -Args '--version' -Verbose
+Retry-Command -Command 'watchmaker' -Args '--version' -Retries 100 -SecondsDelay 5 -Verbose
