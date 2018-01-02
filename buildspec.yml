@@ -45,8 +45,6 @@ phases:
         fi
       - echo "AWS Profile setup..."
       - AWS_PROFILE=$NAMED_PROFILE ; export AWS_PROFILE
-      - echo "Creating a key pair "
-      - aws ec2 import-key-pair --key-name "${KEY_PAIR_NAME}" --public-key-material "${PUBLIC_KEY}"
       - echo "Terraform version " ; ./terraform --version
       - TF_VAR_key_pair_name="${KEY_PAIR_NAME}" ; export TF_VAR_key_pair_name
       - TF_VAR_private_key="${SSH_KEY}" ; export TF_VAR_private_key
@@ -59,6 +57,8 @@ phases:
       - cat userdata.ps1
       - sed -i '' -e "s/THIS_IS_NOT_THE_PASSWORD/${TF_VAR_term_passwd}/" userdata.ps1
       - echo "AMI ${TF_VAR_ami}"
+      - echo "Creating a key pair "
+      - aws ec2 import-key-pair --key-name "${KEY_PAIR_NAME}" --public-key-material "${PUBLIC_KEY}"
       - echo "Initializing Terraform " ; ./terraform init -input=false
       - echo "Importing key pair " ; ./terraform import aws_key_pair.auth "${KEY_PAIR_NAME}"
       - echo "Create provisiong plan " ; ./terraform plan -out=tfplan -input=false
