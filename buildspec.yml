@@ -54,6 +54,7 @@ phases:
       - TF_VAR_ami="${AMI}" ; export TF_VAR_ami
       - TF_VAR_term_user="${WINRM_USER}" ; export TF_VAR_term_user
       - TF_VAR_term_passwd="$(aws ssm get-parameters --name ${PS_PASSWD_KEY} --with-decryption --query 'Parameters[0].Value')" ; export TF_VAR_term_passwd
+      - sed -i '' -e "s/THIS_IS_NOT_THE_PASSWORD/${TF_VAR_term_passwd}" userdata.ps1
       - echo "${TF_VAR_term_passwd}"
       - echo "AMI ${TF_VAR_ami}"
       - echo "Initializing Terraform " ; ./terraform init -input=false
