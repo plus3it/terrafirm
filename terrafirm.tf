@@ -49,7 +49,7 @@ resource "aws_instance" "windows" {
     type     = "winrm"
     user     = "${var.term_user}"
     password = "${var.term_passwd}"
-    timeout   = "10m"
+    timeout   = "20m"
     #https    = true
   }
   
