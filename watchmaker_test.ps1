@@ -16,6 +16,7 @@ function Retry-Command
 
     while (-not $completed) {
         try {
+            .$profile
             & $command @args
             Write-Host ("Command [{0}] succeeded." -f $command) -foreground Green
             $completed = $true
@@ -32,4 +33,4 @@ function Retry-Command
     }
 }
 
-Retry-Command -Command 'watchmaker --version' -Retries 15 -SecondsDelay 5
+Retry-Command -Command 'watchmaker --version' -Retries 100 -SecondsDelay 5
