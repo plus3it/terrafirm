@@ -66,7 +66,7 @@ resource "aws_instance" "windows" {
     #script = "watchmaker_test.ps1"
     inline = [
       "hostname",
-      "powershell.exe -File .\watchmaker_test.ps1",
+      "powershell.exe -File ./watchmaker_test.ps1",
     ]
   }
 }
