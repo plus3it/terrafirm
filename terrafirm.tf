@@ -58,8 +58,8 @@ resource "aws_instance" "windows" {
     #script = "watchmaker_test.bat"
     inline = [
       "hostname",
-      #"timeout 120",
-      #"watchmaker --version",
+      "sleep 120",
+      "watchmaker --version",
     ]
   }
 }
