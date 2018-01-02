@@ -17,14 +17,14 @@ function Retry-Command
     while (-not $completed) {
         try {
             & $command @args
-            Write-Verbose ("Command [{0}] succeeded." -f $command)
+            Write-Output ("Command [{0}] succeeded." -f $command) -foreground Green
             $completed = $true
         } catch {
             if ($retrycount -ge $retries) {
-                Write-Verbose ("Command [{0}] failed the maximum number of {1} times." -f $command, $retrycount)
+                Write-Output ("Command [{0}] failed the maximum number of {1} times." -f $command, $retrycount) -foreground Red
                 throw
             } else {
-                Write-Verbose ("Command [{0}] failed. Retrying in {1} seconds." -f $command, $secondsDelay)
+                Write-Output ("Command [{0}] failed. Retrying in {1} seconds." -f $command, $secondsDelay) -foreground Blue
                 Start-Sleep $secondsDelay
                 $retrycount++
             }
@@ -32,4 +32,4 @@ function Retry-Command
     }
 }
 
-Retry-Command -Command 'watchmaker --version' -Retries 100 -SecondsDelay 5 -Verbose
+Retry-Command -Command 'watchmaker --version' -Retries 100 -SecondsDelay 5
