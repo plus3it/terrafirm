@@ -1,3 +1,3 @@
-<power-shell>
+<powershell>
 watchmaker --version 
 </powershell>
