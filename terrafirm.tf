@@ -53,13 +53,13 @@ resource "aws_instance" "windows" {
     #https    = true
   }
   
-  provisioner "local-exec" {
-    command = "sleep 60"
-  }
-  
   provisioner "file" {
     source = "watchmaker_test.ps1"
     destination = "C:\\scripts\\watchmaker_test.ps1"
+  }
+
+  provisioner "local-exec" {
+    command = "sleep 60"
   }
   
   provisioner "remote-exec" {
