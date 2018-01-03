@@ -68,5 +68,18 @@ resource "aws_instance" "windows" {
       "hostname",
       "powershell.exe -File C:\\scripts\\watchmaker_test.ps1",
     ]
+    on_failure = "continue"
   }
+  
+ provisioner "local-exec" {
+    command = "sleep 30"
+  }
+  
+  provisioner "remote-exec" {
+    #script = "watchmaker_test.ps1"
+    inline = [
+      "hostname",
+      "powershell.exe -File C:\\scripts\\watchmaker_test.ps1",
+    ]
+  }  
 }
