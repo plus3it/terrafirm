@@ -40,8 +40,8 @@ resource "aws_instance" "windows" {
   #user_data = "${template_file.userdata.rendered}"
   
   timeouts {
-    create = "30m"
-    delete = "30m"
+    create = "40m"
+    delete = "40m"
   }
   
   connection {
@@ -49,7 +49,7 @@ resource "aws_instance" "windows" {
     type     = "winrm"
     user     = "${var.term_user}"
     password = "${var.term_passwd}"
-    timeout   = "20m"
+    timeout   = "30m"
     #https    = true
   }
   
