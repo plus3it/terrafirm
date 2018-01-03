@@ -27,4 +27,4 @@ function Retry-Command
     }
 }
 
-Retry-Command -Command 'watchmaker --version' -Retries 20 -SecondsDelay 30
+Retry-Command -Command 'watchmaker --version' -Retries 6 -SecondsDelay 10
