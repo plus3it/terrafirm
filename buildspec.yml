@@ -22,10 +22,10 @@ phases:
       - echo `pwd`
       - curl -L "${TF_ZIP}" -o tf.zip && unzip tf.zip
       - echo "Installed Terraform."
-      - echo "Installing pip & python & pywinrm..."
-      - apt -y install python3
-      - easy_install pip
-      - pip install pywinrm
+      - #echo "Installing pip & python & pywinrm..."
+      - #apt -y install python3
+      - #easy_install pip
+      - #pip install pywinrm
   pre_build:
     commands:
       - |
