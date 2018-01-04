@@ -31,8 +31,30 @@ resource "aws_security_group" "terrafirm" {
   }
 }
 
+data "aws_ami" "windows2016" {
+  most_recent = true
+  
+  filter {
+    name = "virtualization-type"
+    values = ["hvm"]
+  }
+  
+  filter {
+    name = "platform"
+    values = ["windows"]
+  }
+  
+  filter {
+    name = "name"
+    values = ["Server","2016"]
+  }
+  
+  owners = ["amazon"]
+}
+
 resource "aws_instance" "windows" {
-  ami = "${var.ami}"
+  #ami = "${var.ami}"
+  ami = "${data.aws_ami.windows2016.id}"
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.auth.id}"
   vpc_security_group_ids = ["${aws_security_group.terrafirm.id}"]
