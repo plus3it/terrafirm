@@ -44,10 +44,10 @@ data "aws_ami" "windows2016" {
     values = ["windows"]
   }
   
-  filter {
-    name = "name"
-    values = ["*2016*"]
-  }
+  #filter {
+  #  name = "name"
+  #  values = ["*2016*"]
+  #}
   
   owners = ["099720109477"]
 }
