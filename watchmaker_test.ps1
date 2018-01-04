@@ -9,7 +9,7 @@ function Retry-Command
     $retrycount = 0
     $success = $false
 
-    while (-not $completed) {
+    while (-not $success) {
         try {
             Invoke-Expression -Command:$command
             Write-Host ("Command [{0}] succeeded." -f $command)
