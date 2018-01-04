@@ -73,6 +73,8 @@ phases:
       - #./terraform state pull -target=aws_instance.windows -input=false
       - ./terraform output ip
       - ./terraform output id
+      - ./terraform output ami
+      - aws ec2 describe-images --image-ids "$(./terraform output ami)"
       - #AWS_INSTANCE_STATE="$(./terraform state pull -target=aws_instance.windows -input=false)" ; export AWS_INSTANCE_STATE
       - #AWS_INSTANCE_ID="$(echo $AWS_INSTANCE_STATE | ./jq.dms -r '.modules[0].resources."aws_instance.windows".primary.id')" ; export AWS_INSTANCE_ID
       - #AWS_INSTANCE_IP="$(echo $AWS_INSTANCE_STATE | ./jq.dms -r '.modules[0].resources."aws_instance.windows".primary.attributes.public_ip')" ; export AWS_INSTANCE_IP
