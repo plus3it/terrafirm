@@ -109,7 +109,7 @@ data "aws_ami" "windows2008" {
   #  values = ["099720109477","801119661308"]
   #}
   
-  name_regex = "2008.*R2.*English.*Base"
+  name_regex = "R2.*English.*Base"
   owners = ["099720109477","801119661308","amazon"]
   
 }
