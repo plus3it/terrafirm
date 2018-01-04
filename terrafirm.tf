@@ -46,7 +46,7 @@ data "aws_ami" "windows2016" {
   
   filter {
     name = "ImageLocation"
-    values = ["amazon/Windows_Server-2016*"]
+    values = ["amazon/Windows_Server-2016-English-Full-Base*"]
   }
   
   filter {
