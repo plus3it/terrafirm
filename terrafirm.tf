@@ -46,13 +46,13 @@ data "aws_ami" "windows2016" {
   
   filter {
     name = "name"
-    values = ["amazon/Windows_Server-2016-English-Full-Base*"]
+    values = ["Windows_Server-2016-English-Full-Base*"]
   }
   
-  #filter {
-  #  name = "ImageOwnerAlias"
-  #  values = ["amazon"]
-  #}
+  filter {
+    name = "owner"
+    values = ["amazon"]
+  }
   
 }
 
