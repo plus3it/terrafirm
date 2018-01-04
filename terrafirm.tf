@@ -73,7 +73,7 @@ data "aws_ami" "windows2012" {
   
   filter {
     name = "name"
-    values = ["Windows_Server-2012-R2*English*Base"]
+    values = ["Windows_Server-2012-R2*"]
   }
   
   #filter {
@@ -100,7 +100,7 @@ data "aws_ami" "windows2008" {
   
   filter {
     name = "name"
-    values = ["Windows_Server-2008-R2_SP2-English*Base*"]
+    values = ["Windows_Server-2008-R2_SP2-English*"]
   }
   
   #filter {
