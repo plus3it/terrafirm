@@ -13,6 +13,14 @@ output "id" {
   value = "${aws_instance.windows.id}"
 }
 
-output "ami" {
+output "ami2016" {
   value = "${data.aws_ami.windows2016.id}"
+}
+
+output "ami2012" {
+  value = "${data.aws_ami.windows2012.id}"
+}
+
+output "ami2008" {
+  value = "${data.aws_ami.windows2008.id}"
 }
