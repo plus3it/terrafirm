@@ -39,23 +39,12 @@ data "aws_ami" "windows2016" {
     values = ["hvm"]
   }
   
-  #filter {
-  #  name = "Platform"
-  #  values = ["windows"]
-  #}
-  
   filter {
     name = "name"
     values = ["Windows_Server-2016-English-Full-Base*"]
   }
   
-  #filter {
-  #  name = "owners"
-  #  values = ["099720109477","801119661308"]
-  #}
-  
   owners = ["099720109477","801119661308","amazon"]
-  
 }
 
 data "aws_ami" "windows2012" {
@@ -65,25 +54,13 @@ data "aws_ami" "windows2012" {
     name = "virtualization-type"
     values = ["hvm"]
   }
-  
-  #filter {
-  #  name = "Platform"
-  #  values = ["windows"]
-  #}
-  
+
   filter {
     name = "name"
-    values = ["Windows_Server-2012*"]
+    values = ["Windows_Server-2012-R2_RTM-English-64Bit-Base*"]
   }
-  
-  #filter {
-  #  name = "owners"
-  #  values = ["099720109477","801119661308"]
-  #}
-  
-  name_regex = "R2.*English.*Base"
+
   owners = ["099720109477","801119661308","amazon"]
-  
 }
 
 data "aws_ami" "windows2008" {
@@ -93,28 +70,16 @@ data "aws_ami" "windows2008" {
     name = "virtualization-type"
     values = ["hvm"]
   }
-  
-  #filter {
-  #  name = "Platform"
-  #  values = ["windows"]
-  #}
-  
+
   filter {
     name = "name"
-    values = ["Windows_Server-2008*"]
+    values = ["Windows_Server-2008-R2_SP1-English-64Bit-Base*"]
   }
   
-  #filter {
-  #  name = "owners"
-  #  values = ["099720109477","801119661308"]
-  #}
-  
-  name_regex = "R2.*English.*Base"
   owners = ["099720109477","801119661308","amazon"]
-  
 }
 
-resource "aws_instance" "windows" {
+resource "aws_instance" "windows2016" {
   #ami = "${var.ami}"
   ami = "${data.aws_ami.windows2016.id}"
   instance_type = "t2.micro"
