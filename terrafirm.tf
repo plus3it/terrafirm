@@ -50,8 +50,8 @@ data "aws_ami" "windows2016" {
   }
   
   filter {
-    name = "owner"
-    values = ["amazon"]
+    name = "owners"
+    values = ["099720109477","801119661308"]
   }
   
 }
