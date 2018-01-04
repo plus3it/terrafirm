@@ -12,3 +12,7 @@ output "ip" {
 output "id" {
   value = "${aws_instance.windows.id}"
 }
+
+output "ami" {
+  value = "${
+}
