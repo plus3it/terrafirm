@@ -22,11 +22,10 @@ phases:
       - echo `pwd`
       - curl -L "${TF_ZIP}" -o tf.zip && unzip tf.zip
       - echo "Installed Terraform."
-      - aws ec2 describe-images --image-ids ami-e443379e
-      - aws ec2 describe-images --image-ids ami-f8b7c082
-      - aws ec2 describe-images --image-ids ami-f48ffb8e
-      - aws ec2 describe-images --image-ids ami-c0186eba
-      - exit 1
+      - #aws ec2 describe-images --image-ids ami-e443379e
+      - #aws ec2 describe-images --image-ids ami-f8b7c082
+      - #aws ec2 describe-images --image-ids ami-f48ffb8e
+      - #aws ec2 describe-images --image-ids ami-c0186eba
       - #echo "Installing pip & python & pywinrm..."
       - #apt -y install python3
       - #easy_install pip
