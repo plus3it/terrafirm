@@ -54,7 +54,7 @@ data "aws_ami" "windows2016" {
   #  values = ["099720109477","801119661308"]
   #}
   
-  owners = ["099720109477","801119661308"]
+  owners = ["099720109477","801119661308","amazon"]
   
 }
 
@@ -82,7 +82,7 @@ data "aws_ami" "windows2012" {
   #}
   
   name_regex = "R2.*English.*Base"
-  owners = ["099720109477","801119661308"]
+  owners = ["099720109477","801119661308","amazon"]
   
 }
 
@@ -110,7 +110,7 @@ data "aws_ami" "windows2008" {
   #}
   
   name_regex = "2008.*R2.*English.*Base"
-  owners = ["099720109477","801119661308"]
+  owners = ["099720109477","801119661308","amazon"]
   
 }
 
