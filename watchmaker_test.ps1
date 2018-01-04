@@ -29,4 +29,4 @@ function Retry-Command
     return $success
 }
 
-Retry-Command -Command 'watchmaker --version' -Retries 9 -SecondsDelay 30
+Retry-Command -Command 'wotchmaker --version' -Retries 3 -SecondsDelay 30
