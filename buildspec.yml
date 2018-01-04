@@ -22,8 +22,8 @@ phases:
       - echo `pwd`
       - curl -L "${TF_ZIP}" -o tf.zip && unzip tf.zip
       - echo "Installed Terraform."
-      - aws ec2 describe-images --image-ids ami-e443379e
-      - aws ec2 describe-images --image-ids ami-f8b7c082
+      - #aws ec2 describe-images --image-ids ami-e443379e
+      - #aws ec2 describe-images --image-ids ami-f8b7c082
       - #echo "Installing pip & python & pywinrm..."
       - #apt -y install python3
       - #easy_install pip
@@ -75,7 +75,9 @@ phases:
       - #./terraform state pull -target=aws_instance.windows -input=false
       - ./terraform output ip
       - ./terraform output id
-      - ./terraform output ami
+      - ./terraform output ami2016
+      - ./terraform output ami2012
+      - ./terraform output ami2008
       - aws ec2 describe-images --image-ids "$(./terraform output ami)"
       - #AWS_INSTANCE_STATE="$(./terraform state pull -target=aws_instance.windows -input=false)" ; export AWS_INSTANCE_STATE
       - #AWS_INSTANCE_ID="$(echo $AWS_INSTANCE_STATE | ./jq.dms -r '.modules[0].resources."aws_instance.windows".primary.id')" ; export AWS_INSTANCE_ID
