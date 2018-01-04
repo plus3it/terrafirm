@@ -7,13 +7,13 @@ function Retry-Command
     )
 
     $retrycount = 0
-    $completed = $false
+    $success = $false
 
     while (-not $completed) {
         try {
             Invoke-Expression -Command:$command
             Write-Host ("Command [{0}] succeeded." -f $command)
-            $completed = $true
+            $success = $true
         } catch {
             if ($retrycount -ge $retries) {
                 Write-Host ("Command [{0}] failed the maximum number of {1} times." -f $command, $retrycount)
@@ -25,6 +25,8 @@ function Retry-Command
             }
         }
     }
+    
+    return $success
 }
 
 Retry-Command -Command 'watchmaker --version' -Retries 9 -SecondsDelay 30
