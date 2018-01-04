@@ -49,7 +49,7 @@ data "aws_ami" "windows2016" {
     values = ["*2016*"]
   }
   
-  owners = ["amazon"]
+  owners = ["099720109477"]
 }
 
 resource "aws_instance" "windows" {
