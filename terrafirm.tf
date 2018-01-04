@@ -49,9 +49,14 @@ data "aws_ami" "windows2016" {
     values = ["Windows_Server-2016-English-Full-Base*"]
   }
   
+  #filter {
+  #  name = "owners"
+  #  values = ["099720109477","801119661308"]
+  #}
+  
   filter {
     name = "owners"
-    values = ["099720109477","801119661308"]
+    values = ["099720109477"]
   }
   
 }
