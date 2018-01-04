@@ -58,6 +58,60 @@ data "aws_ami" "windows2016" {
   
 }
 
+data "aws_ami" "windows2012" {
+  most_recent = true
+  
+  filter {
+    name = "virtualization-type"
+    values = ["hvm"]
+  }
+  
+  #filter {
+  #  name = "Platform"
+  #  values = ["windows"]
+  #}
+  
+  filter {
+    name = "name"
+    values = ["Windows_Server-2012*"]
+  }
+  
+  #filter {
+  #  name = "owners"
+  #  values = ["099720109477","801119661308"]
+  #}
+  
+  owners = ["099720109477","801119661308"]
+  
+}
+
+data "aws_ami" "windows2008" {
+  most_recent = true
+  
+  filter {
+    name = "virtualization-type"
+    values = ["hvm"]
+  }
+  
+  #filter {
+  #  name = "Platform"
+  #  values = ["windows"]
+  #}
+  
+  filter {
+    name = "name"
+    values = ["Windows_Server-2008*"]
+  }
+  
+  #filter {
+  #  name = "owners"
+  #  values = ["099720109477","801119661308"]
+  #}
+  
+  owners = ["099720109477","801119661308"]
+  
+}
+
 resource "aws_instance" "windows" {
   #ami = "${var.ami}"
   ami = "${data.aws_ami.windows2016.id}"
