@@ -70,7 +70,7 @@ resource "aws_instance" "windows" {
   provisioner "remote-exec" {
     inline = [
       "hostname",
-      "powershell.exe -File C:\\scripts\\manage_tests.ps1",
+      "powershell.exe -File C:\\scripts\\watchmaker_test.ps1",
     ]
   }
   
