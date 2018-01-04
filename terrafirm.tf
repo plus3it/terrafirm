@@ -35,21 +35,25 @@ data "aws_ami" "windows2016" {
   most_recent = true
   
   filter {
-    name = "virtualization-type"
+    name = "VirtualizationType"
     values = ["hvm"]
   }
   
-  filter {
-    name = "platform"
-    values = ["windows"]
-  }
-  
   #filter {
-  #  name = "name"
-  #  values = ["*2016*"]
+  #  name = "Platform"
+  #  values = ["windows"]
   #}
   
-  owners = ["099720109477"]
+  filter {
+    name = "ImageLocation"
+    values = ["amazon/Windows_Server-2016*"]
+  }
+  
+  filter {
+    name = "ImageOwnerAlias"
+    values = ["amazon"]
+  }
+  
 }
 
 resource "aws_instance" "windows" {
