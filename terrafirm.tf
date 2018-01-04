@@ -73,7 +73,7 @@ data "aws_ami" "windows2012" {
   
   filter {
     name = "name"
-    values = ["Windows_Server-2012-R2*"]
+    values = ["Windows_Server-2012*"]
   }
   
   #filter {
@@ -81,6 +81,7 @@ data "aws_ami" "windows2012" {
   #  values = ["099720109477","801119661308"]
   #}
   
+  name_regex = "R2.*English.*Base"
   owners = ["099720109477","801119661308"]
   
 }
@@ -100,7 +101,7 @@ data "aws_ami" "windows2008" {
   
   filter {
     name = "name"
-    values = ["Windows_Server-2008-R2_SP2-English*"]
+    values = ["Windows_Server-2008*"]
   }
   
   #filter {
@@ -108,6 +109,7 @@ data "aws_ami" "windows2008" {
   #  values = ["099720109477","801119661308"]
   #}
   
+  name_regex = "2008.*R2.*English.*Base"
   owners = ["099720109477","801119661308"]
   
 }
