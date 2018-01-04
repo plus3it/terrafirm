@@ -45,7 +45,7 @@ data "aws_ami" "windows2016" {
   #}
   
   filter {
-    name = "image-location"
+    name = "name"
     values = ["amazon/Windows_Server-2016-English-Full-Base*"]
   }
   
