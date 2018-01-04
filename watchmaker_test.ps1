@@ -27,4 +27,4 @@ function Retry-Command
     }
 }
 
-Retry-Command -Command 'watchmaker --version' -Retries 3 -SecondsDelay 10
+Retry-Command -Command 'wotchmaker --version' -Retries 3 -SecondsDelay 10
