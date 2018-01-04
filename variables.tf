@@ -14,5 +14,5 @@ output "id" {
 }
 
 output "ami" {
-  value = "${aws_ami.windows2016.id}"
+  value = "${data.aws_ami.windows2016.id}"
 }
