@@ -46,7 +46,7 @@ data "aws_ami" "windows2016" {
   
   filter {
     name = "name"
-    values = ["Server","2016"]
+    values = ["2016"]
   }
   
   owners = ["amazon"]
