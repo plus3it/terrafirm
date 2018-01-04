@@ -57,6 +57,11 @@ resource "aws_instance" "windows" {
     source = "watchmaker_test.ps1"
     destination = "C:\\scripts\\watchmaker_test.ps1"
   }
+  
+  provisioner "file" {
+    source = "manage_tests.ps1"
+    destination = "C:\\scripts\\manage_tests.ps1"
+  }
 
   provisioner "local-exec" {
     command = "sleep 60"
@@ -65,31 +70,8 @@ resource "aws_instance" "windows" {
   provisioner "remote-exec" {
     inline = [
       "hostname",
-      "powershell.exe -File C:\\scripts\\watchmaker_test.ps1",
+      "powershell.exe -File C:\\scripts\\manage_tests.ps1",
     ]
-    on_failure = "continue"
   }
   
- provisioner "local-exec" {
-    command = "sleep 60"
-  }
-  
-  provisioner "remote-exec" {
-    inline = [
-      "hostname",
-      "powershell.exe -File C:\\scripts\\watchmaker_test.ps1",
-    ]
-    on_failure = "continue"
-  }  
-
-  provisioner "local-exec" {
-    command = "sleep 30"
-  }
-  
-  provisioner "remote-exec" {
-    inline = [
-      "hostname",
-      "powershell.exe -File C:\\scripts\\watchmaker_test.ps1",
-    ]
-  }  
 }
