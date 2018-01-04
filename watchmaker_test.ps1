@@ -27,4 +27,4 @@ function Retry-Command
     }
 }
 
-Retry-Command -Command 'powershell.exe "watchmaker --version"' -Retries 9 -SecondsDelay 30
+Retry-Command -Command 'watchmaker --version' -Retries 9 -SecondsDelay 30
