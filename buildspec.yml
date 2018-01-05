@@ -76,8 +76,8 @@ phases:
       - echo "***************************************"
       - echo "WINDOWS 2008"
       - echo "***************************************"
-      - #echo "Windows 2008 IP address- " ; ./terraform output ip2008
-      - #echo "Windows 2008 ID        - " ; ./terraform output id2008
+      - echo "Windows 2008 IP address- " ; ./terraform output ip2008
+      - echo "Windows 2008 ID        - " ; ./terraform output id2008
       - echo "Windows 2008 AMI       - " ; ./terraform output ami2008
       - #AWS_INSTANCE_STATE="$(./terraform state pull -target=aws_instance.windows -input=false)" ; export AWS_INSTANCE_STATE
       - #AWS_INSTANCE_ID="$(echo $AWS_INSTANCE_STATE | ./jq.dms -r '.modules[0].resources."aws_instance.windows".primary.id')" ; export AWS_INSTANCE_ID
