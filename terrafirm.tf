@@ -186,6 +186,78 @@ resource "aws_instance" "centos6" {
   }
 }
 
+resource "aws_instance" "centos7" {
+  ami = "${data.aws_ami.centos7.id}"
+  instance_type = "t2.micro"
+  key_name = "${aws_key_pair.auth.id}"
+  vpc_security_group_ids = ["${aws_security_group.terrafirm_ssh.id}"]
+  user_data = "${file("linux/userdata.sh")}"
+  
+  timeouts {
+    create = "40m"
+    delete = "40m"
+  }
+  
+  connection {
+    #ssh connection to tier-2 instance
+    user     = "${var.ssh_user}"
+    private_key = "${var.private_key}"
+    timeout   = "30m"
+  }
+  
+  provisioner "remote-exec" {
+    script = "linux/watchmaker_test.sh"
+  }
+}
+
+resource "aws_instance" "rhel6" {
+  ami = "${data.aws_ami.rhel6.id}"
+  instance_type = "t2.micro"
+  key_name = "${aws_key_pair.auth.id}"
+  vpc_security_group_ids = ["${aws_security_group.terrafirm_ssh.id}"]
+  user_data = "${file("linux/userdata.sh")}"
+  
+  timeouts {
+    create = "40m"
+    delete = "40m"
+  }
+  
+  connection {
+    #ssh connection to tier-2 instance
+    user     = "${var.ssh_user}"
+    private_key = "${var.private_key}"
+    timeout   = "30m"
+  }
+  
+  provisioner "remote-exec" {
+    script = "linux/watchmaker_test.sh"
+  }
+}
+
+resource "aws_instance" "rhel7" {
+  ami = "${data.aws_ami.rhel7.id}"
+  instance_type = "t2.micro"
+  key_name = "${aws_key_pair.auth.id}"
+  vpc_security_group_ids = ["${aws_security_group.terrafirm_ssh.id}"]
+  user_data = "${file("linux/userdata.sh")}"
+  
+  timeouts {
+    create = "40m"
+    delete = "40m"
+  }
+  
+  connection {
+    #ssh connection to tier-2 instance
+    user     = "${var.ssh_user}"
+    private_key = "${var.private_key}"
+    timeout   = "30m"
+  }
+  
+  provisioner "remote-exec" {
+    script = "linux/watchmaker_test.sh"
+  }
+}
+
 resource "aws_instance" "windows2016" {
   #ami = "${var.ami}"
   ami = "${data.aws_ami.windows2016.id}"
