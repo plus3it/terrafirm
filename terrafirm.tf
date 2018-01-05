@@ -162,6 +162,46 @@ data "aws_ami" "windows2008" {
   owners = ["099720109477","801119661308","amazon"]
 }
 
+data "aws_ami" "ubuntu_tr14" {
+  most_recent = true
+  
+  filter {
+    name = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  filter {
+    name = "name"
+    values = ["ubuntu/images/hvm/ubuntu-trusty-14.04-amd64-server*"]
+  }
+  
+  owners = ["099720109477","801119661308","amazon"]
+}
+
+resource "aws_instance" "ubuntu_tr14" {
+  ami = "${data.aws_ami.ubuntu_tr14.id}"
+  instance_type = "t2.micro"
+  key_name = "${aws_key_pair.auth.id}"
+  vpc_security_group_ids = ["${aws_security_group.terrafirm_ssh.id}"]
+  user_data = "${file("linux/userdata.sh")}"
+  
+  timeouts {
+    create = "40m"
+    delete = "40m"
+  }
+  
+  connection {
+    #ssh connection to tier-2 instance
+    user     = "${var.ssh_user_nospel}"
+    private_key = "${var.private_key}"
+    timeout   = "30m"
+  }
+  
+  provisioner "remote-exec" {
+    script = "linux/watchmaker_test.sh"
+  }
+}
+
 resource "aws_instance" "centos6" {
   ami = "${data.aws_ami.centos6.id}"
   instance_type = "t2.micro"
