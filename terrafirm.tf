@@ -162,6 +162,31 @@ data "aws_ami" "windows2008" {
   owners = ["099720109477","801119661308","amazon"]
 }
 
+resource "aws_instance" "centos6" {
+  ami = "${data.aws_ami.centos6.id}"
+  instance_type = "t2.micro"
+  key_name = "${aws_key_pair.auth.id}"
+  vpc_security_group_ids = ["${aws_security_group.terrafirm_ssh.id}"]
+  user_data = "${file("linux/userdata.sh")}"
+  
+  timeouts {
+    create = "30m"
+    delete = "30m"
+  }
+  
+  connection {
+    #ssh connection to tier-2 instance
+    user     = "${var.ssh_user}"
+    private_key = "${var.private_key}"
+    timeout   = "3m"
+  }
+  
+  
+  provisioner "remote-exec" {
+    script = "linux/watchmaker.sh"
+  }
+}
+
 resource "aws_instance" "windows2016" {
   #ami = "${var.ami}"
   ami = "${data.aws_ami.windows2016.id}"
@@ -169,7 +194,6 @@ resource "aws_instance" "windows2016" {
   key_name = "${aws_key_pair.auth.id}"
   vpc_security_group_ids = ["${aws_security_group.terrafirm_winrm.id}"]
   user_data = "${file("windows/userdata2.ps1")}"
-  #user_data = "${template_file.userdata.rendered}"
   
   timeouts {
     create = "40m"
