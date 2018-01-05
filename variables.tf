@@ -5,6 +5,7 @@ variable "term_passwd" {}
 variable "key_pair_name" {}
 variable "ssh_user" {}
 variable "ssh_user_nospel" {}
+variable "cb_ip" {}
 
 output "ipfed" {
   value = "${aws_instance.fedora.public_ip}"
