@@ -13,7 +13,7 @@ function Retry-Command
         try {
             Invoke-Expression -Command:$command
             Write-Host ("Command [{0}] succeeded." -f $command)
-            Write-Host ("........................................................................Success!")
+            Write-Host (".............................................................................Success!")
             $success = $true
         } catch {
             if ($retrycount -ge $retries) {
@@ -29,5 +29,9 @@ function Retry-Command
     
     return $success
 }
+
+Write-Host ("*****************************************************************************")
+Write-Host ("Running Watchmaker test script"
+Write-Host ("*****************************************************************************")
 
 Retry-Command -Command 'watchmaker --version' -Retries 9 -SecondsDelay 30
