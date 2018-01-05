@@ -5,16 +5,16 @@ env:
   variables:
     TF_ZIP: https://releases.hashicorp.com/terraform/0.11.1/terraform_0.11.1_linux_amd64.zip
     TERRAFIRM_DESC_URL: https://github.com/YakDriver/terrafirm_win
-    JQ_INSTALL: https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
+    #JQ_INSTALL: https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
 
 phases:
   install:
     commands:
       - echo "Installing unzip............"
       - apt -y install unzip
-      - echo "Installing jq..............."
-      - curl -L "${JQ_INSTALL}" -o jq.dms && chmod +x jq.dms
-      - ./jq.dms --version
+      - #echo "Installing jq..............."
+      - #curl -L "${JQ_INSTALL}" -o jq.dms && chmod +x jq.dms
+      - #./jq.dms --version
       - echo "Installing Terraform..."
       - echo `pwd`
       - curl -L "${TF_ZIP}" -o tf.zip && unzip tf.zip
@@ -42,6 +42,7 @@ phases:
       - TF_VAR_key_pair_name="${KEY_PAIR_NAME}" ; export TF_VAR_key_pair_name
       - TF_VAR_term_user="${WINRM_USER}" ; export TF_VAR_term_user
       - TF_VAR_term_passwd="$(aws ssm get-parameters --name ${PS_PASSWD_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_term_passwd
+      - TF_VAR_ssh_user="${SSH_USER}" ; export TF_VAR_ssh_user
       - TF_VAR_private_key="$(aws ssm get-parameters --name ${PS_SSH_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_private_key
       - TF_VAR_public_key="$(aws ssm get-parameters --name ${PS_PUBLIC_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_public_key
       - cat windows/userdata.ps1 | sed "s/THIS_IS_NOT_THE_PASSWORD/${TF_VAR_term_passwd}/" > windows/userdata2.ps1
