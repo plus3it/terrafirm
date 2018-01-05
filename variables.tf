@@ -16,6 +16,14 @@ output "ami2016" {
   value = "${data.aws_ami.windows2016.id}"
 }
 
+output "ip2012" {
+  value = "${aws_instance.windows2012.public_ip}"
+}
+
+output "id2012" {
+  value = "${aws_instance.windows2012.id}"
+}
+
 output "ami2012" {
   value = "${data.aws_ami.windows2012.id}"
 }
