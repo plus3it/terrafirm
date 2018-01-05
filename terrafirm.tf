@@ -170,17 +170,16 @@ resource "aws_instance" "centos6" {
   user_data = "${file("linux/userdata.sh")}"
   
   timeouts {
-    create = "30m"
-    delete = "30m"
+    create = "40m"
+    delete = "40m"
   }
   
   connection {
     #ssh connection to tier-2 instance
     user     = "${var.ssh_user}"
     private_key = "${var.private_key}"
-    timeout   = "3m"
+    timeout   = "30m"
   }
-  
   
   provisioner "remote-exec" {
     script = "linux/watchmaker.sh"
