@@ -178,6 +178,15 @@ data "aws_ami" "fedora" {
   owners = ["099720109477","125523088429","amazon"]
 }
 
+variable "spel_instance_amis" {
+  default = {
+    "0" = "${data.aws_ami.centos6.id}"
+    "1" = "${data.aws_ami.centos7.id}"
+    "2" = "${data.aws_ami.rhel6.id}"
+    "3" = "${data.aws_ami.rhel7.id}"
+  }
+}
+
 resource "aws_instance" "fedora" {
   ami = "${data.aws_ami.fedora.id}"
   instance_type = "t2.micro"
@@ -202,80 +211,10 @@ resource "aws_instance" "fedora" {
   }
 }
 
-resource "aws_instance" "centos6" {
-  ami = "${data.aws_ami.centos6.id}"
-  instance_type = "t2.micro"
-  key_name = "${aws_key_pair.auth.id}"
-  vpc_security_group_ids = ["${aws_security_group.terrafirm_ssh.id}"]
-  user_data = "${file("linux/userdata.sh")}"
-  
-  timeouts {
-    create = "40m"
-    delete = "40m"
-  }
-  
-  connection {
-    #ssh connection to tier-2 instance
-    user     = "${var.ssh_user}"
-    private_key = "${var.private_key}"
-    timeout   = "30m"
-  }
-  
-  provisioner "remote-exec" {
-    script = "linux/watchmaker_test.sh"
-  }
-}
-
-resource "aws_instance" "centos7" {
-  ami = "${data.aws_ami.centos7.id}"
-  instance_type = "t2.micro"
-  key_name = "${aws_key_pair.auth.id}"
-  vpc_security_group_ids = ["${aws_security_group.terrafirm_ssh.id}"]
-  user_data = "${file("linux/userdata.sh")}"
-  
-  timeouts {
-    create = "40m"
-    delete = "40m"
-  }
-  
-  connection {
-    #ssh connection to tier-2 instance
-    user     = "${var.ssh_user}"
-    private_key = "${var.private_key}"
-    timeout   = "30m"
-  }
-  
-  provisioner "remote-exec" {
-    script = "linux/watchmaker_test.sh"
-  }
-}
-
-resource "aws_instance" "rhel6" {
-  ami = "${data.aws_ami.rhel6.id}"
-  instance_type = "t2.micro"
-  key_name = "${aws_key_pair.auth.id}"
-  vpc_security_group_ids = ["${aws_security_group.terrafirm_ssh.id}"]
-  user_data = "${file("linux/userdata.sh")}"
-  
-  timeouts {
-    create = "40m"
-    delete = "40m"
-  }
-  
-  connection {
-    #ssh connection to tier-2 instance
-    user     = "${var.ssh_user}"
-    private_key = "${var.private_key}"
-    timeout   = "30m"
-  }
-  
-  provisioner "remote-exec" {
-    script = "linux/watchmaker_test.sh"
-  }
-}
-
-resource "aws_instance" "rhel7" {
-  ami = "${data.aws_ami.rhel7.id}"
+resource "aws_instance" "spels" {
+  #ami = "${data.aws_ami.centos6.id}"
+  count = "4"
+  ami = "${lookup(var.spel_instance_amis, count.index)}"
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.auth.id}"
   vpc_security_group_ids = ["${aws_security_group.terrafirm_ssh.id}"]
