@@ -251,8 +251,8 @@ data "null_data_source" "windows_instance_amis" {
 resource "aws_instance" "windows" {
   #ami = "${var.ami}"
   #ami = "${data.aws_ami.windows2016.id}"
-  #count = "0"
-  count = "${length(data.null_data_source.windows_instance_amis.inputs)}"
+  count = "0"
+  #count = "${length(data.null_data_source.windows_instance_amis.inputs)}"
   ami = "${lookup(data.null_data_source.windows_instance_amis.inputs, count.index)}"
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.auth.id}"
