@@ -3,6 +3,19 @@ variable "public_key" {}
 variable "term_user" {}
 variable "term_passwd" {}
 variable "key_pair_name" {}
+variable "ssh_user" {}
+
+output "ipcentos6" {
+  value = "${aws_instance.centos6.public_ip}"
+}
+
+output "idcentos6" {
+  value = "${aws_instance.centos6.id}"
+}
+
+output "amicentos6" {
+  value = "${data.aws_ami.centos6.id}"
+}
 
 output "ip2016" {
   value = "${aws_instance.windows2016.public_ip}"
