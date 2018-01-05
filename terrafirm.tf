@@ -214,7 +214,7 @@ data "null_data_source" "spel_instance_amis" {
 
 resource "aws_instance" "spels" {
   #ami = "${data.aws_ami.centos6.id}"
-  count = "4"
+  count = "length(data.null_data_source.spel_instance_amis.inputs)"
   ami = "${lookup(data.null_data_source.spel_instance_amis.inputs, count.index)}"
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.auth.id}"
@@ -250,7 +250,7 @@ data "null_data_source" "windows_instance_amis" {
 resource "aws_instance" "windows" {
   #ami = "${var.ami}"
   #ami = "${data.aws_ami.windows2016.id}"
-  count = "3"
+  count = "length(data.null_data_source.windows_instance_amis.inputs)"
   ami = "${lookup(data.null_data_source.windows_instance_amis.inputs, count.index)}"
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.auth.id}"
