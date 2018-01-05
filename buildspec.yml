@@ -22,14 +22,6 @@ phases:
       - echo `pwd`
       - curl -L "${TF_ZIP}" -o tf.zip && unzip tf.zip
       - echo "Installed Terraform."
-      - #aws ec2 describe-images --image-ids ami-e443379e
-      - #aws ec2 describe-images --image-ids ami-f8b7c082
-      - #aws ec2 describe-images --image-ids ami-f48ffb8e
-      - #aws ec2 describe-images --image-ids ami-c0186eba
-      - #echo "Installing pip & python & pywinrm..."
-      - #apt -y install python3
-      - #easy_install pip
-      - #pip install pywinrm
   pre_build:
     commands:
       - |
@@ -56,13 +48,7 @@ phases:
       - TF_VAR_ami="${AMI}" ; export TF_VAR_ami
       - TF_VAR_term_user="${WINRM_USER}" ; export TF_VAR_term_user
       - TF_VAR_term_passwd="$(aws ssm get-parameters --name ${PS_PASSWD_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_term_passwd
-      - echo "${TF_VAR_term_passwd}"
-      - echo "USERDATA "
-      - #cat userdata.ps1
-      - #chmod +rw userdata.ps1
       - cat userdata.ps1 | sed "s/THIS_IS_NOT_THE_PASSWORD/${TF_VAR_term_passwd}/" > userdata2.ps1
-      - #cat userdata2.ps1
-      - echo "AMI ${TF_VAR_ami}"
       - echo "Creating a key pair "
       - aws ec2 import-key-pair --key-name "${KEY_PAIR_NAME}" --public-key-material "${PUBLIC_KEY}"
       - echo "Initializing Terraform " ; ./terraform init -input=false
@@ -80,7 +66,6 @@ phases:
       - ./terraform output ami2016
       - ./terraform output ami2012
       - ./terraform output ami2008
-      - aws ec2 describe-images --image-ids "$(./terraform output ami2016)"
       - #AWS_INSTANCE_STATE="$(./terraform state pull -target=aws_instance.windows -input=false)" ; export AWS_INSTANCE_STATE
       - #AWS_INSTANCE_ID="$(echo $AWS_INSTANCE_STATE | ./jq.dms -r '.modules[0].resources."aws_instance.windows".primary.id')" ; export AWS_INSTANCE_ID
       - #AWS_INSTANCE_IP="$(echo $AWS_INSTANCE_STATE | ./jq.dms -r '.modules[0].resources."aws_instance.windows".primary.attributes.public_ip')" ; export AWS_INSTANCE_IP
