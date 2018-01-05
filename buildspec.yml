@@ -39,6 +39,9 @@ phases:
       - echo "AWS Profile setup..."
       - AWS_PROFILE=$NAMED_PROFILE ; export AWS_PROFILE
       - echo "Terraform version " ; ./terraform --version
+      - TF_VAR_cb_ip="$(curl http://checkip.amazonaws.com)" ; export TF_VAR_cb_ip
+      - echo "IP - $TF_VAR_cb_ip"
+      - exit 1
       - TF_VAR_key_pair_name="${KEY_PAIR_NAME}" ; export TF_VAR_key_pair_name
       - TF_VAR_term_user="${WINRM_USER}" ; export TF_VAR_term_user
       - TF_VAR_term_passwd="$(aws ssm get-parameters --name ${PS_PASSWD_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_term_passwd
@@ -52,7 +55,6 @@ phases:
       - echo "Initializing Terraform " ; ./terraform init -input=false
       - echo "Importing key pair " ; ./terraform import aws_key_pair.auth "${KEY_PAIR_NAME}"
       - echo "Create provisiong plan " ; ./terraform plan -out=tfplan -input=false
-      - 
   build:
     commands:
       - echo "Applying Terraform plan (which installs watchmaker) "
