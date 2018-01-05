@@ -4,12 +4,12 @@ variable "term_user" {}
 variable "term_passwd" {}
 variable "key_pair_name" {}
 
-output "ip" {
-  value = "${aws_instance.windows.public_ip}"
+output "ip2016" {
+  value = "${aws_instance.windows2016.public_ip}"
 }
 
-output "id" {
-  value = "${aws_instance.windows.id}"
+output "id2016" {
+  value = "${aws_instance.windows2016.id}"
 }
 
 output "ami2016" {
