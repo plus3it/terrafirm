@@ -1,5 +1,7 @@
 #!/bin/sh
 
+sudo -i
+
 exec &> /tmp/userdata_install.txt
 
 PIP_URL=https://bootstrap.pypa.io/get-pip.py
