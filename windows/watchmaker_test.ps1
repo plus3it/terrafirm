@@ -13,6 +13,7 @@ function Retry-Command
         try {
             Invoke-Expression -Command:$command
             Write-Host ("Command [{0}] succeeded." -f $command)
+            Write-Host ("...................................................................Success!")
             $success = $true
         } catch {
             if ($retrycount -ge $retries) {
