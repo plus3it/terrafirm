@@ -1,6 +1,6 @@
 #!/bin/sh
 
-exec &> fedora_install.txt
+exec &> /tmp/fedora_install.txt
 
 PIP_URL=https://bootstrap.pypa.io/get-pip.py
 PYPI_URL=https://pypi.org/simple
