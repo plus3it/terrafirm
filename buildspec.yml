@@ -61,8 +61,8 @@ phases:
       - echo "NOTE, this will fail if remote execute calls fail"
       - ./terraform apply -input=false tfplan
       - #./terraform state pull -target=aws_instance.windows -input=false
-      - ./terraform output ip
-      - ./terraform output id
+      - ./terraform output ip2016
+      - ./terraform output id2016
       - ./terraform output ami2016
       - ./terraform output ami2012
       - ./terraform output ami2008
