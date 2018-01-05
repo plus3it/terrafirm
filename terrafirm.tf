@@ -178,16 +178,6 @@ data "aws_ami" "fedora" {
   owners = ["099720109477","125523088429","amazon"]
 }
 
-# Data source is used to mitigate lack of intermediate variables and interpolation
-data "null_data_source" "spel_instance_amis" {
-  inputs = {
-    "0" = "${data.aws_ami.centos6.id}"
-    "1" = "${data.aws_ami.centos7.id}"
-    "2" = "${data.aws_ami.rhel6.id}"
-    "3" = "${data.aws_ami.rhel7.id}"
-  }
-}
-
 resource "aws_instance" "fedora" {
   ami = "${data.aws_ami.fedora.id}"
   instance_type = "t2.micro"
@@ -209,6 +199,16 @@ resource "aws_instance" "fedora" {
   
   provisioner "remote-exec" {
     script = "linux/watchmaker_test.sh"
+  }
+}
+
+# Data source is used to mitigate lack of intermediate variables and interpolation
+data "null_data_source" "spel_instance_amis" {
+  inputs = {
+    "0" = "${data.aws_ami.centos6.id}"
+    "1" = "${data.aws_ami.centos7.id}"
+    "2" = "${data.aws_ami.rhel6.id}"
+    "3" = "${data.aws_ami.rhel7.id}"
   }
 }
 
@@ -249,93 +249,13 @@ data "null_data_source" "windows_instance_amis" {
 
 resource "aws_instance" "windows2016" {
   #ami = "${var.ami}"
-  ami = "${data.aws_ami.windows2016.id}"
+  #ami = "${data.aws_ami.windows2016.id}"
+  count = "3"
+  ami = "${lookup(data.null_data_source.windows_instance_amis.inputs, count.index)}"
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.auth.id}"
   vpc_security_group_ids = ["${aws_security_group.terrafirm_winrm.id}"]
   user_data = "${file("windows/userdata2.ps1")}"
-  
-  timeouts {
-    create = "40m"
-    delete = "40m"
-  }
-  
-  connection {
-    #winrm connection to tier-2 instance
-    type     = "winrm"
-    user     = "${var.term_user}"
-    password = "${var.term_passwd}"
-    timeout   = "30m"
-    #https    = true
-  }
-  
-  provisioner "file" {
-    source = "windows/watchmaker_test.ps1"
-    destination = "C:\\scripts\\watchmaker_test.ps1"
-  }
-
-  provisioner "local-exec" {
-    command = "sleep 60"
-  }
-  
-  provisioner "remote-exec" {
-    inline = [
-      "hostname",
-      "powershell.exe -File C:\\scripts\\watchmaker_test.ps1",
-    ]
-  }
-  
-}
-
-resource "aws_instance" "windows2012" {
-  #ami = "${var.ami}"
-  ami = "${data.aws_ami.windows2012.id}"
-  instance_type = "t2.micro"
-  key_name = "${aws_key_pair.auth.id}"
-  vpc_security_group_ids = ["${aws_security_group.terrafirm_winrm.id}"]
-  user_data = "${file("windows/userdata2.ps1")}"
-  #user_data = "${template_file.userdata.rendered}"
-  
-  timeouts {
-    create = "40m"
-    delete = "40m"
-  }
-  
-  connection {
-    #winrm connection to tier-2 instance
-    type     = "winrm"
-    user     = "${var.term_user}"
-    password = "${var.term_passwd}"
-    timeout   = "30m"
-    #https    = true
-  }
-  
-  provisioner "file" {
-    source = "windows/watchmaker_test.ps1"
-    destination = "C:\\scripts\\watchmaker_test.ps1"
-  }
-
-  provisioner "local-exec" {
-    command = "sleep 60"
-  }
-  
-  provisioner "remote-exec" {
-    inline = [
-      "hostname",
-      "powershell.exe -File C:\\scripts\\watchmaker_test.ps1",
-    ]
-  }
-  
-}
-
-resource "aws_instance" "windows2008" {
-  #ami = "${var.ami}"
-  ami = "${data.aws_ami.windows2008.id}"
-  instance_type = "t2.micro"
-  key_name = "${aws_key_pair.auth.id}"
-  vpc_security_group_ids = ["${aws_security_group.terrafirm_winrm.id}"]
-  user_data = "${file("windows/userdata2.ps1")}"
-  #user_data = "${template_file.userdata.rendered}"
   
   timeouts {
     create = "40m"
