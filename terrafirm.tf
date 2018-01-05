@@ -232,7 +232,7 @@ resource "aws_instance" "windows2012" {
   ami = "${data.aws_ami.windows2012.id}"
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.auth.id}"
-  vpc_security_group_ids = ["${aws_security_group.terrafirm.id}"]
+  vpc_security_group_ids = ["${aws_security_group.terrafirm_winrm.id}"]
   user_data = "${file("windows/userdata2.ps1")}"
   #user_data = "${template_file.userdata.rendered}"
   
@@ -273,7 +273,7 @@ resource "aws_instance" "windows2008" {
   ami = "${data.aws_ami.windows2008.id}"
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.auth.id}"
-  vpc_security_group_ids = ["${aws_security_group.terrafirm.id}"]
+  vpc_security_group_ids = ["${aws_security_group.terrafirm_winrm.id}"]
   user_data = "${file("windows/userdata2.ps1")}"
   #user_data = "${template_file.userdata.rendered}"
   
