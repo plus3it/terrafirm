@@ -15,7 +15,7 @@ wait_file() {
   done
   
   if [ -f "$file" ]; then
-    echo "Success! watchmaker found........."
+    echo "........................................................................Success!"
   fi
 
   ((++wait_seconds))
