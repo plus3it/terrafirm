@@ -6,16 +6,16 @@ variable "key_pair_name" {}
 variable "ssh_user" {}
 variable "ssh_user_nospel" {}
 
-output "ipubuntu_tr14" {
-  value = "${aws_instance.ubuntu_tr14.public_ip}"
+output "ipfed" {
+  value = "${aws_instance.fedora.public_ip}"
 }
 
-output "idubuntu_tr14" {
-  value = "${aws_instance.ubuntu_tr14.id}"
+output "idfedora" {
+  value = "${aws_instance.fedora.id}"
 }
 
-output "amiubuntu_tr14" {
-  value = "${data.aws_ami.ubuntu_tr14.id}"
+output "amifedora" {
+  value = "${data.aws_ami.fedora.id}"
 }
 
 output "ipcentos6" {
