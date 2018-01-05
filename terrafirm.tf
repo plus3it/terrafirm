@@ -162,7 +162,7 @@ data "aws_ami" "windows2008" {
   owners = ["099720109477","801119661308","amazon"]
 }
 
-data "aws_ami" "ubuntu_tr14" {
+data "aws_ami" "fedora" {
   most_recent = true
   
   filter {
@@ -172,14 +172,14 @@ data "aws_ami" "ubuntu_tr14" {
 
   filter {
     name = "name"
-    values = ["ubuntu/images/hvm/ubuntu-trusty-14.04-amd64-server*"]
+    values = ["Fedora-Cloud-Base-Rawhide-*"]
   }
   
-  owners = ["099720109477","801119661308","amazon"]
+  owners = ["099720109477","125523088429","amazon"]
 }
 
-resource "aws_instance" "ubuntu_tr14" {
-  ami = "${data.aws_ami.ubuntu_tr14.id}"
+resource "aws_instance" "fedora" {
+  ami = "${data.aws_ami.fedora.id}"
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.auth.id}"
   vpc_security_group_ids = ["${aws_security_group.terrafirm_ssh.id}"]
