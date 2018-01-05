@@ -19,49 +19,49 @@ output "amifedora" {
   value = "${data.aws_ami.fedora.id}"
 }
 
-output "ipcentos6" {
-  value = "${aws_instance.centos6.public_ip}"
-}
+#output "ipcentos6" {
+#  value = "${aws_instance.centos6.public_ip}"
+#}
 
-output "idcentos6" {
-  value = "${aws_instance.centos6.id}"
-}
+#output "idcentos6" {
+#  value = "${aws_instance.centos6.id}"
+#}
 
 output "amicentos6" {
   value = "${data.aws_ami.centos6.id}"
 }
 
-output "ipcentos7" {
-  value = "${aws_instance.centos7.public_ip}"
-}
+#output "ipcentos7" {
+#  value = "${aws_instance.centos7.public_ip}"
+#}
 
-output "idcentos7" {
-  value = "${aws_instance.centos7.id}"
-}
+#output "idcentos7" {
+#  value = "${aws_instance.centos7.id}"
+#}
 
 output "amicentos7" {
   value = "${data.aws_ami.centos7.id}"
 }
 
-output "iprhel6" {
-  value = "${aws_instance.rhel6.public_ip}"
-}
+#output "iprhel6" {
+#  value = "${aws_instance.rhel6.public_ip}"
+#}
 
-output "idrhel6" {
-  value = "${aws_instance.rhel6.id}"
-}
+#output "idrhel6" {
+#  value = "${aws_instance.rhel6.id}"
+#}
 
 output "amirhel6" {
   value = "${data.aws_ami.rhel6.id}"
 }
 
-output "iprhel7" {
-  value = "${aws_instance.rhel7.public_ip}"
-}
+#output "iprhel7" {
+#  value = "${aws_instance.rhel7.public_ip}"
+#}
 
-output "idrhel7" {
-  value = "${aws_instance.rhel7.id}"
-}
+#output "idrhel7" {
+#  value = "${aws_instance.rhel7.id}"
+#}
 
 output "amirhel7" {
   value = "${data.aws_ami.rhel7.id}"
