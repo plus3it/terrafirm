@@ -183,7 +183,7 @@ resource "aws_instance" "fedora" {
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.auth.id}"
   vpc_security_group_ids = ["${aws_security_group.terrafirm_ssh.id}"]
-  user_data = "${file("linux/userdata.sh")}"
+  user_data = "${file("linux/fedora_userdata.sh")}"
   
   timeouts {
     create = "40m"
