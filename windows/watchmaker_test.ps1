@@ -31,7 +31,7 @@ function Retry-Command
 }
 
 Write-Host ("*****************************************************************************")
-Write-Host ("Running Watchmaker test script")
+Write-Host ("Running Watchmaker test script: Windows")
 Write-Host ("*****************************************************************************")
 
 Retry-Command -Command 'watchmaker --version' -Retries 9 -SecondsDelay 30
