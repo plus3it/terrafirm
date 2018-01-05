@@ -17,6 +17,42 @@ output "amicentos6" {
   value = "${data.aws_ami.centos6.id}"
 }
 
+output "ipcentos7" {
+  value = "${aws_instance.centos7.public_ip}"
+}
+
+output "idcentos7" {
+  value = "${aws_instance.centos7.id}"
+}
+
+output "amicentos7" {
+  value = "${data.aws_ami.centos7.id}"
+}
+
+output "iprhel6" {
+  value = "${aws_instance.rhel6.public_ip}"
+}
+
+output "idrhel6" {
+  value = "${aws_instance.rhel6.id}"
+}
+
+output "amirhel6" {
+  value = "${data.aws_ami.rhel6.id}"
+}
+
+output "iprhel7" {
+  value = "${aws_instance.rhel7.public_ip}"
+}
+
+output "idrhel7" {
+  value = "${aws_instance.rhel7.id}"
+}
+
+output "amirhel7" {
+  value = "${data.aws_ami.rhel7.id}"
+}
+
 output "ip2016" {
   value = "${aws_instance.windows2016.public_ip}"
 }
