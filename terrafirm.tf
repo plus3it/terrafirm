@@ -106,11 +106,6 @@ resource "aws_instance" "windows2016" {
     source = "watchmaker_test.ps1"
     destination = "C:\\scripts\\watchmaker_test.ps1"
   }
-  
-  provisioner "file" {
-    source = "manage_tests.ps1"
-    destination = "C:\\scripts\\manage_tests.ps1"
-  }
 
   provisioner "local-exec" {
     command = "sleep 60"
