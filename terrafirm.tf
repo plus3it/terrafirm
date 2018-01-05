@@ -192,7 +192,7 @@ resource "aws_instance" "fedora" {
   
   connection {
     #ssh connection to tier-2 instance
-    user     = "${var.ssh_user_nospel}"
+    user     = "${var.ssh_user_fedora}"
     private_key = "${var.private_key}"
     timeout   = "30m"
   }
