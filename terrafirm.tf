@@ -5,10 +5,6 @@ resource "aws_key_pair" "auth" {
   public_key = "${var.public_key}"
 }
 
-#resource "template_file" "userdata" {
-#  filename = "userdata.ps1"
-#}
-
 # Security group to access the instances over WinRM
 resource "aws_security_group" "terrafirm" {
   name        = "terrafirm_sg"
