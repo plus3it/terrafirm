@@ -4,7 +4,7 @@ variable "term_user" {}
 variable "term_passwd" {}
 variable "key_pair_name" {}
 variable "ssh_user" {}
-variable "ssh_user_nospel" {}
+variable "ssh_user_fedora" {}
 variable "cb_ip" {}
 
 output "ipfed" {
