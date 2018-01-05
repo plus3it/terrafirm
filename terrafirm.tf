@@ -27,6 +27,70 @@ resource "aws_security_group" "terrafirm" {
   }
 }
 
+data "aws_ami" "centos6" {
+  most_recent = true
+  
+  filter {
+    name = "virtualization-type"
+    values = ["hvm"]
+  }
+  
+  filter {
+    name = "name"
+    values = ["spel-minimal-centos-6*"]
+  }
+  
+  owners = ["701759196663","self"]
+}
+
+data "aws_ami" "centos7" {
+  most_recent = true
+  
+  filter {
+    name = "virtualization-type"
+    values = ["hvm"]
+  }
+  
+  filter {
+    name = "name"
+    values = ["spel-minimal-centos-7*"]
+  }
+  
+  owners = ["701759196663","self"]
+}
+
+data "aws_ami" "rhel6" {
+  most_recent = true
+  
+  filter {
+    name = "virtualization-type"
+    values = ["hvm"]
+  }
+  
+  filter {
+    name = "name"
+    values = ["spel-minimal-rhel-6*"]
+  }
+  
+  owners = ["701759196663","self"]
+}
+
+data "aws_ami" "rhel7" {
+  most_recent = true
+  
+  filter {
+    name = "virtualization-type"
+    values = ["hvm"]
+  }
+  
+  filter {
+    name = "name"
+    values = ["spel-minimal-rhel-7*"]
+  }
+  
+  owners = ["701759196663","self"]
+}
+
 data "aws_ami" "windows2016" {
   most_recent = true
   
