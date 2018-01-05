@@ -6,9 +6,6 @@ env:
     TF_ZIP: https://releases.hashicorp.com/terraform/0.11.1/terraform_0.11.1_linux_amd64.zip
     TERRAFIRM_DESC_URL: https://github.com/YakDriver/terrafirm_win
     JQ_INSTALL: https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
-  parameter-store:
-    SSH_KEY: "/CodeBuild/terrafirm/aws_private_key"
-    PUBLIC_KEY: "/CodeBuild/terrafirm/aws_public_key"
 
 phases:
   install:
@@ -43,11 +40,10 @@ phases:
       - AWS_PROFILE=$NAMED_PROFILE ; export AWS_PROFILE
       - echo "Terraform version " ; ./terraform --version
       - TF_VAR_key_pair_name="${KEY_PAIR_NAME}" ; export TF_VAR_key_pair_name
-      - TF_VAR_private_key="${SSH_KEY}" ; export TF_VAR_private_key
-      - TF_VAR_public_key="${PUBLIC_KEY}" ; export TF_VAR_public_key
-      - TF_VAR_ami="${AMI}" ; export TF_VAR_ami
       - TF_VAR_term_user="${WINRM_USER}" ; export TF_VAR_term_user
       - TF_VAR_term_passwd="$(aws ssm get-parameters --name ${PS_PASSWD_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_term_passwd
+      - TF_VAR_private_key="$(aws ssm get-parameters --name ${PS_SSH_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_private_key
+      - TF_VAR_public_key="$(aws ssm get-parameters --name ${PS_PUBLIC_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_public_key
       - cat windows/userdata.ps1 | sed "s/THIS_IS_NOT_THE_PASSWORD/${TF_VAR_term_passwd}/" > windows/userdata2.ps1
       - echo "Creating a key pair "
       - aws ec2 import-key-pair --key-name "${KEY_PAIR_NAME}" --public-key-material "${PUBLIC_KEY}"
