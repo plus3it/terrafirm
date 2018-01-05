@@ -27,6 +27,29 @@ resource "aws_security_group" "terrafirm_winrm" {
   }
 }
 
+# Security group to access the instances over SSH
+resource "aws_security_group" "terrafirm_ssh" {
+  name        = "terrafirm_ssh_sg"
+  description = "Used in terrafirm"
+
+  # SSH access from anywhere
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # outbound internet access
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+
 data "aws_ami" "centos6" {
   most_recent = true
   
