@@ -188,8 +188,8 @@ data "aws_ami" "fedora" {
 #}
 
 # Data source is used to mitigate lack of intermediate variables and interpolation
-data "null_data_source" "spel_instances" {
-  amis = {
+data "null_data_source" "spel_instance_amis" {
+  inputs = {
     "0" = "${data.aws_ami.centos6.id}"
     "1" = "${data.aws_ami.centos7.id}"
     "2" = "${data.aws_ami.rhel6.id}"
@@ -224,7 +224,7 @@ resource "aws_instance" "fedora" {
 resource "aws_instance" "spels" {
   #ami = "${data.aws_ami.centos6.id}"
   count = "4"
-  ami = "${lookup(data.null_data_source.spel_instances.amis, count.index)}"
+  ami = "${lookup(data.null_data_source.spel_instance_amis.inputs, count.index)}"
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.auth.id}"
   vpc_security_group_ids = ["${aws_security_group.terrafirm_ssh.id}"]
