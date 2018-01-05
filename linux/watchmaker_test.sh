@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "*****************************************************************************"
-echo "Running Watchmaker test script: Linux"
+echo "Running Watchmaker test script: LINUX"
 echo "*****************************************************************************"
 
 wait_file() {
@@ -22,9 +22,9 @@ wait_file() {
 
 exec_file=/usr/bin/watchmaker
 
-wait_file "$exec_file" 9 || {
+wait_file "$exec_file" 12 || {
   echo "Executable on remote instance never became available for $? seconds: '$exec_file'"
   exit 1
 }
 
-/usr/bin/watchmaker --version
+watchmaker --version
