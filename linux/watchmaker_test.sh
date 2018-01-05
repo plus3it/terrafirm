@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "*****************************************************************************"
-echo "Running Watchmaker test script"
+echo "Running Watchmaker test script: Linux"
 echo "*****************************************************************************"
 
 wait_file() {
