@@ -178,15 +178,6 @@ data "aws_ami" "fedora" {
   owners = ["099720109477","125523088429","amazon"]
 }
 
-#variable "spel_instance_amis" {
-#  default = {
-#    "0" = "${data.aws_ami.centos6.id}"
-#    "1" = "${data.aws_ami.centos7.id}"
-#    "2" = "${data.aws_ami.rhel6.id}"
-#    "3" = "${data.aws_ami.rhel7.id}"
-#  }
-#}
-
 # Data source is used to mitigate lack of intermediate variables and interpolation
 data "null_data_source" "spel_instance_amis" {
   inputs = {
@@ -244,6 +235,15 @@ resource "aws_instance" "spels" {
   
   provisioner "remote-exec" {
     script = "linux/watchmaker_test.sh"
+  }
+}
+
+# Data source is used to mitigate lack of intermediate variables and interpolation
+data "null_data_source" "windows_instance_amis" {
+  inputs = {
+    "0" = "${data.aws_ami.windows2016.id}"
+    "1" = "${data.aws_ami.windows2012.id}"
+    "2" = "${data.aws_ami.windows2008.id}"
   }
 }
 
