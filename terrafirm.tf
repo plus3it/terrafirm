@@ -247,7 +247,7 @@ data "null_data_source" "windows_instance_amis" {
   }
 }
 
-resource "aws_instance" "windows2016" {
+resource "aws_instance" "windows" {
   #ami = "${var.ami}"
   #ami = "${data.aws_ami.windows2016.id}"
   count = "3"
