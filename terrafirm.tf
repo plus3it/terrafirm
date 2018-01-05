@@ -15,7 +15,7 @@ resource "aws_security_group" "terrafirm_winrm" {
     from_port   = 5985
     to_port     = 5986
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["${var.cb_ip}/32"]
   }
 
   # outbound internet access
@@ -37,7 +37,7 @@ resource "aws_security_group" "terrafirm_ssh" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["${var.cb_ip}/32"]
   }
 
   # outbound internet access
