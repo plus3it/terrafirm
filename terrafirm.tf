@@ -6,8 +6,8 @@ resource "aws_key_pair" "auth" {
 }
 
 # Security group to access the instances over WinRM
-resource "aws_security_group" "terrafirm" {
-  name        = "terrafirm_sg"
+resource "aws_security_group" "terrafirm_winrm" {
+  name        = "terrafirm_winrm_sg"
   description = "Used in terrafirm"
 
   # SSH access from anywhere
@@ -144,7 +144,7 @@ resource "aws_instance" "windows2016" {
   ami = "${data.aws_ami.windows2016.id}"
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.auth.id}"
-  vpc_security_group_ids = ["${aws_security_group.terrafirm.id}"]
+  vpc_security_group_ids = ["${aws_security_group.terrafirm_winrm.id}"]
   user_data = "${file("windows/userdata2.ps1")}"
   #user_data = "${template_file.userdata.rendered}"
   
