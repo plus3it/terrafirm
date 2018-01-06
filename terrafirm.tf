@@ -49,6 +49,9 @@ resource "aws_security_group" "terrafirm_ssh" {
   }
 }
 
+variable "linux_ami_owners" {
+  default = ["701759196663", "self", "125523088429", "099720109477"]
+}
 
 data "aws_ami" "centos6" {
   most_recent = true
