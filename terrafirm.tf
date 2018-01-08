@@ -71,7 +71,7 @@ data "aws_ami" "centos6" {
   }
   
   #owners = ["701759196663","self"]
-  owners = ${var.linux_ami_owners}
+  owners = "${var.linux_ami_owners}"
 }
 
 data "aws_ami" "centos7" {
