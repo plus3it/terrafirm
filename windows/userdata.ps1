@@ -41,5 +41,5 @@ cd watchmaker
 pip install --index-url "$PypiUrl" --editable .
 
 # Run watchmaker
-watchmaker --log-level debug --log-dir=C:\Watchmaker\Logs
+watchmaker -n --log-level debug --log-dir=C:\Watchmaker\Logs
 </powershell>
