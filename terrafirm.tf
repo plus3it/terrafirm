@@ -87,7 +87,7 @@ data "aws_ami" "centos7" {
     values = ["spel-minimal-centos-7*"]
   }
   
-  owners = ["701759196663","self"]
+  owners = "${var.linux_ami_owners}"
 }
 
 data "aws_ami" "rhel6" {
@@ -103,7 +103,7 @@ data "aws_ami" "rhel6" {
     values = ["spel-minimal-rhel-6*"]
   }
   
-  owners = ["701759196663","self"]
+  owners = "${var.linux_ami_owners}"
 }
 
 data "aws_ami" "rhel7" {
@@ -119,7 +119,7 @@ data "aws_ami" "rhel7" {
     values = ["spel-minimal-rhel-7*"]
   }
   
-  owners = ["701759196663","self"]
+  owners = "${var.linux_ami_owners}"
 }
 
 data "aws_ami" "windows2016" {
@@ -135,7 +135,7 @@ data "aws_ami" "windows2016" {
     values = ["Windows_Server-2016-English-Full-Base*"]
   }
   
-  owners = ["099720109477","801119661308","amazon"]
+  owners = "${var.windows_ami_owners}"
 }
 
 data "aws_ami" "windows2012" {
@@ -151,7 +151,7 @@ data "aws_ami" "windows2012" {
     values = ["Windows_Server-2012-R2_RTM-English-64Bit-Base*"]
   }
 
-  owners = ["099720109477","801119661308","amazon"]
+  owners = "${var.windows_ami_owners}"
 }
 
 data "aws_ami" "windows2008" {
@@ -167,48 +167,7 @@ data "aws_ami" "windows2008" {
     values = ["Windows_Server-2008-R2_SP1-English-64Bit-Base*"]
   }
   
-  owners = ["099720109477","801119661308","amazon"]
-}
-
-data "aws_ami" "fedora" {
-  most_recent = true
-  
-  filter {
-    name = "virtualization-type"
-    values = ["hvm"]
-  }
-
-  filter {
-    name = "name"
-    values = ["Fedora-Cloud-Base-Rawhide-*"]
-  }
-  
-  owners = ["099720109477","125523088429","amazon"]
-}
-
-resource "aws_instance" "fedora" {
-  count = "0"
-  ami = "${data.aws_ami.fedora.id}"
-  instance_type = "t2.micro"
-  key_name = "${aws_key_pair.auth.id}"
-  vpc_security_group_ids = ["${aws_security_group.terrafirm_ssh.id}"]
-  user_data = "${file("linux/fedora_userdata.sh")}"
-  
-  timeouts {
-    create = "40m"
-    delete = "40m"
-  }
-  
-  connection {
-    #ssh connection to tier-2 instance
-    user     = "${var.ssh_user_fedora}"
-    private_key = "${var.private_key}"
-    timeout   = "30m"
-  }
-  
-  provisioner "remote-exec" {
-    script = "linux/watchmaker_test.sh"
-  }
+  owners = "${var.windows_ami_owners}"
 }
 
 # Data source is used to mitigate lack of intermediate variables and interpolation
@@ -223,7 +182,7 @@ data "null_data_source" "spel_instance_amis" {
 
 resource "aws_instance" "spels" {
   #ami = "${data.aws_ami.centos6.id}"
-  count = "1"
+  count = "4"
   #count = "${length(data.null_data_source.spel_instance_amis.inputs)}"
   ami = "${lookup(data.null_data_source.spel_instance_amis.inputs, count.index)}"
   instance_type = "t2.micro"
@@ -260,7 +219,7 @@ data "null_data_source" "windows_instance_amis" {
 resource "aws_instance" "windows" {
   #ami = "${var.ami}"
   #ami = "${data.aws_ami.windows2016.id}"
-  count = "0"
+  count = "3"
   #count = "${length(data.null_data_source.windows_instance_amis.inputs)}"
   ami = "${lookup(data.null_data_source.windows_instance_amis.inputs, count.index)}"
   instance_type = "t2.micro"
