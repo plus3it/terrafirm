@@ -186,6 +186,7 @@ data "aws_ami" "fedora" {
 }
 
 resource "aws_instance" "fedora" {
+  count = "0"
   ami = "${data.aws_ami.fedora.id}"
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.auth.id}"
