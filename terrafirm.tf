@@ -53,6 +53,10 @@ variable "linux_ami_owners" {
   default = ["701759196663", "self", "125523088429", "099720109477"]
 }
 
+variable "windows_ami_owners" {
+  default = ["801119661308", "amazon"]
+}
+
 data "aws_ami" "centos6" {
   most_recent = true
   
