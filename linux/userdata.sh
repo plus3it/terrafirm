@@ -25,4 +25,4 @@ cd watchmaker
 pip install --index-url "$PYPI_URL" --editable .
 
 # Run watchmaker
-watchmaker --log-level debug --log-dir=/var/log/watchmaker
+watchmaker -n --log-level debug --log-dir=/var/log/watchmaker
