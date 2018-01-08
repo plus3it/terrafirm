@@ -7,10 +7,6 @@ variable "ssh_user" {}
 variable "ssh_user_fedora" {}
 variable "cb_ip" {}
 
-output "amifedora" {
-  value = "${data.aws_ami.fedora.id}"
-}
-
 output "amicentos6" {
   value = "${data.aws_ami.centos6.id}"
 }
