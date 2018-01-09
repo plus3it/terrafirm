@@ -47,4 +47,4 @@ Write-Host ("*******************************************************************
 
 #Perform test
 Write-Host ("Performing test...")
-Retry-Command -Command $test_command -Retries $retries -SecondsDelay $seconds_between_retries
+Retry-Command -Command 'watchmaker --version' -Retries $retries -SecondsDelay $seconds_between_retries
