@@ -57,6 +57,13 @@ variable "windows_ami_owners" {
   default = ["801119661308", "amazon"]
 }
 
+variable "ami_filters" {
+  default = [
+    "spel-minimal-centos-6*",
+    "spel-minimal-centos-7*",
+  ] 
+}
+
 data "aws_ami" "centos6" {
   most_recent = true
   
@@ -67,7 +74,8 @@ data "aws_ami" "centos6" {
   
   filter {
     name = "name"
-    values = ["spel-minimal-centos-6*"]
+    #values = ["spel-minimal-centos-6*"]
+    values = ["${lookup(var.ami_filters, 0)}"]
   }
   
   #owners = ["701759196663","self"]
@@ -84,7 +92,8 @@ data "aws_ami" "centos7" {
   
   filter {
     name = "name"
-    values = ["spel-minimal-centos-7*"]
+    #values = ["spel-minimal-centos-7*"]
+    values = ["${lookup(var.ami_filters, 1)}"]
   }
   
   owners = "${var.linux_ami_owners}"
@@ -181,8 +190,8 @@ data "null_data_source" "spel_instance_amis" {
 }
 
 resource "aws_instance" "spels" {
-  #count = "0"
-  count = "${length(data.null_data_source.spel_instance_amis.inputs)}"
+  count = "2"
+  #count = "${length(data.null_data_source.spel_instance_amis.inputs)}"
   ami = "${lookup(data.null_data_source.spel_instance_amis.inputs, count.index)}"
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.auth.id}"
@@ -216,8 +225,8 @@ data "null_data_source" "windows_instance_amis" {
 }
 
 resource "aws_instance" "windows" {
-  #count = "1"
-  count = "${length(data.null_data_source.windows_instance_amis.inputs)}"
+  count = "0"
+  #count = "${length(data.null_data_source.windows_instance_amis.inputs)}"
   ami = "${lookup(data.null_data_source.windows_instance_amis.inputs, count.index)}"
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.auth.id}"
