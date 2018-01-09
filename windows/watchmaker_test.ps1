@@ -35,7 +35,7 @@ Write-Host ("Running Watchmaker test script: WINDOWS")
 Write-Host ("*****************************************************************************")
 
 #Wait for the signal from the userdata script before testing
-while (!(Test-Path "C:\scripts\SIGNAL.txt")) {
+while (!(Test-Path "C:\tmp\SIGNAL.txt")) {
     Write-Host ("Waiting for Watchmaker install to complete...")
     Start-Sleep 20 
 }
