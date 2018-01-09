@@ -34,4 +34,12 @@ Write-Host ("*******************************************************************
 Write-Host ("Running Watchmaker test script: WINDOWS")
 Write-Host ("*****************************************************************************")
 
-Retry-Command -Command 'watchmaker --version' -Retries 12 -SecondsDelay 30
+#Wait for the signal from the userdata script before testing
+while (!(Test-Path "C:\scripts\SIGNAL")) {
+    Write-Host ("Waiting for Watchmaker install to complete...")
+    Start-Sleep 20 
+}
+
+#Perform test
+Write-Host ("Performing test...")
+Retry-Command -Command 'watchmaker --version' -Retries 3 -SecondsDelay 30
