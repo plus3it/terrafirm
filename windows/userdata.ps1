@@ -46,5 +46,5 @@ watchmaker -n --log-level debug --log-dir=C:\Watchmaker\Logs
 
 # Signal completion of userdata
 #New-Item C:\tmp -type directory -force
-#New-Item $signal_file -type file -force
+New-Item C:\tmp\SIGNAL -type file -force
 </powershell>
