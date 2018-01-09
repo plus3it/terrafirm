@@ -262,9 +262,9 @@ resource "aws_instance" "windows" {
     destination = "C:\\scripts\\watchmaker_test.ps1"
   }
 
-  provisioner "local-exec" {
-    command = "sleep 60"
-  }
+  #provisioner "local-exec" {
+  #  command = "sleep 60"
+  #}
   
   provisioner "remote-exec" {
     inline = [
