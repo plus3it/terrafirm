@@ -75,7 +75,7 @@ data "aws_ami" "centos6" {
   filter {
     name = "name"
     #values = ["spel-minimal-centos-6*"]
-    values = ["${lookup(var.ami_filters, 0)}"]
+    values = ["${element(var.ami_filters, 0)}"]
   }
   
   #owners = ["701759196663","self"]
@@ -93,7 +93,7 @@ data "aws_ami" "centos7" {
   filter {
     name = "name"
     #values = ["spel-minimal-centos-7*"]
-    values = ["${lookup(var.ami_filters, 1)}"]
+    values = ["${element(var.ami_filters, 1)}"]
   }
   
   owners = "${var.linux_ami_owners}"
