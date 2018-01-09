@@ -1,5 +1,5 @@
 $signal_file = "C:\tmp\SIGNAL.txt"
-$retries = 3
+$retries = 12
 $seconds_between_retries = 30
 $test_command = 'watchmaker --version'
 
@@ -40,10 +40,10 @@ Write-Host ("Running Watchmaker test script: WINDOWS")
 Write-Host ("*****************************************************************************")
 
 #Wait for the signal from the userdata script before testing
-while (!(Test-Path $signal_file)) {
-    Write-Host ("Waiting for Watchmaker install to complete...")
-    Start-Sleep 20 
-}
+#while (!(Test-Path $signal_file)) {
+#    Write-Host ("Waiting for Watchmaker install to complete...")
+#    Start-Sleep 20 
+#}
 
 #Perform test
 Write-Host ("Performing test...")
