@@ -1,4 +1,7 @@
 $signal_file = "C:\tmp\SIGNAL.txt"
+$retries = 3
+$seconds_between_retries = 30
+$test_command = 'watchmaker --version'
 
 function Retry-Command
 {
@@ -44,4 +47,4 @@ while (!(Test-Path $signal_file)) {
 
 #Perform test
 Write-Host ("Performing test...")
-Retry-Command -Command 'watchmaker --version' -Retries 3 -SecondsDelay 30
+Retry-Command -Command $test_command -Retries $retries -SecondsDelay $seconds_between_retries
