@@ -3,7 +3,7 @@
 </script>
 <powershell>
 # Get ready for winrm for terraform provisioner connection
-$signal_file = "C:\tmp\SIGNAL.txt"
+$signal_file = "C:\tmp\SIGNAL"
 
 # open firewall for winrm
 netsh advfirewall firewall add rule name="WinRM in" protocol=TCP dir=in profile=any localport=5985 remoteip=any localip=any action=allow
@@ -45,6 +45,5 @@ pip install --index-url "$PypiUrl" --editable .
 watchmaker -n --log-level debug --log-dir=C:\Watchmaker\Logs
 
 # Signal completion of userdata
-#New-Item C:\tmp -type directory -force
 New-Item C:\tmp\SIGNAL -type file -force
 </powershell>
