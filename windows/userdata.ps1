@@ -44,5 +44,5 @@ pip install --index-url "$PypiUrl" --editable .
 watchmaker -n --log-level debug --log-dir=C:\Watchmaker\Logs
 
 # Signal completion of userdata
-New-Item C:\tmp\SIGNAL -type file -force
+New-Item 'C:\Temp\SETUP_COMPLETE_SIGNAL' -type file -force
 </powershell>
