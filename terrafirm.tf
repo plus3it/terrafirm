@@ -61,6 +61,11 @@ variable "ami_filters" {
   default = [
     "spel-minimal-centos-6*",
     "spel-minimal-centos-7*",
+    "spel-minimal-rhel-6*",
+    "spel-minimal-rhel-7*",
+    "Windows_Server-2016-English-Full-Base*",
+    "Windows_Server-2012-R2_RTM-English-64Bit-Base*",
+    "Windows_Server-2008-R2_SP1-English-64Bit-Base*",
   ] 
 }
 
@@ -109,7 +114,8 @@ data "aws_ami" "rhel6" {
   
   filter {
     name = "name"
-    values = ["spel-minimal-rhel-6*"]
+    #values = ["spel-minimal-rhel-6*"]
+    values = ["${element(var.ami_filters, 2)}"]
   }
   
   owners = "${var.linux_ami_owners}"
@@ -125,7 +131,8 @@ data "aws_ami" "rhel7" {
   
   filter {
     name = "name"
-    values = ["spel-minimal-rhel-7*"]
+    #values = ["spel-minimal-rhel-7*"]
+    values = ["${element(var.ami_filters, 3)}"]
   }
   
   owners = "${var.linux_ami_owners}"
@@ -141,7 +148,8 @@ data "aws_ami" "windows2016" {
   
   filter {
     name = "name"
-    values = ["Windows_Server-2016-English-Full-Base*"]
+    #values = ["Windows_Server-2016-English-Full-Base*"]
+    values = ["${element(var.ami_filters, 4)}"]
   }
   
   owners = "${var.windows_ami_owners}"
@@ -157,7 +165,8 @@ data "aws_ami" "windows2012" {
 
   filter {
     name = "name"
-    values = ["Windows_Server-2012-R2_RTM-English-64Bit-Base*"]
+    #values = ["Windows_Server-2012-R2_RTM-English-64Bit-Base*"]
+    values = ["${element(var.ami_filters, 5)}"]
   }
 
   owners = "${var.windows_ami_owners}"
@@ -173,7 +182,8 @@ data "aws_ami" "windows2008" {
 
   filter {
     name = "name"
-    values = ["Windows_Server-2008-R2_SP1-English-64Bit-Base*"]
+    #values = ["Windows_Server-2008-R2_SP1-English-64Bit-Base*"]
+    values = ["${element(var.ami_filters, 6)}"]
   }
   
   owners = "${var.windows_ami_owners}"
