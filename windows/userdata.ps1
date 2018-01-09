@@ -2,8 +2,7 @@
   winrm quickconfig -q & winrm set winrm/config @{MaxTimeoutms="1800000"} & winrm set winrm/config/service @{AllowUnencrypted="true"} & winrm set winrm/config/service/auth @{Basic="true"}
 </script>
 <powershell>
-# Get ready for winrm for terraform provisioner connection
-$signal_file = "C:\tmp\SIGNAL"
+# Get ready for winrm for terraform winrm provisioner connection
 
 # open firewall for winrm
 netsh advfirewall firewall add rule name="WinRM in" protocol=TCP dir=in profile=any localport=5985 remoteip=any localip=any action=allow
