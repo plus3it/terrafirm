@@ -262,14 +262,20 @@ resource "aws_instance" "windows" {
     destination = "C:\\scripts\\watchmaker_test.ps1"
   }
 
+  provisioner "file" {
+    source = "windows/block_until_setup.ps1"
+    destination = "C:\\scripts\\block_until_setup.ps1"
+  }
+
   #provisioner "local-exec" {
   #  command = "sleep 60"
   #}
   
   provisioner "remote-exec" {
     inline = [
-      "hostname",
-      "while (!(Test-Path 'C:\\tmp\\SIGNAL')) { Write-Host (\"Waiting for server setup to complete...\"); Start-Sleep 20; }",
+      #"hostname",
+      #"while (!(Test-Path 'C:\\tmp\\SIGNAL')) { Write-Host (\"Waiting for server setup to complete...\"); Start-Sleep 20; }",
+      "powershell.exe -File C:\\scripts\\block_until_setup.ps1",
       "powershell.exe -File C:\\scripts\\watchmaker_test.ps1",
     ]
   }
