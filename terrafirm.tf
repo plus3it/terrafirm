@@ -267,9 +267,9 @@ resource "aws_instance" "windows" {
     destination = "C:\\scripts\\block_until_setup.ps1"
   }
 
-  provisioner "local-exec" {
-    command = "sleep 10"
-  }
+  #provisioner "local-exec" {
+  #  command = "sleep 10"
+  #}
   
   provisioner "remote-exec" {
     inline = [
