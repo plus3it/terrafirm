@@ -3,3 +3,4 @@ while (!(.\check_block.ps1)) {
   Write-Host ("Setup not complete. Retrying...")
   Start-Sleep 20 
 }
+Write-Host ("Setup complete!")
