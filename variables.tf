@@ -6,6 +6,7 @@ variable "key_pair_name" {}
 variable "ssh_user" {}
 variable "ssh_user_fedora" {}
 variable "cb_ip" {}
+variable "associate_public_ip_address" {}
 
 output "amicentos6" {
   value = "${data.aws_ami.centos6.id}"
