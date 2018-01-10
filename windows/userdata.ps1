@@ -12,8 +12,8 @@ $admin = [adsi]("WinNT://./administrator, user")
 $admin.psbase.invoke("SetPassword", "THIS_IS_NOT_THE_PASSWORD")
 
 #### watchmaker starts here ####
-$GitRepo = "https://github.com/plus3it/watchmaker.git"
-$GitBranch = "develop"
+$GitRepo = "THIS_IS_NOT_THE_REPO"
+$GitBranch = "THIS_IS_NOT_THE_BRANCH"
 
 $BootstrapUrl = "https://raw.githubusercontent.com/plus3it/watchmaker/master/docs/files/bootstrap/watchmaker-bootstrap.ps1"
 $PythonUrl = "https://www.python.org/ftp/python/3.6.3/python-3.6.3-amd64.exe"
