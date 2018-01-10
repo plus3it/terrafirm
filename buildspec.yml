@@ -49,8 +49,13 @@ phases:
       - TF_VAR_private_key="$(aws ssm get-parameters --name ${PS_SSH_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_private_key
       - TF_VAR_public_key="$(aws ssm get-parameters --name ${PS_PUBLIC_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_public_key
       - cat windows/userdata.ps1 | sed "s/THIS_IS_NOT_THE_PASSWORD/${TF_VAR_term_passwd}/" > windows/userdata2.ps1
-      - echo "Creating a key pair "
-      - aws ec2 import-key-pair --key-name "${KEY_PAIR_NAME}" --public-key-material "${TF_VAR_public_key}"
+      - |
+        if [ aws ec2 describe-key-pairs --key-name "${KEY_PAIR_NAME}" ]; then
+          echo "Key pair already exists..."
+        else
+          echo "Creating a key pair "
+          aws ec2 import-key-pair --key-name "${KEY_PAIR_NAME}" --public-key-material "${TF_VAR_public_key}"
+        fi
       - echo "Initializing Terraform " ; ./terraform init -input=false
       - echo "Importing key pair " ; ./terraform import aws_key_pair.auth "${KEY_PAIR_NAME}"
       - echo "Create provisiong plan " ; ./terraform plan -out=tfplan -input=false
