@@ -276,7 +276,7 @@ resource "aws_instance" "windows" {
   #}
   
   provisioner "remote-exec" {
-    script = "windows/block_until_setup.ps1"
+    script = "windows/run_blocker.bat"
   }
   
   #provisioner "remote-exec" {
