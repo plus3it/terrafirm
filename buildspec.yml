@@ -94,15 +94,14 @@ phases:
       - #echo "********"
   post_build:
     commands:
+      - echo "Destroying everything..."
+      - #./terraform destroy -input=false -force
+      - echo "Terrafirm completed on $(date)"
       - |
         if aws ec2 describe-key-pairs --key-name "${KEY_PAIR_NAME}" ; then
           echo "Deleting key pair..."
           aws ec2 delete-key-pair --key-name "${KEY_PAIR_NAME}"
         fi
-      - echo "Destroying everything..."
-      - #./terraform destroy -input=false -force
-      - echo "Terrafirm completed on $(date)"
-
 artifacts:
   files:
     - '**/*'
