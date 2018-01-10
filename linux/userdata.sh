@@ -15,7 +15,7 @@ curl "$PIP_URL" | python - --index-url="$PYPI_URL" wheel==0.29.0
 yum -y install git
 
 # Upgrade pip and setuptools
-pip install --index-url="$PYPI_URL" --upgrade pip setuptools
+pip install --index-url="$PYPI_URL" --upgrade pip setuptools boto3
 
 # Clone watchmaker
 git clone "$GIT_REPO" --branch "$GIT_BRANCH" --recursive
