@@ -276,12 +276,16 @@ resource "aws_instance" "windows" {
   #}
   
   provisioner "remote-exec" {
-    inline = [
-      #"hostname",
-      #"while (!(Test-Path 'C:\\tmp\\SIGNAL')) { Write-Host (\"Waiting for server setup to complete...\"); Start-Sleep 20; }",
-      "powershell.exe -File C:\\scripts\\block_until_setup.ps1",
-      "powershell.exe -File C:\\scripts\\watchmaker_test.ps1",
-    ]
+    script = "windows/block_until_setup.ps1"
   }
+  
+  #provisioner "remote-exec" {
+  #  inline = [
+  #    #"hostname",
+  #    #"while (!(Test-Path 'C:\\tmp\\SIGNAL')) { Write-Host (\"Waiting for server setup to complete...\"); Start-Sleep 20; }",
+  #    "powershell.exe -File C:\\scripts\\block_until_setup.ps1",
+  #    "powershell.exe -File C:\\scripts\\watchmaker_test.ps1",
+  #  ]
+  #}
   
 }
