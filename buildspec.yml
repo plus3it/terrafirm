@@ -48,6 +48,11 @@ phases:
       - TF_VAR_ssh_user_fedora="${SSH_USER_FEDORA}" ; export TF_VAR_ssh_user_fedora
       - TF_VAR_private_key="$(aws ssm get-parameters --name ${PS_SSH_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_private_key
       - TF_VAR_public_key="$(aws ssm get-parameters --name ${PS_PUBLIC_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_public_key
+      - TF_VAR_associate_public_ip_address="false" ; export TF_VAR_associate_public_ip_address
+      - |
+        if [ "${ASSIGN_PUBLIC_IP}" -eq "true" ] ; then
+          TF_VAR_associate_public_ip_address="${ASSIGN_PUBLIC_IP}" ; export TF_VAR_associate_public_ip_address
+        fi
       - cat windows/userdata.ps1 | sed "s/THIS_IS_NOT_THE_PASSWORD/${TF_VAR_term_passwd}/" > windows/userdata2.ps1
       - |
         if aws ec2 describe-key-pairs --key-name "${KEY_PAIR_NAME}" ; then
