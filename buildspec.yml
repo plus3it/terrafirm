@@ -90,7 +90,7 @@ phases:
   post_build:
     commands:
       - echo "Destroying everything..."
-      - #./terraform destroy -input=false -force
+      - ./terraform destroy -input=false -force
       - echo "Terrafirm completed on $(date)"
 
 artifacts:
