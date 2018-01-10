@@ -49,6 +49,10 @@ phases:
       - TF_VAR_public_key="$(aws ssm get-parameters --name ${PS_PUBLIC_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_public_key
       - TF_VAR_associate_public_ip_address="${ASSIGN_PUBLIC_IP}" ; export TF_VAR_associate_public_ip_address
       - cat windows/userdata.ps1 | sed "s/THIS_IS_NOT_THE_PASSWORD/${TF_VAR_term_passwd}/" > windows/userdata2.ps1
+      - cat windows/userdata2.ps1 | sed "s/THIS_IS_NOT_THE_REPO/${GIT_REPO}/" > windows/userdata2.ps1
+      - cat windows/userdata2.ps1 | sed "s/THIS_IS_NOT_THE_BRANCH/${GIT_BRANCH}/" > windows/userdata2.ps1
+      - cat linux/userdata.ps1 | sed "s/THIS_IS_NOT_THE_REPO/${GIT_REPO}/" > linux/userdata.ps1
+      - cat linux/userdata.ps1 | sed "s/THIS_IS_NOT_THE_BRANCH/${GIT_BRANCH}/" > linux/userdata.ps1
       - |
         if aws ec2 describe-key-pairs --key-name "${KEY_PAIR_NAME}" ; then
           echo "Key pair already exists..."
