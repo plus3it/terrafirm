@@ -31,7 +31,7 @@ $BootstrapFile = "${Env:Temp}\$(${BootstrapUrl}.split("/")[-1])"
     -Verbose -ErrorAction Stop
 
 # Upgrade pip and setuptools
-pip install --index-url="$PypiUrl" --upgrade pip setuptools
+pip install --index-url="$PypiUrl" --upgrade pip setuptools boto3
 
 # Clone watchmaker
 git clone "$GitRepo" --branch "$GitBranch" --recursive
