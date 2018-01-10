@@ -244,8 +244,8 @@ resource "aws_instance" "windows" {
   user_data = "${file("windows/userdata2.ps1")}"
   
   timeouts {
-    create = "40m"
-    delete = "40m"
+    create = "120m"
+    delete = "120m"
   }
   
   connection {
