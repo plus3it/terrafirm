@@ -276,6 +276,7 @@ resource "aws_instance" "windows" {
   #}
   
   provisioner "remote-exec" {
+    timeout   = "30m"
     inline = [
       #"hostname",
       #"while (!(Test-Path 'C:\\tmp\\SIGNAL')) { Write-Host (\"Waiting for server setup to complete...\"); Start-Sleep 20; }",
