@@ -45,7 +45,6 @@ phases:
       - TF_VAR_term_user="${WINRM_USER}" ; export TF_VAR_term_user
       - TF_VAR_term_passwd="$(aws ssm get-parameters --name ${PS_PASSWD_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_term_passwd
       - TF_VAR_ssh_user="${SSH_USER}" ; export TF_VAR_ssh_user
-      - TF_VAR_ssh_user_fedora="${SSH_USER_FEDORA}" ; export TF_VAR_ssh_user_fedora
       - TF_VAR_private_key="$(aws ssm get-parameters --name ${PS_SSH_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_private_key
       - TF_VAR_public_key="$(aws ssm get-parameters --name ${PS_PUBLIC_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_public_key
       - TF_VAR_associate_public_ip_address="${ASSIGN_PUBLIC_IP}" ; export TF_VAR_associate_public_ip_address
