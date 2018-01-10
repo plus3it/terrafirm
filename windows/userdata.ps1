@@ -45,4 +45,6 @@ watchmaker -n --log-level debug --log-dir=C:\Watchmaker\Logs
 
 # Signal completion of userdata
 New-Item 'C:\Temp\SETUP_COMPLETE_SIGNAL' -type file -force
+
+Start-Sleep -s 900
 </powershell>
