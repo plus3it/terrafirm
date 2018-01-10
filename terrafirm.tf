@@ -207,6 +207,7 @@ resource "aws_instance" "spels" {
   key_name = "${aws_key_pair.auth.id}"
   vpc_security_group_ids = ["${aws_security_group.terrafirm_ssh.id}"]
   user_data = "${file("linux/userdata.sh")}"
+  associate_public_ip_address = "${var.associate_public_ip_address}"
   
   timeouts {
     create = "40m"
@@ -242,6 +243,7 @@ resource "aws_instance" "windows" {
   key_name = "${aws_key_pair.auth.id}"
   vpc_security_group_ids = ["${aws_security_group.terrafirm_winrm.id}"]
   user_data = "${file("windows/userdata2.ps1")}"
+  associate_public_ip_address = "${var.associate_public_ip_address}"  
   
   timeouts {
     create = "120m"
