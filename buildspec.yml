@@ -48,6 +48,7 @@ phases:
       - TF_VAR_ssh_user_fedora="${SSH_USER_FEDORA}" ; export TF_VAR_ssh_user_fedora
       - TF_VAR_private_key="$(aws ssm get-parameters --name ${PS_SSH_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_private_key
       - TF_VAR_public_key="$(aws ssm get-parameters --name ${PS_PUBLIC_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_public_key
+      - #public ip defaults to false unless exactly "true" appears in env so that errors cannot occur causing instance create to fail
       - TF_VAR_associate_public_ip_address="false" ; export TF_VAR_associate_public_ip_address
       - |
         if [ "${ASSIGN_PUBLIC_IP}" -eq "true" ] ; then
