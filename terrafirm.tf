@@ -228,7 +228,7 @@ resource "aws_instance" "spels" {
 
 resource "null_resource" "spels_nr" {
   count = "1"
-  
+  depends_on = ["aws_instance.spels"]
   connection {
     #ssh connection to tier-2 instance
     host     = "${element(aws_instance.spels.*.private_ip, count.index)}"
