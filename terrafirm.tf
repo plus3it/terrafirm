@@ -227,10 +227,9 @@ resource "aws_instance" "spels" {
 }
 
 resource "null_resource" "spels_nr" {
-  #count = "1"
-  #count = "${length(data.null_data_source.spel_instance_amis.inputs)}"
   count = "${aws_instance.spels.count}"
   depends_on = ["aws_instance.spels"]
+  
   connection {
     #ssh connection to tier-2 instance
     host     = "${element(aws_instance.spels.*.public_ip, count.index)}"
