@@ -47,7 +47,13 @@ phases:
       - TF_VAR_ssh_user="${SSH_USER}" ; export TF_VAR_ssh_user
       - TF_VAR_private_key="$(aws ssm get-parameters --name ${PS_SSH_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_private_key
       - TF_VAR_public_key="$(aws ssm get-parameters --name ${PS_PUBLIC_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_public_key
-      - TF_VAR_associate_public_ip_address="${ASSIGN_PUBLIC_IP}" ; export TF_VAR_associate_public_ip_address
+      - | #avoid errors with invalid parameter values - only will show up as "true" or "false"
+        if [ "${ASSIGN_PUBLIC_IP}" = "true" ] ; then
+          TF_VAR_associate_public_ip_address="${ASSIGN_PUBLIC_IP}"
+        else
+          TF_VAR_associate_public_ip_address="false"
+        fi
+        export TF_VAR_associate_public_ip_address
       - TF_VAR_security_group_win="${SECURITY_GRP_WIN}" ; export TF_VAR_security_group_win
       - TF_VAR_security_group_lin="${SECURITY_GRP_LIN}" ; export TF_VAR_security_group_lin
       - #"Creative" variable substitution required since windows userdata has chars that won't work with automatic method
