@@ -240,7 +240,7 @@ resource "null_resource" "spels_nr" {
   provisioner "remote-exec" {
     inline = [
       "while [ ! -f /tmp/SETUP_COMPLETE_SIGNAL ]; do sleep 2; done",
-      "watchmaker --version",
+      "wotchmaker --version",
     ]
   }
 }
