@@ -86,7 +86,7 @@ data "aws_ami" "centos6" {
   
   filter {
     name = "virtualization-type"
-    values = ["${lookup(var.other_filters["virtualization_type"]}"]
+    values = ["${var.other_filters["virtualization_type"]}"]
   }
   
   filter {
@@ -103,7 +103,7 @@ data "aws_ami" "centos7" {
   
   filter {
     name = "virtualization-type"
-    values = ["${lookup(var.other_filters["virtualization_type"]}"]
+    values = ["${var.other_filters["virtualization_type"]}"]
   }
   
   filter {
@@ -120,7 +120,7 @@ data "aws_ami" "rhel6" {
   
   filter {
     name = "virtualization-type"
-    values = ["${lookup(var.other_filters["virtualization_type"]}"]
+    values = ["${var.other_filters["virtualization_type"]}"]
   }
   
   filter {
@@ -137,7 +137,7 @@ data "aws_ami" "rhel7" {
   
   filter {
     name = "virtualization-type"
-    values = ["${lookup(var.other_filters["virtualization_type"]}"]
+    values = ["${var.other_filters["virtualization_type"]}"]
   }
   
   filter {
@@ -154,7 +154,7 @@ data "aws_ami" "windows2016" {
   
   filter {
     name = "virtualization-type"
-    values = ["${lookup(var.other_filters["virtualization_type"]}"]
+    values = ["${var.other_filters["virtualization_type"]}"]
   }
   
   filter {
@@ -171,7 +171,7 @@ data "aws_ami" "windows2012" {
   
   filter {
     name = "virtualization-type"
-    values = ["${lookup(var.other_filters["virtualization_type"]}"]
+    values = ["${var.other_filters["virtualization_type"]}"]
   }
 
   filter {
@@ -188,7 +188,7 @@ data "aws_ami" "windows2008" {
   
   filter {
     name = "virtualization-type"
-    values = ["${lookup(var.other_filters["virtualization_type"]}"]
+    values = ["${var.other_filters["virtualization_type"]}"]
   }
 
   filter {
