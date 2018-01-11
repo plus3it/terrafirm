@@ -110,7 +110,7 @@ phases:
         else
           echo "********* WARNING *********"
           echo "NOT destroying resources!"
-          echo "Expensive AWS resources are still up and running and need to be terminated manually."
+          echo "Expensive AWS resources are still up and running and need to be terminated/deleted manually."
           echo "***************************"
         fi
       - echo "Terrafirm completed on $(date)"
