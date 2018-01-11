@@ -200,8 +200,8 @@ data "null_data_source" "spel_instance_amis" {
 }
 
 resource "aws_instance" "spels" {
-  count = "1"
-  #count = "${length(data.null_data_source.spel_instance_amis.inputs)}"
+  #count = "1"
+  count = "${length(data.null_data_source.spel_instance_amis.inputs)}"
   ami = "${lookup(data.null_data_source.spel_instance_amis.inputs, count.index)}"
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.auth.id}"
@@ -227,7 +227,8 @@ resource "aws_instance" "spels" {
 }
 
 resource "null_resource" "spels_nr" {
-  count = "1"
+  #count = "1"
+  count = "${length(data.null_data_source.spel_instance_amis.inputs)}"
   depends_on = ["aws_instance.spels"]
   connection {
     #ssh connection to tier-2 instance
