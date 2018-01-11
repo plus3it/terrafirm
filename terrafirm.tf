@@ -211,8 +211,8 @@ data "null_data_source" "spel_instance_amis" {
 
 # bread & butter - this tells TF the provision/create the actual instance
 resource "aws_instance" "spels" {
-  #count = "1"
-  count = "${length(data.null_data_source.spel_instance_amis.inputs)}"
+  count = "0"
+  #count = "${length(data.null_data_source.spel_instance_amis.inputs)}"
   ami = "${lookup(data.null_data_source.spel_instance_amis.inputs, count.index)}"
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.auth.id}"
@@ -264,7 +264,7 @@ data "null_data_source" "windows_instance_amis" {
 
 # bread & butter - this tells TF the provision/create the actual instance
 resource "aws_instance" "windows" {
-  count = "0"
+  count = "1"
   #count = "${length(data.null_data_source.windows_instance_amis.inputs)}"
   ami = "${lookup(data.null_data_source.windows_instance_amis.inputs, count.index)}"
   instance_type = "t2.micro"
@@ -278,36 +278,36 @@ resource "aws_instance" "windows" {
     delete = "120m"
   }
   
-  connection {
-    #winrm connection to tier-2 instance
-    type     = "winrm"
-    user     = "${var.term_user}"
-    password = "${var.term_passwd}"
-    timeout   = "30m"
-    #https    = true
-  }
+  #connection {
+  #  #winrm connection to tier-2 instance
+  #  type     = "winrm"
+  #  user     = "${var.term_user}"
+  #  password = "${var.term_passwd}"
+  #  timeout   = "30m"
+  #  #https    = true
+  #}
   
-  provisioner "file" {
-    source = "windows/watchmaker_test.ps1"
-    destination = "C:\\scripts\\watchmaker_test.ps1"
-  }
+  #provisioner "file" {
+  #  source = "windows/watchmaker_test.ps1"
+  #  destination = "C:\\scripts\\watchmaker_test.ps1"
+  #}
 
-  provisioner "file" {
-    source = "windows/block_until_setup.ps1"
-    destination = "C:\\scripts\\block_until_setup.ps1"
-  }
+  #provisioner "file" {
+  #  source = "windows/block_until_setup.ps1"
+  #  destination = "C:\\scripts\\block_until_setup.ps1"
+  #}
 
-  provisioner "file" {
-    source = "windows/check_block.ps1"
-    destination = "C:\\scripts\\check_block.ps1"
-  }
+  #provisioner "file" {
+  #  source = "windows/check_block.ps1"
+  #  destination = "C:\\scripts\\check_block.ps1"
+  #}
   #provisioner "local-exec" {
   #  command = "sleep 10"
   #}
   
-  provisioner "remote-exec" {
-    script = "windows/run_blocker.bat"
-  }
+  #provisioner "remote-exec" {
+  #  script = "windows/run_blocker.bat"
+  #}
   
   #provisioner "remote-exec" {
   #  inline = [
@@ -318,4 +318,32 @@ resource "aws_instance" "windows" {
   #  ]
   #}
   
+}
+
+# null resource used to connect to all the windows instances to test them
+resource "null_resource" "windows_nr" {
+  count = "${aws_instance.windows.count}"
+  depends_on = ["aws_instance.windows"]
+  
+  connection {
+    type     = "winrm"
+    host     = "${element(aws_instance.windows.*.public_ip, count.index)}"
+    user     = "${var.term_user}"
+    password = "${var.term_passwd}"
+    timeout   = "30m"
+  }
+  
+  provisioner "file" {
+    source = "windows/watchmaker_test.ps1"
+    destination = "C:\\scripts\\watchmaker_test.ps1"
+  }
+  
+  provisioner "remote-exec" {
+    inline = [
+      "powershell \"while (!(Test-Path 'C:\\Temp\\SIGNAL')) { Start-Sleep 2; }\"",
+      "powershell C:\\scripts\\watchmaker_test.ps1",
+      #"while [ ! -f /tmp/SETUP_COMPLETE_SIGNAL ]; do sleep 2; done",
+      #"~/watchmaker_test.sh",
+    ]
+  }
 }
