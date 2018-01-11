@@ -48,6 +48,8 @@ phases:
       - TF_VAR_private_key="$(aws ssm get-parameters --name ${PS_SSH_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_private_key
       - TF_VAR_public_key="$(aws ssm get-parameters --name ${PS_PUBLIC_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_public_key
       - TF_VAR_associate_public_ip_address="${ASSIGN_PUBLIC_IP}" ; export TF_VAR_associate_public_ip_address
+      - TF_VAR_security_group_win="${SECURITY_GRP_WIN}" ; export TF_VAR_security_group_win
+      - TF_VAR_security_group_lin="${SECURITY_GRP_LIN}" ; export TF_VAR_security_group_lin
       - #"Creative" variable substitution required since windows userdata has chars that won't work with automatic method
       - sed -i "s/THIS_IS_NOT_THE_PASSWORD/${TF_VAR_term_passwd}/" windows/userdata.ps1
       - sed -i "s,THIS_IS_NOT_THE_REPO,${GIT_REPO}," windows/userdata.ps1
