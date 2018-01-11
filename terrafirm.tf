@@ -1,5 +1,6 @@
 provider "aws" {}
 
+#used for importing the key pair created using aws cli
 resource "aws_key_pair" "auth" {
   key_name   = "${var.key_pair_name}"
   public_key = "${var.public_key}"
@@ -49,14 +50,17 @@ resource "aws_security_group" "terrafirm_ssh" {
   }
 }
 
+#owners of canonical centos, rhel, linux amis
 variable "linux_ami_owners" {
   default = ["701759196663", "self", "125523088429", "099720109477"]
 }
 
+#owners of canonical windows amis (basically Amazon)
 variable "windows_ami_owners" {
   default = ["801119661308", "amazon"]
 }
 
+#these are just strings that are used by aws_ami data resources to find amis 
 variable "ami_filters" {
   default = [
     "spel-minimal-centos-6*",
@@ -69,6 +73,7 @@ variable "ami_filters" {
   ] 
 }
 
+#used just to find the ami id matching criteria, which is then used in provisioning resource
 data "aws_ami" "centos6" {
   most_recent = true
   
@@ -87,6 +92,7 @@ data "aws_ami" "centos6" {
   owners = "${var.linux_ami_owners}"
 }
 
+#used just to find the ami id matching criteria, which is then used in provisioning resource
 data "aws_ami" "centos7" {
   most_recent = true
   
@@ -104,6 +110,7 @@ data "aws_ami" "centos7" {
   owners = "${var.linux_ami_owners}"
 }
 
+#used just to find the ami id matching criteria, which is then used in provisioning resource
 data "aws_ami" "rhel6" {
   most_recent = true
   
@@ -121,6 +128,7 @@ data "aws_ami" "rhel6" {
   owners = "${var.linux_ami_owners}"
 }
 
+#used just to find the ami id matching criteria, which is then used in provisioning resource
 data "aws_ami" "rhel7" {
   most_recent = true
   
@@ -138,6 +146,7 @@ data "aws_ami" "rhel7" {
   owners = "${var.linux_ami_owners}"
 }
 
+#used just to find the ami id matching criteria, which is then used in provisioning resource
 data "aws_ami" "windows2016" {
   most_recent = true
   
@@ -155,6 +164,7 @@ data "aws_ami" "windows2016" {
   owners = "${var.windows_ami_owners}"
 }
 
+#used just to find the ami id matching criteria, which is then used in provisioning resource
 data "aws_ami" "windows2012" {
   most_recent = true
   
@@ -172,6 +182,7 @@ data "aws_ami" "windows2012" {
   owners = "${var.windows_ami_owners}"
 }
 
+#used just to find the ami id matching criteria, which is then used in provisioning resource
 data "aws_ami" "windows2008" {
   most_recent = true
   
@@ -189,7 +200,7 @@ data "aws_ami" "windows2008" {
   owners = "${var.windows_ami_owners}"
 }
 
-# Data source is used to mitigate lack of intermediate variables and interpolation
+# data source (place to put the ami id strings), used to mitigate lack of intermediate variables and interpolation
 data "null_data_source" "spel_instance_amis" {
   inputs = {
     "0" = "${data.aws_ami.centos6.id}"
@@ -199,6 +210,7 @@ data "null_data_source" "spel_instance_amis" {
   }
 }
 
+# bread & butter - this tells TF the provision/create the actual instance
 resource "aws_instance" "spels" {
   count = "1"
   #count = "${length(data.null_data_source.spel_instance_amis.inputs)}"
@@ -213,19 +225,9 @@ resource "aws_instance" "spels" {
     create = "40m"
     delete = "40m"
   }
-  
-  connection {
-    #ssh connection to tier-2 instance
-    user     = "${var.ssh_user}"
-    private_key = "${var.private_key}"
-    timeout   = "30m"
-  }
-  
-  #provisioner "remote-exec" {
-  #  script = "linux/watchmaker_test.sh"
-  #}
 }
 
+# null resource used to connect to all the linux instances to test them
 resource "null_resource" "spels_nr" {
   count = "${aws_instance.spels.count}"
   depends_on = ["aws_instance.spels"]
@@ -252,7 +254,7 @@ resource "null_resource" "spels_nr" {
   }
 }
 
-# Data source is used to mitigate lack of intermediate variables and interpolation
+# data source (place to put the ami id strings), used to mitigate lack of intermediate variables and interpolation
 data "null_data_source" "windows_instance_amis" {
   inputs = {
     "0" = "${data.aws_ami.windows2016.id}"
