@@ -29,3 +29,6 @@ pip install --index-url "$PYPI_URL" --editable .
 
 # Run watchmaker
 watchmaker -n --log-level debug --log-dir=/var/log/watchmaker
+
+# Signal completion of userdata
+touch /tmp/SETUP_COMPLETE_SIGNAL
