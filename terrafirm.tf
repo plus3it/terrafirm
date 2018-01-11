@@ -238,10 +238,16 @@ resource "null_resource" "spels_nr" {
     timeout   = "30m"
   }
   
+  provisioner "file" {
+    source = "linux/watchmaker_test.sh"
+    destination = "/tmp/watchmaker_test.sh"
+  }
+  
   provisioner "remote-exec" {
     inline = [
       "while [ ! -f /tmp/SETUP_COMPLETE_SIGNAL ]; do sleep 2; done",
-      "watchmaker --version",
+      "chmod +x /tmp/watchmaker_test.sh",
+      "/tmp/watchmaker_test.sh",
     ]
   }
 }
