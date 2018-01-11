@@ -340,7 +340,7 @@ resource "null_resource" "windows_nr" {
   
   provisioner "remote-exec" {
     inline = [
-      "powershell \"while (!(Test-Path 'C:\\Temp\\SIGNAL')) { Start-Sleep 2; }\"",
+      "powershell \"while (!(Test-Path 'C:\\Temp\\SETUP_COMPLETE_SIGNAL')) { Start-Sleep 2; }\"",
       "powershell C:\\scripts\\watchmaker_test.ps1",
       #"while [ ! -f /tmp/SETUP_COMPLETE_SIGNAL ]; do sleep 2; done",
       #"~/watchmaker_test.sh",
