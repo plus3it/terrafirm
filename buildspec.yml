@@ -99,14 +99,21 @@ phases:
       - #echo "********"
   post_build:
     commands:
-      - echo "Destroying everything..."
-      - ./terraform destroy -input=false -force
-      - echo "Terrafirm completed on $(date)"
       - |
-        if aws ec2 describe-key-pairs --key-name "${KEY_PAIR_NAME}" ; then
-          echo "Deleting key pair..."
-          aws ec2 delete-key-pair --key-name "${KEY_PAIR_NAME}"
+        if [ "${DESTROY_AFTER_TEST}" -eq "true" ]; then
+          echo "Destroying everything..."
+          ./terraform destroy -input=false -force
+          if aws ec2 describe-key-pairs --key-name "${KEY_PAIR_NAME}" ; then
+            echo "Deleting key pair..."
+            aws ec2 delete-key-pair --key-name "${KEY_PAIR_NAME}"
+          fi
+        else
+          echo "********* WARNING *********"
+          echo "NOT destroying resources!"
+          echo "Expensive AWS resources are still up and running and need to be terminated manually."
+          echo "***************************"
         fi
+      - echo "Terrafirm completed on $(date)"
 artifacts:
   files:
     - '**/*'
