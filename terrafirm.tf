@@ -200,7 +200,7 @@ data "null_data_source" "spel_instance_amis" {
 }
 
 resource "aws_instance" "spels" {
-  count = "0"
+  count = "1"
   #count = "${length(data.null_data_source.spel_instance_amis.inputs)}"
   ami = "${lookup(data.null_data_source.spel_instance_amis.inputs, count.index)}"
   instance_type = "t2.micro"
