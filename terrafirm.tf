@@ -76,7 +76,7 @@ variable "ami_name_filters" {
 variable "other_filters" {
   type  = "map"
   default = {
-    "virtualization-type" = "hvm"
+    virtualization_type = "hvm"
   }
 }
 
@@ -86,16 +86,14 @@ data "aws_ami" "centos6" {
   
   filter {
     name = "virtualization-type"
-    values = ["hvm"]
+    values = ["${lookup(var.other_filters["virtualization_type"]}"]
   }
   
   filter {
     name = "name"
-    #values = ["spel-minimal-centos-6*"]
     values = ["${element(var.ami_name_filters, 0)}"]
   }
   
-  #owners = ["701759196663","self"]
   owners = "${var.linux_ami_owners}"
 }
 
@@ -105,12 +103,11 @@ data "aws_ami" "centos7" {
   
   filter {
     name = "virtualization-type"
-    values = ["hvm"]
+    values = ["${lookup(var.other_filters["virtualization_type"]}"]
   }
   
   filter {
     name = "name"
-    #values = ["spel-minimal-centos-7*"]
     values = ["${element(var.ami_name_filters, 1)}"]
   }
   
@@ -123,12 +120,11 @@ data "aws_ami" "rhel6" {
   
   filter {
     name = "virtualization-type"
-    values = ["hvm"]
+    values = ["${lookup(var.other_filters["virtualization_type"]}"]
   }
   
   filter {
     name = "name"
-    #values = ["spel-minimal-rhel-6*"]
     values = ["${element(var.ami_name_filters, 2)}"]
   }
   
@@ -141,12 +137,11 @@ data "aws_ami" "rhel7" {
   
   filter {
     name = "virtualization-type"
-    values = ["hvm"]
+    values = ["${lookup(var.other_filters["virtualization_type"]}"]
   }
   
   filter {
     name = "name"
-    #values = ["spel-minimal-rhel-7*"]
     values = ["${element(var.ami_name_filters, 3)}"]
   }
   
@@ -159,12 +154,11 @@ data "aws_ami" "windows2016" {
   
   filter {
     name = "virtualization-type"
-    values = ["hvm"]
+    values = ["${lookup(var.other_filters["virtualization_type"]}"]
   }
   
   filter {
     name = "name"
-    #values = ["Windows_Server-2016-English-Full-Base*"]
     values = ["${element(var.ami_name_filters, 4)}"]
   }
   
@@ -177,12 +171,11 @@ data "aws_ami" "windows2012" {
   
   filter {
     name = "virtualization-type"
-    values = ["hvm"]
+    values = ["${lookup(var.other_filters["virtualization_type"]}"]
   }
 
   filter {
     name = "name"
-    #values = ["Windows_Server-2012-R2_RTM-English-64Bit-Base*"]
     values = ["${element(var.ami_name_filters, 5)}"]
   }
 
@@ -195,12 +188,11 @@ data "aws_ami" "windows2008" {
   
   filter {
     name = "virtualization-type"
-    values = ["hvm"]
+    values = ["${lookup(var.other_filters["virtualization_type"]}"]
   }
 
   filter {
     name = "name"
-    #values = ["Windows_Server-2008-R2_SP1-English-64Bit-Base*"]
     values = ["${element(var.ami_name_filters, 6)}"]
   }
   
@@ -270,6 +262,7 @@ data "null_data_source" "windows_instance_amis" {
   }
 }
 
+# bread & butter - this tells TF the provision/create the actual instance
 resource "aws_instance" "windows" {
   count = "0"
   #count = "${length(data.null_data_source.windows_instance_amis.inputs)}"
