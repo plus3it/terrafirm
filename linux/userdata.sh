@@ -2,9 +2,6 @@
 
 exec &> /tmp/userdata_install.txt
 
-#GIT_REPO=https://github.com/plus3it/watchmaker.git
-#GIT_BRANCH=develop
-
 GIT_REPO=THIS_IS_NOT_THE_REPO
 GIT_BRANCH=THIS_IS_NOT_THE_BRANCH
 
