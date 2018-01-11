@@ -3,7 +3,7 @@ Terrafirm tests watchmaker on Windows and Linux
 
 This project is designed to work with **AWS CodeBuild**. In order to use it, you will need to provide certain environment variables.
 
-##ENVIRONMENT VARIABLES EXPECTED BY TERRAFIRM
+## ENVIRONMENT VARIABLES EXPECTED BY TERRAFIRM
 
 - REGION            : AWS region, e.g., us-east-1
 - PS_PUBLIC_KEY     : Name of a Parameter Store parameter containing the public key used in creating a Key Pair for use by Terrafirm. E.g., /CodeBuild/public_key
