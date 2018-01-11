@@ -100,7 +100,7 @@ phases:
   post_build:
     commands:
       - |
-        if [ "${DESTROY_AFTER_TEST}" -eq "true" ]; then
+        if [ "${DESTROY_AFTER_TEST}" = "true" ]; then
           echo "Destroying Terraform-created resources (e.g., security groups, instances, key pair)..."
           ./terraform destroy -input=false -force
           if aws ec2 describe-key-pairs --key-name "${KEY_PAIR_NAME}" ; then
