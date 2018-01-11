@@ -4,7 +4,7 @@ echo "**************************************************************************
 echo "Running Watchmaker test script: LINUX"
 echo "*****************************************************************************"
 
-command = "watchmaker --version"
+command="watchmaker --version"
 
 if $command ; then
   echo ".............................................................................Success!"
