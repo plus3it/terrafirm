@@ -221,9 +221,9 @@ resource "aws_instance" "spels" {
     timeout   = "30m"
   }
   
-  provisioner "remote-exec" {
-    script = "linux/watchmaker_test.sh"
-  }
+  #provisioner "remote-exec" {
+  #  script = "linux/watchmaker_test.sh"
+  #}
 }
 
 resource "null_resource" "spels_nr" {
@@ -239,8 +239,8 @@ resource "null_resource" "spels_nr" {
   
   provisioner "remote-exec" {
     inline = [
-      "while [ ! -f /tmp/signal ]; do sleep 2; done",
-      ...
+      "while [ ! -f /tmp/SETUP_COMPLETE_SIGNAL ]; do sleep 2; done",
+      "watchmaker --version",
     ]
   }
 }
