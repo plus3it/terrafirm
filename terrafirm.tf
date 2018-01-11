@@ -226,6 +226,25 @@ resource "aws_instance" "spels" {
   }
 }
 
+resource "null_resource" "spels_nr" {
+  count = "1"
+  
+  connection {
+    #ssh connection to tier-2 instance
+    host     = "${element(aws_instance.spels.*.private_ip, count.index)}"
+    user     = "${var.ssh_user}"
+    private_key = "${var.private_key}"
+    timeout   = "30m"
+  }
+  
+  provisioner "remote-exec" {
+    inline = [
+      "while [ ! -f /tmp/signal ]; do sleep 2; done",
+      ...
+    ]
+  }
+}
+
 # Data source is used to mitigate lack of intermediate variables and interpolation
 data "null_data_source" "windows_instance_amis" {
   inputs = {
@@ -236,7 +255,7 @@ data "null_data_source" "windows_instance_amis" {
 }
 
 resource "aws_instance" "windows" {
-  count = "1"
+  count = "0"
   #count = "${length(data.null_data_source.windows_instance_amis.inputs)}"
   ami = "${lookup(data.null_data_source.windows_instance_amis.inputs, count.index)}"
   instance_type = "t2.micro"
