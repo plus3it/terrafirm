@@ -4,7 +4,7 @@ echo "**************************************************************************
 echo "Running Watchmaker test script: LINUX"
 echo "*****************************************************************************"
 
-cat /tmp/userdata_install.txt
+#cat /tmp/userdata_install.txt
 
 wait_file() {
   local file="$1"; shift
