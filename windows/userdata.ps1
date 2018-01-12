@@ -41,6 +41,7 @@ pip install --index-url "$PypiUrl" --editable .
 
 # Run watchmaker
 watchmaker -n --log-level debug --log-dir=C:\Watchmaker\Logs
+New-Item c:\scripts\new_file.txt -type file -force
 #$admin = [adsi]("WinNT://./xadministrator, user")
 #$admin.description = "Stage3"
 #$admin.psbase.CommitChanges()
@@ -50,6 +51,7 @@ watchmaker -n --log-level debug --log-dir=C:\Watchmaker\Logs
 # Set Administrator password
 $admin = [adsi]("WinNT://./xadministrator, user")
 $admin.psbase.invoke("SetPassword", "THIS_IS_NOT_THE_PASSWORD")
+$admin.psbase.CommitChanges()
 
 # open firewall for winrm
 netsh advfirewall firewall add rule name="WinRM in" protocol=TCP dir=in profile=any localport=5985 remoteip=any localip=any action=allow
