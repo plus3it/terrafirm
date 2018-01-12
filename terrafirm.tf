@@ -270,7 +270,7 @@ resource "aws_instance" "windows" {
   instance_type = "t2.medium"
   key_name = "${aws_key_pair.auth.id}"
   vpc_security_group_ids = ["${aws_security_group.terrafirm_winrm.id}"]
-  user_data = "${file("windows/userdata2.ps1")}"
+  user_data = "${file("windows/userdata.ps1")}"
   associate_public_ip_address = "${var.associate_public_ip_address}"  
   
   timeouts {
@@ -278,19 +278,19 @@ resource "aws_instance" "windows" {
     delete = "120m"
   }
   
-  #connection {
-  #  #winrm connection to tier-2 instance
-  #  type     = "winrm"
-  #  user     = "${var.term_user}"
-  #  password = "${var.term_passwd}"
-  #  timeout   = "30m"
-  #  #https    = true
-  #}
+  connection {
+    #winrm connection to tier-2 instance
+    type     = "winrm"
+    user     = "${var.term_user}"
+    password = "${var.term_passwd}"
+    timeout   = "60m"
+    #https    = true
+  }
   
-  #provisioner "file" {
-  #  source = "windows/watchmaker_test.ps1"
-  #  destination = "C:\\scripts\\watchmaker_test.ps1"
-  #}
+  provisioner "file" {
+    source = "windows/watchmaker_test.ps1"
+    destination = "C:\\scripts\\watchmaker_test.ps1"
+  }
 
   #provisioner "file" {
   #  source = "windows/block_until_setup.ps1"
@@ -309,20 +309,21 @@ resource "aws_instance" "windows" {
   #  script = "windows/run_blocker.bat"
   #}
   
-  #provisioner "remote-exec" {
-  #  inline = [
+  provisioner "remote-exec" {
+    inline = [
   #    #"hostname",
   #    #"while (!(Test-Path 'C:\\tmp\\SIGNAL')) { Write-Host (\"Waiting for server setup to complete...\"); Start-Sleep 20; }",
   #    "powershell.exe -File C:\\scripts\\block_until_setup.ps1",
-  #    "powershell.exe -File C:\\scripts\\watchmaker_test.ps1",
-  #  ]
-  #}
+      "powershell.exe -File C:\\scripts\\watchmaker_test.ps1",
+    ]
+  }
   
 }
 
 # null resource used to connect to all the windows instances to test them
 resource "null_resource" "windows_nr" {
-  count = "${aws_instance.windows.count}"
+  count = "0"
+  #count = "${aws_instance.windows.count}"
   depends_on = ["aws_instance.windows"]
   
   connection {
@@ -362,7 +363,8 @@ resource "null_resource" "windows_nr" {
 
 # null resource used to connect to all the windows instances to test them
 resource "null_resource" "windows_nr2" {
-  count = "${aws_instance.windows.count}"
+  count = "0"
+  #count = "${aws_instance.windows.count}"
   depends_on = ["null_resource.windows_nr"]
   
   connection {
