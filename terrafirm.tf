@@ -350,6 +350,7 @@ resource "null_resource" "windows_nr" {
   
   provisioner "remote-exec" {
     inline = [
+      "powershell \"do { Start-Sleep 10; $admin = [adsi]('WinNT://./administrator, user') ; Write-Host $admin.Description ; } while($admin.Description -ne 'Stage2')",
       #"powershell C:\\scripts\\accounts.ps1",
       "powershell \"while (!(Test-Path C:\\Temp\\SETUP_COMPLETE_SIGNAL)) { Start-Sleep 10; $admin = [adsi]('WinNT://./administrator, user') ; Write-Host $admin.Description ; }\"",
       #"powershell \"while (!(Test-Path 'C:\\Temp\\SETUP_COMPLETE_SIGNAL')) { Start-Sleep 30; Invoke-Expression -Command:'C:\\scripts\\RefreshEnv.cmd' ; }\"",
