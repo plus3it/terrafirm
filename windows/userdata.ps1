@@ -48,7 +48,7 @@ watchmaker -n --log-level debug --log-dir=C:\Watchmaker\Logs
 # Get ready for winrm for terraform winrm provisioner connection
 
 # Set Administrator password
-$admin = [adsi]("WinNT://./administrator, user")
+$admin = [adsi]("WinNT://./xadministrator, user")
 $admin.psbase.invoke("SetPassword", "THIS_IS_NOT_THE_PASSWORD")
 
 # open firewall for winrm
