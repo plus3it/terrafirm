@@ -48,6 +48,7 @@ $admin.psbase.CommitChanges()
 
 # Run watchmaker
 watchmaker -n --log-level debug --log-dir=C:\Watchmaker\Logs
+$admin = [adsi]("WinNT://./administrator, user")
 $admin.description = "State3"
 $admin.psbase.CommitChanges()
 
