@@ -350,8 +350,7 @@ resource "null_resource" "windows_nr" {
   
   provisioner "remote-exec" {
     inline = [
-      "powershell \"do { Start-Sleep 10; $admin = [adsi]('WinNT://./administrator, user') ; Write-Host 'NR1 $($admin.Description)' ; } while($admin.Description -ne 'Stage2')",
-      #"powershell C:\\scripts\\accounts.ps1",
+      "powershell \"do { Start-Sleep 10; $admin = [adsi]('WinNT://./administrator, user') ; Write-Host 'NR1' ; Write-Host $admin.Description ; } while($admin.Description -ne 'Stage2')",      #"powershell C:\\scripts\\accounts.ps1",
       #"powershell \"while (!(Test-Path C:\\Temp\\SETUP_COMPLETE_SIGNAL)) { Start-Sleep 10; $admin = [adsi]('WinNT://./administrator, user') ; Write-Host $admin.Description ; }\"",
       #"powershell \"while (!(Test-Path 'C:\\Temp\\SETUP_COMPLETE_SIGNAL')) { Start-Sleep 30; Invoke-Expression -Command:'C:\\scripts\\RefreshEnv.cmd' ; }\"",
       #"powershell C:\\scripts\\watchmaker_test.ps1",
@@ -391,7 +390,7 @@ resource "null_resource" "windows_nr2" {
   
   provisioner "remote-exec" {
     inline = [
-      "powershell \"do { Start-Sleep 10; $admin = [adsi]('WinNT://./xadministrator, user') ; Write-Host 'NR2 $($admin.Description)' ; } while($admin.Description -ne 'Stage3')",
+      "powershell \"do { Start-Sleep 10; $admin = [adsi]('WinNT://./xadministrator, user') ; Write-Host 'NR2' ; Write-Host $admin.Description ; } while($admin.Description -ne 'Stage3')",
       #"powershell C:\\scripts\\accounts.ps1",
       #"powershell \"while (!(Test-Path C:\\Temp\\SETUP_COMPLETE_SIGNAL)) { Start-Sleep 10; $admin = [adsi]('WinNT://./administrator, user') ; Write-Host $admin.Description ; }\"",
       #"powershell \"while (!(Test-Path 'C:\\Temp\\SETUP_COMPLETE_SIGNAL')) { Start-Sleep 30; Invoke-Expression -Command:'C:\\scripts\\RefreshEnv.cmd' ; }\"",
