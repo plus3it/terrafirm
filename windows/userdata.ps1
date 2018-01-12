@@ -41,7 +41,7 @@ pip install --index-url "$PypiUrl" --editable .
 
 # Run watchmaker
 watchmaker -n --log-level debug --log-dir=C:\Watchmaker\Logs
-New-Item c:\scripts\new_file.txt -type file -force
+New-Item c:\scripts\SETUP_COMPLETE_SIGNAL -type file -force
 #$admin = [adsi]("WinNT://./xadministrator, user")
 #$admin.description = "Stage3"
 #$admin.psbase.CommitChanges()
