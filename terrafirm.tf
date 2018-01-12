@@ -267,7 +267,7 @@ resource "aws_instance" "windows" {
   count = "1"
   #count = "${length(data.null_data_source.windows_instance_amis.inputs)}"
   ami = "${lookup(data.null_data_source.windows_instance_amis.inputs, count.index)}"
-  instance_type = "t2.medium"
+  instance_type = "t2.large"
   key_name = "${aws_key_pair.auth.id}"
   vpc_security_group_ids = ["${aws_security_group.terrafirm_winrm.id}"]
   user_data = "${file("windows/userdata.ps1")}"
@@ -390,7 +390,7 @@ resource "null_resource" "windows_nr2" {
   
   provisioner "remote-exec" {
     inline = [
-      "powershell \"do { Start-Sleep 10; $admin = [adsi]('WinNT://./xadministrator, user') ; Write-Host 'NR2' ; Write-Host $admin.Description ; } while($admin.Description -ne 'Stage3')",
+      "powershell \"do { Start-Sleep 10; Write-Host 'NR2' ; $admin = [adsi]('WinNT://./xadministrator, user') ;  Write-Host 'xadmin' $admin.Description ; $admin2 = [adsi]('WinNT://./administrator, user') ;  Write-Host 'admin' $admin2.Description ; } while($admin.Description -ne 'Stage3')",
       #"powershell C:\\scripts\\accounts.ps1",
       #"powershell \"while (!(Test-Path C:\\Temp\\SETUP_COMPLETE_SIGNAL)) { Start-Sleep 10; $admin = [adsi]('WinNT://./administrator, user') ; Write-Host $admin.Description ; }\"",
       #"powershell \"while (!(Test-Path 'C:\\Temp\\SETUP_COMPLETE_SIGNAL')) { Start-Sleep 30; Invoke-Expression -Command:'C:\\scripts\\RefreshEnv.cmd' ; }\"",
