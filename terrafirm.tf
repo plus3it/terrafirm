@@ -323,7 +323,7 @@ resource "aws_instance" "windows" {
 # null resource used to connect to all the windows instances to test them
 resource "null_resource" "windows_nr" {
   count = "${aws_instance.windows.count}"
-  depends_on = ["aws_instance.windows.*"]
+  depends_on = ["aws_instance.windows"]
   
   connection {
     type     = "winrm"
