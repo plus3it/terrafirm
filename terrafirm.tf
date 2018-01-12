@@ -345,6 +345,7 @@ resource "null_resource" "windows_nr" {
   
   provisioner "remote-exec" {
     inline = [
+      "powershell accounts.ps1",
       "powershell \"while (!(Test-Path 'C:\\Temp\\SETUP_COMPLETE_SIGNAL')) { Start-Sleep 30; Invoke-Expression -Command:'C:\\scripts\\RefreshEnv.cmd' ; }\"",
       "powershell C:\\scripts\\watchmaker_test.ps1",
       #"while [ ! -f /tmp/SETUP_COMPLETE_SIGNAL ]; do sleep 2; done",
