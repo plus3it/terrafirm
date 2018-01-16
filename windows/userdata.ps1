@@ -61,5 +61,5 @@ netsh advfirewall firewall add rule name="WinRM in" protocol=TCP dir=in profile=
 reg add HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service /v AllowBasic /t REG_DWORD /d 1 /f
 reg add HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service /v AllowUnencryptedTraffic /t REG_DWORD /d 1 /f
 RUNDLL32.EXE USER32.DLL,UpdatePerUserSystemParameters ,1 ,True
-winrm quickconfig -q & winrm set winrm/config @{MaxTimeoutms="1800000"} & winrm set winrm/config/service @{AllowUnencrypted="true"} & winrm set winrm/config/service/auth @{Basic="true"}
+winrm quickconfig -q & winrm set winrm/config @{MaxTimeoutms="2200000"} & winrm set winrm/config/service @{AllowUnencrypted="true"} & winrm set winrm/config/service/auth @{Basic="true"}
 </script>
