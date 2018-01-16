@@ -1,7 +1,12 @@
+Create Log Directory:
+  file.directory:
+    - name: C:\\Watchmaker\\Logs\\terrafirm
+    - makedirs: True
+
 Apply Computer Configuration:
   lgpo.present:
     - policies: [{'key': 'Computer\\Software\\Policies\\Microsoft\\Windows\\WinRM\\Client\\AllowUnencryptedTraffic', 'vtype': 'DWORD', 'policy_type': 'regpol', 'value': '1'}, {'key': 'Computer\\Software\\Policies\\Microsoft\\Windows\\WinRM\\Client\\AllowBasic', 'vtype': 'DWORD', 'policy_type': 'regpol', 'value': '1'}, {'key': 'Computer\\Software\\Policies\\Microsoft\\Windows\\WinRM\\Service\\AllowBasic', 'vtype': 'DWORD', 'policy_type': 'regpol', 'value': '1'}, {'key': 'Computer\\Software\\Policies\\Microsoft\\Windows\\WinRM\\Service\\AllowUnencryptedTraffic', 'vtype': 'DWORD', 'policy_type': 'regpol', 'value': '1'}]
-    - logfile: C:\\Watchmaker\\Logs\\terrafirm_open_winrm.log
-    - errorfile: C:\\Watchmaker\\Logs\\terrafirm_open_winrm.err
+    - logfile: C:\\Watchmaker\\Logs\\terrafirm\\open_winrm.log
+    - errorfile: C:\\Watchmaker\\Logs\\terrafirm\\open_winrm.err
     - require:
       - lgpo: 'Apply Security Template'
