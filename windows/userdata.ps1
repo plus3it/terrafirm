@@ -70,5 +70,5 @@ salt-call.bat --local -c C:\Watchmaker\salt\conf lgpo.set_reg_value `
 #lacroix
 </powershell>
 <script>
-winrm quickconfig -q & winrm set winrm/config @{MaxTimeoutms="2200000"} 
+winrm quickconfig -q & winrm set winrm/config @{MaxTimeoutms="1900000"} 
 </script>
