@@ -56,15 +56,15 @@ netsh advfirewall firewall add rule name="WinRM in" protocol=TCP dir=in profile=
 #Invoke-Expression -Command:winrm set winrm/config @{MaxTimeoutms="1800000"}
 #Invoke-Expression -Command:winrm set winrm/config/service @{AllowUnencrypted="true"}
 #Invoke-Expression -Command:winrm set winrm/config/service/auth @{Basic="true"}
-salt-call --local -c C:\Watchmaker\salt\conf lgpo.set_reg_value `
-    key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowBasic' `
-    value='1' `
-    vtype='REG_DWORD'
+#salt-call --local -c C:\Watchmaker\salt\conf lgpo.set_reg_value `
+#    key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowBasic' `
+#    value='1' `
+#    vtype='REG_DWORD'
     
-salt-call --local -c C:\Watchmaker\salt\conf lgpo.set_reg_value `
-    key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowUnencryptedTraffic' `
-    value='1' `
-    vtype='REG_DWORD'
+#salt-call --local -c C:\Watchmaker\salt\conf lgpo.set_reg_value `
+#    key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowUnencryptedTraffic' `
+#    value='1' `
+#    vtype='REG_DWORD'
 </powershell>
 <script>
 reg add HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service /v AllowBasic /t REG_DWORD /d 1 /f
