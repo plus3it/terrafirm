@@ -56,19 +56,19 @@ netsh advfirewall firewall add rule name="WinRM in" protocol=TCP dir=in profile=
 #Invoke-Expression -Command:winrm set winrm/config @{MaxTimeoutms="1800000"}
 #Invoke-Expression -Command:winrm set winrm/config/service @{AllowUnencrypted="true"}
 #Invoke-Expression -Command:winrm set winrm/config/service/auth @{Basic="true"}
-#salt-call --local -c C:\Watchmaker\salt\conf lgpo.set_reg_value `
-#    key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowBasic' `
-#    value='1' `
-#    vtype='REG_DWORD'
+salt-call.bat --local -c C:\Watchmaker\salt\conf lgpo.set_reg_value `
+    key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowBasic' `
+    value='1' `
+    vtype='REG_DWORD'
     
-#salt-call --local -c C:\Watchmaker\salt\conf lgpo.set_reg_value `
-#    key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowUnencryptedTraffic' `
-#    value='1' `
-#    vtype='REG_DWORD'
+salt-call.bat --local -c C:\Watchmaker\salt\conf lgpo.set_reg_value `
+    key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowUnencryptedTraffic' `
+    value='1' `
+    vtype='REG_DWORD'
+    
+#& winrm set winrm/config/service @{AllowUnencrypted="true"} & winrm set winrm/config/service/auth @{Basic="true"}
+#lacroix
 </powershell>
 <script>
-reg add HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service /v AllowBasic /t REG_DWORD /d 1 /f
-reg add HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service /v AllowUnencryptedTraffic /t REG_DWORD /d 1 /f
-RUNDLL32.EXE USER32.DLL,UpdatePerUserSystemParameters ,1 ,True
-winrm quickconfig -q & winrm set winrm/config @{MaxTimeoutms="2200000"} & winrm set winrm/config/service @{AllowUnencrypted="true"} & winrm set winrm/config/service/auth @{Basic="true"}
+winrm quickconfig -q & winrm set winrm/config @{MaxTimeoutms="2200000"} 
 </script>
