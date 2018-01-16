@@ -264,8 +264,8 @@ data "null_data_source" "windows_instance_amis" {
 
 # bread & butter - this tells TF the provision/create the actual instance
 resource "aws_instance" "windows" {
-  count = "1"
-  #count = "${length(data.null_data_source.windows_instance_amis.inputs)}"
+  #count = "1"
+  count = "${length(data.null_data_source.windows_instance_amis.inputs)}"
   ami = "${lookup(data.null_data_source.windows_instance_amis.inputs, count.index)}"
   instance_type = "t2.medium"
   key_name = "${aws_key_pair.auth.id}"
@@ -318,12 +318,33 @@ resource "aws_instance" "windows" {
   #  ]
   #}
   
+  connection {
+    type     = "winrm"
+    user     = "${var.term_user}"
+    password = "${var.term_passwd}"
+    timeout   = "30m"
+  }
+  
+  provisioner "file" {
+    source = "windows/watchmaker_test.ps1"
+    destination = "C:\\scripts\\watchmaker_test.ps1"
+  }
+  
+  provisioner "remote-exec" {
+    inline = [
+  #    #"hostname",
+  #    #"while (!(Test-Path 'C:\\tmp\\SIGNAL')) { Write-Host (\"Waiting for server setup to complete...\"); Start-Sleep 20; }",
+  #    "powershell.exe -File C:\\scripts\\block_until_setup.ps1",
+      "powershell.exe -File C:\\scripts\\watchmaker_test.ps1",
+    ]
+  }  
+  
 }
 
 # null resource used to connect to all the windows instances to test them
 resource "null_resource" "windows_nr" {
-  #count = "0"
-  count = "${aws_instance.windows.count}"
+  count = "0"
+  #count = "${aws_instance.windows.count}"
   depends_on = ["aws_instance.windows"]
   
   connection {
