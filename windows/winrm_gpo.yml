@@ -9,4 +9,4 @@ Apply Computer Configuration:
     - logfile: C:\\Watchmaker\\Logs\\terrafirm\\open_winrm.log
     - errorfile: C:\\Watchmaker\\Logs\\terrafirm\\open_winrm.err
     - require:
-      - lgpo: 'Apply Security Template'
+      - lgpo: 'Create Log Directory'
