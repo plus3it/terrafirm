@@ -52,11 +52,14 @@ $admin.psbase.CommitChanges()
 
 # open firewall for winrm
 netsh advfirewall firewall add rule name="WinRM in" protocol=TCP dir=in profile=any localport=5985 remoteip=any localip=any action=allow
-Invoke-Expression -Command:winrm quickconfig -q
-Invoke-Expression -Command:winrm set winrm/config @{MaxTimeoutms="1800000"}
-Invoke-Expression -Command:winrm set winrm/config/service @{AllowUnencrypted="true"}
-Invoke-Expression -Command:winrm set winrm/config/service/auth @{Basic="true"}
+#Invoke-Expression -Command:winrm quickconfig -q
+#Invoke-Expression -Command:winrm set winrm/config @{MaxTimeoutms="1800000"}
+#Invoke-Expression -Command:winrm set winrm/config/service @{AllowUnencrypted="true"}
+#Invoke-Expression -Command:winrm set winrm/config/service/auth @{Basic="true"}
 </powershell>
 <script>
+reg add HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service /v AllowBasic /t REG_DWORD /d 1 /f
+reg add HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service /v AllowUnencryptedTraffic /t REG_DWORD /d 1 /f
+RUNDLL32.EXE USER32.DLL,UpdatePerUserSystemParameters ,1 ,True
 winrm quickconfig -q & winrm set winrm/config @{MaxTimeoutms="1800000"} & winrm set winrm/config/service @{AllowUnencrypted="true"} & winrm set winrm/config/service/auth @{Basic="true"}
 </script>
