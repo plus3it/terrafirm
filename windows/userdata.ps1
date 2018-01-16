@@ -1,5 +1,7 @@
 <powershell>
 
+Start-Transcript -path C:\scripts\watchmaker_install.txt -append
+
 #$admin.description = "Stage0"
 #$admin.psbase.CommitChanges()
 
@@ -68,6 +70,8 @@ salt-call.bat --local -c C:\Watchmaker\salt\conf lgpo.set_reg_value `
     
 #& winrm set winrm/config/service @{AllowUnencrypted="true"} & winrm set winrm/config/service/auth @{Basic="true"}
 #lacroix
+
+Stop-Transcript
 </powershell>
 <script>
 winrm quickconfig -q & winrm set winrm/config @{MaxTimeoutms="1900000"} 
