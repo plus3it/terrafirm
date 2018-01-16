@@ -63,7 +63,7 @@ C:\salt\salt-call --local -c C:\Watchmaker\salt\conf lgpo.set_reg_value `
     value='1' `
     vtype='REG_DWORD'
     
-C:\salt\salt-call.bat --local -c C:\Watchmaker\salt\conf lgpo.set_reg_value `
+C:\salt\salt-call --local -c C:\Watchmaker\salt\conf lgpo.set_reg_value `
     key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowUnencryptedTraffic' `
     value='1' `
     vtype='REG_DWORD'
