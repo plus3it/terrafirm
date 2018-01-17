@@ -3,7 +3,7 @@
 echo "*****************************************************************************"
 echo "Running Watchmaker test script: LINUX"
 echo "*****************************************************************************"
-uname -a
+cat /etc/issue.net
 
 command="watchmaker --version"
 
