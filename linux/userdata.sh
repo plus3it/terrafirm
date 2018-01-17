@@ -9,5 +9,5 @@ sed -i '5iPort 122' /etc/ssh/sshd_config
 service sshd restart
   
 #/sbin/service sshd restart
-iptables -I INPUT -p tcp -m tcp --dport 122 -j ACCEPT
-service iptables save
+#iptables -I INPUT -p tcp -m tcp --dport 122 -j ACCEPT
+#service iptables save
