@@ -232,11 +232,32 @@ resource "aws_instance" "spels" {
     create = "40m"
     delete = "40m"
   }
+  
+  connection {
+    #ssh connection to tier-2 instance
+    user     = "${var.ssh_user}"
+    private_key = "${var.private_key}"
+    timeout   = "30m"
+  }
+  
+  provisioner "file" {
+    source = "linux/watchmaker_test.sh"
+    destination = "~/watchmaker_test.sh"
+  }
+  
+  provisioner "remote-exec" {
+    inline = [
+      "while [ ! -f /tmp/SETUP_COMPLETE_SIGNAL ]; do sleep 2; done",
+      "chmod +x ~/watchmaker_test.sh",
+      "~/watchmaker_test.sh",
+    ]
+  }  
 }
 
 # null resource used to connect to all the linux instances to test them
 resource "null_resource" "spels_nr" {
-  count = "${aws_instance.spels.count}"
+  count = "0"
+  #count = "${aws_instance.spels.count}"
   depends_on = ["aws_instance.spels"]
   
   connection {
