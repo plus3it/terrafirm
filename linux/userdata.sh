@@ -12,5 +12,5 @@ sed -i -e "s/^[#]*Port .*$/Port 122/" /etc/ssh/sshd_config
 service sshd restart
   
 #/sbin/service sshd restart
-/sbin/iptables -A INPUT -p tcp --destination-port 122 -j ACCEPT
-/sbin/service iptables save
+iptables -I INPUT -p tcp -m tcp --dport 122 -j ACCEPT
+service iptables save
