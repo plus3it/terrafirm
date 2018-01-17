@@ -43,8 +43,8 @@ resource "aws_security_group" "terrafirm_ssh" {
   
   # Special SSH access 
   ingress {
-    from_port   = 122
-    to_port     = 122
+    from_port   = 2222
+    to_port     = 2222
     protocol    = "tcp"
     cidr_blocks = ["${var.cb_ip}/32"]
   }  
