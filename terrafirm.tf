@@ -211,7 +211,7 @@ data "null_data_source" "spel_instance_amis" {
 
 # bread & butter - this tells TF the provision/create the actual instance
 resource "aws_instance" "spels" {
-  count = "0"
+  count = "1"
   #count = "${length(data.null_data_source.spel_instance_amis.inputs)}"
   ami = "${lookup(data.null_data_source.spel_instance_amis.inputs, count.index)}"
   instance_type = "t2.micro"
@@ -246,7 +246,7 @@ resource "null_resource" "spels_nr" {
   
   provisioner "remote-exec" {
     inline = [
-      "while [ ! -f /tmp/SETUP_COMPLETE_SIGNAL ]; do sleep 2; done",
+      #"while [ ! -f /tmp/SETUP_COMPLETE_SIGNAL ]; do sleep 2; done",
       "chmod +x ~/watchmaker_test.sh",
       "~/watchmaker_test.sh",
     ]
@@ -264,8 +264,8 @@ data "null_data_source" "windows_instance_amis" {
 
 # bread & butter - this tells TF the provision/create the actual instance
 resource "aws_instance" "windows" {
-  #count = "1"
-  count = "${length(data.null_data_source.windows_instance_amis.inputs)}"
+  count = "0"
+  #count = "${length(data.null_data_source.windows_instance_amis.inputs)}"
   ami = "${lookup(data.null_data_source.windows_instance_amis.inputs, count.index)}"
   instance_type = "t2.medium"
   key_name = "${aws_key_pair.auth.id}"
