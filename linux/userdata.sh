@@ -1,6 +1,6 @@
 #!/bin/sh
 
-exec &> /tmp/userdata_install.txt
+exec &> /tmp/watchmaker_userdata_install.log
 
 GIT_REPO=THIS_IS_NOT_THE_REPO
 GIT_BRANCH=THIS_IS_NOT_THE_BRANCH
