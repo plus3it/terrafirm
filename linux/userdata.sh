@@ -2,8 +2,10 @@
 
 exec &> /tmp/watchmaker_userdata_install.log
 
+/sbin/iptables -A INPUT -p tcp --destination-port 22 -j DROP
+/sbin/service iptables save
+
 WATCHMAKER_INSTALL_GOES_HERE
 
-
-# Signal completion of userdata
-touch /tmp/SETUP_COMPLETE_SIGNAL
+/sbin/iptables -A INPUT -p tcp --destination-port 22 -j ACCEPT
+/sbin/service iptables save
