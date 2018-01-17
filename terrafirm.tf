@@ -254,35 +254,6 @@ resource "aws_instance" "spels" {
   }  
 }
 
-# null resource used to connect to all the linux instances to test them
-resource "null_resource" "spels_nr" {
-  count = "0"
-  #count = "${aws_instance.spels.count}"
-  depends_on = ["aws_instance.spels"]
-  
-  connection {
-    #ssh connection to tier-2 instance
-    host     = "${element(aws_instance.spels.*.public_ip, count.index)}"
-    port     = 122
-    user     = "${var.ssh_user}"
-    private_key = "${var.private_key}"
-    timeout   = "30m"
-  }
-  
-  provisioner "file" {
-    source = "linux/watchmaker_test.sh"
-    destination = "~/watchmaker_test.sh"
-  }
-  
-  provisioner "remote-exec" {
-    inline = [
-      #"while [ ! -f /tmp/SETUP_COMPLETE_SIGNAL ]; do sleep 2; done",
-      "chmod +x ~/watchmaker_test.sh",
-      "~/watchmaker_test.sh",
-    ]
-  }
-}
-
 # data source (place to put the ami id strings), used to mitigate lack of intermediate variables and interpolation
 data "null_data_source" "windows_instance_amis" {
   inputs = {
@@ -308,46 +279,6 @@ resource "aws_instance" "windows" {
     delete = "120m"
   }
   
-  #connection {
-  #  #winrm connection to tier-2 instance
-  #  type     = "winrm"
-  #  user     = "${var.term_user}"
-  #  password = "${var.term_passwd}"
-  #  timeout   = "60m"
-  #  #https    = true
-  #}
-  
-  #provisioner "file" {
-  #  source = "windows/watchmaker_test.ps1"
-  #  destination = "C:\\scripts\\watchmaker_test.ps1"
-  #}
-
-  #provisioner "file" {
-  #  source = "windows/block_until_setup.ps1"
-  #  destination = "C:\\scripts\\block_until_setup.ps1"
-  #}
-
-  #provisioner "file" {
-  #  source = "windows/check_block.ps1"
-  #  destination = "C:\\scripts\\check_block.ps1"
-  #}
-  #provisioner "local-exec" {
-  #  command = "sleep 10"
-  #}
-  
-  #provisioner "remote-exec" {
-  #  script = "windows/run_blocker.bat"
-  #}
-  
-  #provisioner "remote-exec" {
-  #  inline = [
-  #    #"hostname",
-  #    #"while (!(Test-Path 'C:\\tmp\\SIGNAL')) { Write-Host (\"Waiting for server setup to complete...\"); Start-Sleep 20; }",
-  #    "powershell.exe -File C:\\scripts\\block_until_setup.ps1",
-  #    "powershell.exe -File C:\\scripts\\watchmaker_test.ps1",
-  #  ]
-  #}
-  
   connection {
     type     = "winrm"
     user     = "${var.term_user}"
@@ -362,82 +293,8 @@ resource "aws_instance" "windows" {
   
   provisioner "remote-exec" {
     inline = [
-  #    #"hostname",
-  #    #"while (!(Test-Path 'C:\\tmp\\SIGNAL')) { Write-Host (\"Waiting for server setup to complete...\"); Start-Sleep 20; }",
-  #    "powershell.exe -File C:\\scripts\\block_until_setup.ps1",
       "powershell.exe -File C:\\scripts\\watchmaker_test.ps1",
     ]
   }  
   
-}
-
-# null resource used to connect to all the windows instances to test them
-resource "null_resource" "windows_nr" {
-  count = "0"
-  #count = "${aws_instance.windows.count}"
-  depends_on = ["aws_instance.windows"]
-  
-  connection {
-    type     = "winrm"
-    host     = "${element(aws_instance.windows.*.public_ip, count.index)}"
-    user     = "${var.term_user}"
-    password = "${var.term_passwd}"
-    timeout   = "30m"
-  }
-  
-  provisioner "file" {
-    source = "windows/watchmaker_test.ps1"
-    destination = "C:\\scripts\\watchmaker_test.ps1"
-  }
-  
-  provisioner "remote-exec" {
-    inline = [
-  #    #"hostname",
-  #    #"while (!(Test-Path 'C:\\tmp\\SIGNAL')) { Write-Host (\"Waiting for server setup to complete...\"); Start-Sleep 20; }",
-  #    "powershell.exe -File C:\\scripts\\block_until_setup.ps1",
-      "powershell.exe -File C:\\scripts\\watchmaker_test.ps1",
-    ]
-  }
-}
-
-# null resource used to connect to all the windows instances to test them
-resource "null_resource" "windows_nr2" {
-  count = "0"
-  #count = "${aws_instance.windows.count}"
-  depends_on = ["null_resource.windows_nr"]
-  
-  connection {
-    type     = "winrm"
-    host     = "${element(aws_instance.windows.*.public_ip, count.index)}"
-    user     = "${var.term_user}"
-    password = "${var.term_passwd}"
-    timeout   = "30m"
-  }
-  
-  #provisioner "file" {
-  #  source = "windows/watchmaker_test.ps1"
-  #  destination = "C:\\scripts\\watchmaker_test.ps1"
-  #}
-  
-  #provisioner "file" {
-  #  source = "windows/RefreshEnv.cmd"
-  #  destination = "C:\\scripts\\RefreshEnv.cmd"
-  #}
-  
-  #provisioner "file" {
-    #source = "windows/accounts.ps1"
-    #destination = "C:\\scripts\\accounts.ps1"
-  #}
-  
-  provisioner "remote-exec" {
-    inline = [
-      "powershell \"do { Start-Sleep 10; Write-Host 'NR2' ; $admin = [adsi]('WinNT://./xadministrator, user') ;  Write-Host 'xadmin' $admin.Description ; $admin2 = [adsi]('WinNT://./administrator, user') ;  Write-Host 'admin' $admin2.Description ; } while($admin.Description -ne 'Stage3')",
-      #"powershell C:\\scripts\\accounts.ps1",
-      #"powershell \"while (!(Test-Path C:\\Temp\\SETUP_COMPLETE_SIGNAL)) { Start-Sleep 10; $admin = [adsi]('WinNT://./administrator, user') ; Write-Host $admin.Description ; }\"",
-      #"powershell \"while (!(Test-Path 'C:\\Temp\\SETUP_COMPLETE_SIGNAL')) { Start-Sleep 30; Invoke-Expression -Command:'C:\\scripts\\RefreshEnv.cmd' ; }\"",
-      #"powershell C:\\scripts\\watchmaker_test.ps1",
-      #"while [ ! -f /tmp/SETUP_COMPLETE_SIGNAL ]; do sleep 2; done",
-      #"~/watchmaker_test.sh",
-    ]
-  }
 }
