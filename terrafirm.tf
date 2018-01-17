@@ -33,7 +33,7 @@ resource "aws_security_group" "terrafirm_ssh" {
   name        = "${var.security_group_lin}"
   description = "Used in terrafirm"
 
-  # SSH access from anywhere
+  # SSH access 
   ingress {
     from_port   = 22
     to_port     = 22
@@ -41,7 +41,7 @@ resource "aws_security_group" "terrafirm_ssh" {
     cidr_blocks = ["${var.cb_ip}/32"]
   }
   
-  # SSH access from anywhere
+  # Special SSH access 
   ingress {
     from_port   = 122
     to_port     = 122
