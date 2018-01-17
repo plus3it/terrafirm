@@ -1,7 +1,7 @@
 <powershell>
 
 # log of the userdata install
-Start-Transcript -path C:\scripts\watchmaker_install.txt -append
+Start-Transcript -path C:\Temp\watchmaker_install.txt -append
 
 # close the firewall
 netsh advfirewall firewall add rule name="WinRM in" protocol=TCP dir=in profile=any localport=5985 remoteip=any localip=any action=deny
