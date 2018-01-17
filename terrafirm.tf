@@ -242,7 +242,7 @@ resource "null_resource" "spels_nr" {
   connection {
     #ssh connection to tier-2 instance
     host     = "${element(aws_instance.spels.*.public_ip, count.index)}"
-    port     = "122"
+    port     = "2222"
     user     = "${var.ssh_user}"
     private_key = "${var.private_key}"
     timeout   = "30m"
