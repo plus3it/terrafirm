@@ -43,8 +43,8 @@ resource "aws_security_group" "terrafirm_ssh" {
   
   # Special SSH access 
   ingress {
-    from_port   = 2222
-    to_port     = 2222
+    from_port   = 122
+    to_port     = 122
     protocol    = "tcp"
     cidr_blocks = ["${var.cb_ip}/32"]
   }  
@@ -242,7 +242,7 @@ resource "null_resource" "spels_nr" {
   connection {
     #ssh connection to tier-2 instance
     host     = "${element(aws_instance.spels.*.public_ip, count.index)}"
-    port     = 2222
+    port     = 122
     user     = "${var.ssh_user}"
     private_key = "${var.private_key}"
     timeout   = "30m"
