@@ -40,6 +40,14 @@ resource "aws_security_group" "terrafirm_ssh" {
     protocol    = "tcp"
     cidr_blocks = ["${var.cb_ip}/32"]
   }
+  
+  # SSH access from anywhere
+  ingress {
+    from_port   = 122
+    to_port     = 122
+    protocol    = "tcp"
+    cidr_blocks = ["${var.cb_ip}/32"]
+  }  
 
   # outbound internet access
   egress {
@@ -234,6 +242,7 @@ resource "null_resource" "spels_nr" {
   connection {
     #ssh connection to tier-2 instance
     host     = "${element(aws_instance.spels.*.public_ip, count.index)}"
+    port     = "122"
     user     = "${var.ssh_user}"
     private_key = "${var.private_key}"
     timeout   = "30m"
