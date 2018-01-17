@@ -36,6 +36,7 @@ function Retry-Command
 Write-Host ("*****************************************************************************")
 Write-Host ("Running Watchmaker test script: WINDOWS")
 Write-Host ("*****************************************************************************")
+Write-Host ((Get-WmiObject -class Win32_OperatingSystem).Caption)
 
 #Perform test
 Retry-Command -Command 'watchmaker --version' -Retries $retries -SecondsDelay $seconds_between_retries
