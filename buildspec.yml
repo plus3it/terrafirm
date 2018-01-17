@@ -57,7 +57,7 @@ phases:
       - TF_VAR_security_group_win="${SECURITY_GRP_WIN}" ; export TF_VAR_security_group_win
       - TF_VAR_security_group_lin="${SECURITY_GRP_LIN}" ; export TF_VAR_security_group_lin
       - #"Creative" variable substitution required since windows userdata has chars that won't work with automatic method
-      - sed -i -e '|WATCHMAKER_INSTALL_GOES_HERE|${r windows/install_watchmaker.ps1' -e 'd}' windows/userdata.ps1
+      - sed -i -e '/WATCHMAKER_INSTALL_GOES_HERE/{r windows\/install_watchmaker.ps1' -e 'd}' windows/userdata.ps1
       - cat windows/userdata.ps1
       - exit 1
       - sed -i "s/THIS_IS_NOT_THE_PASSWORD/${TF_VAR_term_passwd}/" windows/userdata.ps1
