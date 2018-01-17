@@ -1,1 +1,0 @@
-Test-Path 'C:\Temp\SETUP_COMPLETE_SIGNAL'
