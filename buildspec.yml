@@ -29,12 +29,6 @@ phases:
         fi
       - TF_VAR_cb_ip="$(curl http://checkip.amazonaws.com)" ; export TF_VAR_cb_ip
       - echo "IP of CodeBuild instance is $TF_VAR_cb_ip"
-      - TF_VAR_key_pair_name="${KEY_PAIR_NAME}" ; export TF_VAR_key_pair_name
-      - TF_VAR_term_user="${WINRM_USER}" ; export TF_VAR_term_user
-      - TF_VAR_term_passwd="$(aws ssm get-parameters --name ${PS_PASSWD_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_term_passwd
-      - TF_VAR_ssh_user="${SSH_USER}" ; export TF_VAR_ssh_user
-      - TF_VAR_private_key="$(aws ssm get-parameters --name ${PS_SSH_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_private_key
-      - TF_VAR_public_key="$(aws ssm get-parameters --name ${PS_PUBLIC_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_public_key
       - | #avoid errors with invalid parameter values - only will show up as "true" or "false"
         if [ "${ASSIGN_PUBLIC_IP}" = "true" ] ; then
           TF_VAR_associate_public_ip_address="${ASSIGN_PUBLIC_IP}"
@@ -52,7 +46,12 @@ phases:
       - sed -i -e '/WATCHMAKER_INSTALL_GOES_HERE/{r linux/install_watchmaker.sh' -e 'd}' linux/userdata.sh
       - sed -i "s,THIS_IS_NOT_THE_REPO,${GIT_REPO}," linux/userdata.sh
       - sed -i "s/THIS_IS_NOT_THE_BRANCH/${GIT_BRANCH}/" linux/userdata.sh
-      - echo "AWS key pair setup..."      
+      - echo "AWS key setup..........................................................."      
+      - TF_VAR_key_pair_name="${KEY_PAIR_NAME}" ; export TF_VAR_key_pair_name
+      - TF_VAR_term_user="${WINRM_USER}" ; export TF_VAR_term_user
+      - TF_VAR_ssh_user="${SSH_USER}" ; export TF_VAR_ssh_user
+      - TF_VAR_private_key="$(aws ssm get-parameters --name ${PS_PRIVATE_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_private_key
+      - TF_VAR_public_key="$(aws ssm get-parameters --name ${PS_PUBLIC_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_public_key
       - |
         if aws ec2 describe-key-pairs --key-name "${KEY_PAIR_NAME}" ; then
           echo "Key pair already exists..."
@@ -60,7 +59,7 @@ phases:
           echo "Creating a key pair "
           aws ec2 import-key-pair --key-name "${KEY_PAIR_NAME}" --public-key-material "${TF_VAR_public_key}"
         fi
-      - echo "AWS instance profile setup..."
+      - echo "AWS instance profile setup............................................."
       - |
         if [ -z "${AWS_PROFILE}" ]
         then
