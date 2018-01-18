@@ -67,9 +67,9 @@ variable "ami_name_filters" {
     "spel-minimal-centos-7*",
     "spel-minimal-rhel-6*",
     "spel-minimal-rhel-7*",
+    "Windows_Server-2008-R2_SP1-English-64Bit-Base*",
     "Windows_Server-2016-English-Full-Base*",
     "Windows_Server-2012-R2_RTM-English-64Bit-Base*",
-    "Windows_Server-2008-R2_SP1-English-64Bit-Base*",
   ] 
 }
 
@@ -211,8 +211,8 @@ data "null_data_source" "spel_instance_amis" {
 
 # bread & butter - this tells TF the provision/create the actual instance
 resource "aws_instance" "spels" {
-  #count = "1"
-  count = "${length(data.null_data_source.spel_instance_amis.inputs)}"
+  count = "0"
+  #count = "${length(data.null_data_source.spel_instance_amis.inputs)}"
   ami = "${lookup(data.null_data_source.spel_instance_amis.inputs, count.index)}"
   instance_type = "t2.micro"
   key_name = "${aws_key_pair.auth.id}"
@@ -257,8 +257,8 @@ data "null_data_source" "windows_instance_amis" {
 
 # bread & butter - this tells TF the provision/create the actual instance
 resource "aws_instance" "windows" {
-  #count = "0"
-  count = "${length(data.null_data_source.windows_instance_amis.inputs)}"
+  count = "1"
+  #count = "${length(data.null_data_source.windows_instance_amis.inputs)}"
   ami = "${lookup(data.null_data_source.windows_instance_amis.inputs, count.index)}"
   instance_type = "t2.medium"
   key_name = "${aws_key_pair.auth.id}"
