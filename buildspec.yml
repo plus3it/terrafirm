@@ -52,6 +52,7 @@ phases:
       - sed -i -e '/WATCHMAKER_INSTALL_GOES_HERE/{r linux/install_watchmaker.sh' -e 'd}' linux/userdata.sh
       - sed -i "s,THIS_IS_NOT_THE_REPO,${GIT_REPO}," linux/userdata.sh
       - sed -i "s/THIS_IS_NOT_THE_BRANCH/${GIT_BRANCH}/" linux/userdata.sh
+      - echo "AWS key pair setup..."      
       - |
         if aws ec2 describe-key-pairs --key-name "${KEY_PAIR_NAME}" ; then
           echo "Key pair already exists..."
@@ -59,7 +60,7 @@ phases:
           echo "Creating a key pair "
           aws ec2 import-key-pair --key-name "${KEY_PAIR_NAME}" --public-key-material "${TF_VAR_public_key}"
         fi
-      - echo "AWS Profile setup..."
+      - echo "AWS instance profile setup..."
       - |
         if [ -z "${AWS_PROFILE}" ]
         then
