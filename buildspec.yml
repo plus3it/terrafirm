@@ -78,6 +78,7 @@ phases:
           echo "Role provided (${INSTANCE_ROLE})"
           aws iam add-role-to-instance-profile --role-name "${INSTANCE_ROLE}" --instance-profile-name "${AWS_PROFILE}"
         fi        
+      - sleep 180
       - echo "Throwing it over the fence to Terraform................................"
       - echo "Initializing Terraform " ; ./terraform init -input=false
       - echo "Importing key pair " ; ./terraform import aws_key_pair.auth "${KEY_PAIR_NAME}"
