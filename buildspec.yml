@@ -22,10 +22,6 @@ phases:
   pre_build:
     commands:
       - echo "Terraform version " ; ./terraform --version
-      - |
-        if [ -n "${REGION}" ] ; then
-          aws configure set region $REGION --profile $NAMED_PROFILE
-        fi
       - TF_VAR_cb_ip="$(curl http://checkip.amazonaws.com)" ; export TF_VAR_cb_ip
       - echo "IP of CodeBuild instance is $TF_VAR_cb_ip"
       - | #avoid errors with invalid parameter values - only will show up as "true" or "false"
@@ -78,6 +74,10 @@ phases:
           echo "Role provided (${INSTANCE_ROLE})"
           aws iam add-role-to-instance-profile --role-name "${INSTANCE_ROLE}" --instance-profile-name "${AWS_PROFILE}"
         fi        
+      - |
+        if [ -n "${REGION}" ] ; then
+          aws configure set region "${REGION}" --profile "${AWS_PROFILE}"
+        fi
       - sleep 180
       - echo "Throwing it over the fence to Terraform................................"
       - echo "Initializing Terraform " ; ./terraform init -input=false
