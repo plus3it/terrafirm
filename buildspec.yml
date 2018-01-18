@@ -22,6 +22,14 @@ phases:
   pre_build:
     commands:
       - |
+        if aws ec2 get-instance-profile --instance-profile-name "${AWS_PROFILE}" ; then
+          echo "Profile already exists..."
+        else
+          echo "Creating a profile "
+          aws ec2 create-instance-profile --instance-profile-name "${AWS_PROFILE}"
+        fi
+      - exit 1
+      - |
         if [ -z "${NAMED_PROFILE}" ] ; then
           echo "No named profile given, using default (terrafirm)..."
           NAMED_PROFILE=terrafirm
