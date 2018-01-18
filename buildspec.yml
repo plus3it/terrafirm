@@ -21,51 +21,28 @@ phases:
       - echo "Installed Terraform."
   pre_build:
     commands:
-      - AWS_PROFILE2=terrafirm ; export AWS_PROFILE2
-      - aws configure set region "us-east-1" --profile $AWS_PROFILE2
-      - exit 1
-      - echo "AWS profile is $AWS_PROFILE"
-      - aws configure set region "us-east-1" --profile terrafirm
-      - exit 1
-      - |
-        if aws ec2 get-instance-profile --instance-profile-name "${AWS_PROFILE}" ; then
-          echo "Profile already exists..."
-        else
-          echo "Creating a profile "
-          aws ec2 create-instance-profile --instance-profile-name "${AWS_PROFILE}"
-        fi
-      - exit 1
+      - echo "Terraform version " ; ./terraform --version
+      - echo "SETUP - AWS CLI *named* profile................................................"
+      - echo "This is distinct from the instance profile that contains a role for creating the instance"
+      - echo "This profile is used by CLI"
       - |
         if [ -z "${NAMED_PROFILE}" ] ; then
-          echo "No named profile given, using default (terrafirm)..."
-          NAMED_PROFILE=terrafirm
-        else
-          NAMED_PROFILE="${NAMED_PROFILE}"
+          echo "No CLI named profile given, using default (terrafirm)..."
+          NAMED_PROFILE=terrafirm ; export NAMED_PROFILE
         fi
-        export NAMED_PROFILE
-        echo "AWS profile is $NAMED_PROFILE"
       - |
         if [ -n "${REGION}" ] ; then
-          aws configure set region $REGION --profile $NAMED_PROFILE
+          aws configure set region "${REGION}" --profile "${NAMED_PROFILE}"
         fi
-      - echo "AWS Profile setup..."
-      - echo $NAMED_PROFILE
-      - AWS_PROFILE=$NAMED_PROFILE ; export AWS_PROFILE
-      - echo "Terraform version " ; ./terraform --version   
-      - exit 1
-      - echo "Terraform version " ; ./terraform --version
-      - echo "AWS instance profile setup............................................."
-      - |
-        if [ -z "${AWS_PROFILE}" ] ; then
-          echo "No instance profile given, using default (terrafirm)..."
-          AWS_PROFILE=terrafirm ; export AWS_PROFILE
-        fi
+      - #Setting this environment variable gives TF all the profile info (e.g., region)
+      - AWS_PROFILE="${NAMED_PROFILE}" ; export AWS_PROFILE
+      - echo "SETUP - AWS instance profile setup............................................."
+      - echo "This is distinct from the named profile used by CLI"
+      - echo "This profile is to contain a role in creating the instance"
+
       - echo "AWS profile is $AWS_PROFILE"        
       - TF_VAR_instance_profile="${AWS_PROFILE}" ; export TF_VAR_instance_profile
-      - |
-        if [ -n "${REGION}" ] ; then
-          aws configure set region "${REGION}" --profile "${AWS_PROFILE}"
-        fi
+
       - |
         if aws ec2 get-instance-profile --instance-profile-name "${AWS_PROFILE}" ; then
           echo "Profile already exists..."
@@ -88,8 +65,10 @@ phases:
           TF_VAR_associate_public_ip_address="false"
         fi
         export TF_VAR_associate_public_ip_address
-      - TF_VAR_security_group_win="${SECURITY_GRP_WIN}" ; export TF_VAR_security_group_win
-      - TF_VAR_security_group_lin="${SECURITY_GRP_LIN}" ; export TF_VAR_security_group_lin
+      - TF_VAR_win_security_group="${WIN_SECURITY_GRP}" ; export TF_VAR_win_security_group
+      - TF_VAR_lx_security_group="${LX_SECURITY_GRP}" ; export TF_VAR_lx_security_group
+      - TF_VAR_win_instance_type="${WIN_INSTANCE_TYPE}" ; export TF_VAR_win_instance_type
+      - TF_VAR_lx_instance_type="${LX_INSTANCE_TYPE}" ; export TF_VAR_lx_instance_type
       - #"Creative" variable substitution required since windows userdata has chars that won't work with automatic method
       - sed -i -e '/WATCHMAKER_INSTALL_GOES_HERE/{r windows/install_watchmaker.ps1' -e 'd}' windows/userdata.ps1
       - sed -i "s/THIS_IS_NOT_THE_PASSWORD/${TF_VAR_term_passwd}/" windows/userdata.ps1
