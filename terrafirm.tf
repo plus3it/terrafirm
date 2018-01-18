@@ -263,7 +263,7 @@ resource "aws_instance" "windows" {
   ami                          = "${lookup(data.null_data_source.windows_instance_amis.inputs, count.index)}"
   instance_type                = "${var.win_instance_type}"
   key_name                     = "${aws_key_pair.auth.id}"
-  iam_instance_profile         = "${var.instance_profile}"
+  #iam_instance_profile         = "${var.instance_profile}"
   vpc_security_group_ids       = ["${aws_security_group.terrafirm_winrm.id}"]
   user_data                    = "${file("windows/userdata.ps1")}"
   associate_public_ip_address  = "${var.associate_public_ip_address}"  
