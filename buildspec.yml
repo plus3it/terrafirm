@@ -49,7 +49,7 @@ phases:
         if aws iam get-instance-profile --instance-profile-name "${INSTANCE_PROFILE}" ; then
           echo "Profile already exists. Checking instance profile..."
           OLD_ROLE="$(aws iam get-instance-profile --instance-profile-name $INSTANCE_PROFILE | ./jq.dms -r '.InstanceProfile.Roles[0].RoleName')"
-          if [ -z "${OLD_ROLE}" ] ; then
+          if [ "${OLD_ROLE}" = "null" ] || [ -z "${OLD_ROLE}" ] ; then
             OLD_ROLE=none
           fi
           if [ "${INSTANCE_ROLE}" = "${OLD_ROLE}" ] ; then
