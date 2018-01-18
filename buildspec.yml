@@ -21,27 +21,14 @@ phases:
       - echo "Installed Terraform."
   pre_build:
     commands:
-      - |
-        if [ -z "${NAMED_PROFILE}" ]
-        then
-          echo "No named profile given, using default (terrafirm)..."
-          NAMED_PROFILE=terrafirm
-        else
-          NAMED_PROFILE="${NAMED_PROFILE}"
-        fi
-        export NAMED_PROFILE
-        echo "AWS profile is $NAMED_PROFILE"
+      - echo "Terraform version " ; ./terraform --version
       - |
         if [ -n "${REGION}" ]
         then
           aws configure set region $REGION --profile $NAMED_PROFILE
         fi
-      - echo "AWS Profile setup..."
-      - AWS_PROFILE=$NAMED_PROFILE ; export AWS_PROFILE
-      - echo "Terraform version " ; ./terraform --version
       - TF_VAR_cb_ip="$(curl http://checkip.amazonaws.com)" ; export TF_VAR_cb_ip
       - echo "IP of CodeBuild instance is $TF_VAR_cb_ip"
-      - TF_VAR_instance_profile="${NAMED_PROFILE}" ; export TF_VAR_instance_profile
       - TF_VAR_key_pair_name="${KEY_PAIR_NAME}" ; export TF_VAR_key_pair_name
       - TF_VAR_term_user="${WINRM_USER}" ; export TF_VAR_term_user
       - TF_VAR_term_passwd="$(aws ssm get-parameters --name ${PS_PASSWD_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_term_passwd
@@ -72,12 +59,21 @@ phases:
           echo "Creating a key pair "
           aws ec2 import-key-pair --key-name "${KEY_PAIR_NAME}" --public-key-material "${TF_VAR_public_key}"
         fi
+      - echo "AWS Profile setup..."
       - |
-        if aws ec2 get-instance-profile --instance-profile-name "${NAMED_PROFILE}" ; then
+        if [ -z "${AWS_PROFILE}" ]
+        then
+          echo "No instance profile given, using default (terrafirm)..."
+          AWS_PROFILE=terrafirm ; export AWS_PROFILE
+        fi
+      - TF_VAR_instance_profile="${AWS_PROFILE}" ; export TF_VAR_instance_profile
+      - echo "AWS profile is $AWS_PROFILE"        
+      - |
+        if aws ec2 get-instance-profile --instance-profile-name "${AWS_PROFILE}" ; then
           echo "Profile already exists..."
         else
           echo "Creating a profile "
-          aws ec2 create-instance-profile --instance-profile-name "${NAMED_PROFILE}"
+          aws ec2 create-instance-profile --instance-profile-name "${AWS_PROFILE}"
         fi        
       - echo "Initializing Terraform " ; ./terraform init -input=false
       - echo "Importing key pair " ; ./terraform import aws_key_pair.auth "${KEY_PAIR_NAME}"
