@@ -21,7 +21,9 @@ phases:
       - echo "Installed Terraform."
   pre_build:
     commands:
+      - #-------------------------------------------------------------------------------------------------
       - echo "Terraform version " ; ./terraform --version
+      - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - AWS CLI named profile................................................"
       - echo "(This is distinct from the instance profile that contains a role for creating the instance."
       - echo "This profile is used by CLI.)"
@@ -38,6 +40,7 @@ phases:
       - #Can't be set before first 'aws configure' call or CodeBuild barfs
       - AWS_PROFILE="${NAMED_PROFILE}" ; export AWS_PROFILE
       - echo "AWS CLI named profile is $AWS_PROFILE"  
+      - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - AWS instance profile setup............................................."
       - echo "(This is distinct from the named profile used by CLI."
       - echo "This profile is to contain a role in creating the instance.)"
@@ -54,19 +57,23 @@ phases:
           echo "Role provided (${INSTANCE_ROLE})"
           aws iam add-role-to-instance-profile --role-name "${INSTANCE_ROLE}" --instance-profile-name "${INSTANCE_PROFILE}"
         fi        
+      - #-------------------------------------------------------------------------------------------------
       - TF_VAR_cb_ip="$(curl http://checkip.amazonaws.com)" ; export TF_VAR_cb_ip
       - echo "IP of CodeBuild instance is $TF_VAR_cb_ip"
+      - #-------------------------------------------------------------------------------------------------
       - | #avoid errors with invalid parameter values - only will show up as "true" or "false"
         if [ "${ASSIGN_PUBLIC_IP}" = "true" ] ; then
           TF_VAR_associate_public_ip_address="${ASSIGN_PUBLIC_IP}"
         else
           TF_VAR_associate_public_ip_address="false"
         fi
-        export TF_VAR_associate_public_ip_address
+      - export TF_VAR_associate_public_ip_address
+      - #-------------------------------------------------------------------------------------------------
       - TF_VAR_win_security_group="${WIN_SECURITY_GRP}" ; export TF_VAR_win_security_group
       - TF_VAR_lx_security_group="${LX_SECURITY_GRP}" ; export TF_VAR_lx_security_group
       - TF_VAR_win_instance_type="${WIN_INSTANCE_TYPE}" ; export TF_VAR_win_instance_type
       - TF_VAR_lx_instance_type="${LX_INSTANCE_TYPE}" ; export TF_VAR_lx_instance_type
+      - #-------------------------------------------------------------------------------------------------
       - #"Creative" variable substitution required since windows userdata has chars that won't work with automatic method
       - sed -i -e '/WATCHMAKER_INSTALL_GOES_HERE/{r windows/install_watchmaker.ps1' -e 'd}' windows/userdata.ps1
       - sed -i "s/THIS_IS_NOT_THE_PASSWORD/${TF_VAR_term_passwd}/" windows/userdata.ps1
@@ -75,6 +82,7 @@ phases:
       - sed -i -e '/WATCHMAKER_INSTALL_GOES_HERE/{r linux/install_watchmaker.sh' -e 'd}' linux/userdata.sh
       - sed -i "s,THIS_IS_NOT_THE_REPO,${GIT_REPO}," linux/userdata.sh
       - sed -i "s/THIS_IS_NOT_THE_BRANCH/${GIT_BRANCH}/" linux/userdata.sh
+      - #-------------------------------------------------------------------------------------------------
       - echo "AWS key setup..........................................................."      
       - TF_VAR_key_pair_name="${KEY_PAIR_NAME}" ; export TF_VAR_key_pair_name
       - TF_VAR_ssh_user="${SSH_USER}" ; export TF_VAR_ssh_user
@@ -89,7 +97,7 @@ phases:
           echo "Creating a key pair "
           aws ec2 import-key-pair --key-name "${KEY_PAIR_NAME}" --public-key-material "${TF_VAR_public_key}"
         fi
-
+      - #-------------------------------------------------------------------------------------------------
       - echo "Throwing it over the fence to Terraform................................"
       - echo "Initializing Terraform " ; ./terraform init -input=false
       - echo "Importing key pair " ; ./terraform import aws_key_pair.auth "${KEY_PAIR_NAME}"
