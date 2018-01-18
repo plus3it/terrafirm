@@ -10,7 +10,7 @@ resource "aws_key_pair" "auth" {
 
 # Security group to access the instances over WinRM
 resource "aws_security_group" "terrafirm_winrm" {
-  name        = "${var.security_group_win}"
+  name        = "${var.win_security_group}"
   description = "Used in terrafirm"
 
   # SSH access from anywhere
@@ -32,7 +32,7 @@ resource "aws_security_group" "terrafirm_winrm" {
 
 # Security group to access the instances over SSH
 resource "aws_security_group" "terrafirm_ssh" {
-  name        = "${var.security_group_lin}"
+  name        = "${var.lx_security_group}"
   description = "Used in terrafirm"
 
   # SSH access 
