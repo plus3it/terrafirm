@@ -71,7 +71,7 @@ phases:
           if aws iam create-instance-profile --instance-profile-name "${INSTANCE_PROFILE}" ; then
             echo "Created!"
           fi
-          if [ -n "${INSTANCE_ROLE}" ] ; then
+          if [ "${INSTANCE_ROLE}" != "none" ] ; then
             echo "Adding role to profile..."
             if aws iam add-role-to-instance-profile --role-name "${INSTANCE_ROLE}" --instance-profile-name "${INSTANCE_PROFILE}" ; then
               echo "Role added!"
