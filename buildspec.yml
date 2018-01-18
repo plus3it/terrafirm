@@ -5,16 +5,16 @@ env:
   variables:
     TF_ZIP: https://releases.hashicorp.com/terraform/0.11.2/terraform_0.11.2_linux_amd64.zip
     TERRAFIRM_DESC_URL: https://github.com/YakDriver/terrafirm_win
-    #JQ_INSTALL: https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
+    JQ_INSTALL: https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
 
 phases:
   install:
     commands:
       - echo "Installing unzip............"
       - apt -y install unzip
-      - #echo "Installing jq..............."
-      - #curl -L "${JQ_INSTALL}" -o jq.dms && chmod +x jq.dms
-      - #./jq.dms --version
+      - echo "Installing jq..............."
+      - curl -L "${JQ_INSTALL}" -o jq.dms && chmod +x jq.dms
+      - ./jq.dms --version
       - echo "Installing Terraform..."
       - echo `pwd`
       - curl -L "${TF_ZIP}" -o tf.zip && unzip tf.zip
@@ -48,8 +48,14 @@ phases:
       - |
         if aws iam get-instance-profile --instance-profile-name "${INSTANCE_PROFILE}" ; then
           echo "Profile already exists. Deleting instance profile..."
+          OLD_ROLE="$(aws iam get-instance-profile --instance-profile-name $INSTANCE_PROFILE | ./jq.dms -r '.InstanceProfile.Roles[0].RoleName')"
+          if [ -n "${OLD_ROLE}" ] ; then
+            echo "Profile has a role - ${OLD_ROLE}. Removing role..."
+            aws iam remove-role-from-instance-profile --role-name "${OLD_ROLE}" --instance-profile-name "${INSTANCE_PROFILE}"
+          fi
           aws iam delete-instance-profile --instance-profile-name "${INSTANCE_PROFILE}"
         fi
+      - exit 1
       - echo "Creating instance profile..."
       - aws iam create-instance-profile --instance-profile-name "${INSTANCE_PROFILE}"
       - |
