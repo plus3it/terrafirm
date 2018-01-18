@@ -56,7 +56,7 @@ phases:
             echo "No change to instance profile needed."
           else
             echo "Profile has wrong role - ${OLD_ROLE}. Removing role..."
-            if aws iam remove-role-from-instance-profile --role-name "${OLD_ROLE}" --instance-profile-name "${INSTANCE_PROFILE}" ; then
+            if [ "${OLD_ROLE}" = "none" ] || aws iam remove-role-from-instance-profile --role-name "${OLD_ROLE}" --instance-profile-name "${INSTANCE_PROFILE}" ; then
               echo "Role removed!"
             fi
             if [ "${INSTANCE_ROLE}" != "none" ] ; then
