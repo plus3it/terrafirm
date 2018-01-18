@@ -47,25 +47,35 @@ phases:
       - TF_VAR_instance_profile="${INSTANCE_PROFILE}" ; export TF_VAR_instance_profile
       - |
         if aws iam get-instance-profile --instance-profile-name "${INSTANCE_PROFILE}" ; then
-          echo "Profile already exists. Deleting instance profile..."
+          echo "Profile already exists. Checking instance profile..."
           OLD_ROLE="$(aws iam get-instance-profile --instance-profile-name $INSTANCE_PROFILE | ./jq.dms -r '.InstanceProfile.Roles[0].RoleName')"
-          if [ -n "${OLD_ROLE}" ] ; then
-            echo "Profile has a role - ${OLD_ROLE}. Removing role..."
+          if [ -z "${OLD_ROLE}" ] ; then
+            OLD_ROLE=none
+          fi
+          if [ "${INSTANCE_ROLE}" = "${OLD_ROLE}" ] ; then
+            echo "No change to instance profile needed."
+          else
+            echo "Profile has wrong role - ${OLD_ROLE}. Removing role..."
             if aws iam remove-role-from-instance-profile --role-name "${OLD_ROLE}" --instance-profile-name "${INSTANCE_PROFILE}" ; then
               echo "Role removed!"
             fi
+            if [ "${INSTANCE_ROLE}" != "none" ] ; then
+              echo "Adding role to profile..."
+              if aws iam add-role-to-instance-profile --role-name "${INSTANCE_ROLE}" --instance-profile-name "${INSTANCE_PROFILE}" ; then
+                echo "Role added!"
+              fi
+            fi
           fi
-          if aws iam delete-instance-profile --instance-profile-name "${INSTANCE_PROFILE}" ; then
-            echo "Instance profile deleted!"
+        else
+          aws iam create-instance-profile --instance-profile-name "${INSTANCE_PROFILE}"    
+          if [ -n "${INSTANCE_ROLE}" ] ; then
+            echo "Adding role to profile..."
+            if aws iam add-role-to-instance-profile --role-name "${INSTANCE_ROLE}" --instance-profile-name "${INSTANCE_PROFILE}" ; then
+              echo "Role added!"
+            fi
           fi
         fi
-      - echo "Creating instance profile..."
-      - aws iam create-instance-profile --instance-profile-name "${INSTANCE_PROFILE}"
-      - |
-        if [ "${INSTANCE_ROLE}" != "none" ] ; then
-          echo "Role provided (${INSTANCE_ROLE})"
-          aws iam add-role-to-instance-profile --role-name "${INSTANCE_ROLE}" --instance-profile-name "${INSTANCE_PROFILE}"
-        fi        
+      - exit 1
       - #-------------------------------------------------------------------------------------------------
       - TF_VAR_cb_ip="$(curl http://checkip.amazonaws.com)" ; export TF_VAR_cb_ip
       - echo "IP of CodeBuild instance is $TF_VAR_cb_ip"
