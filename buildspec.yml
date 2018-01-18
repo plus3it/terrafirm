@@ -21,7 +21,7 @@ phases:
       - echo "Installed Terraform."
   pre_build:
     commands:
-      - aws configure set region us-east-1 --profile terrafirm
+      - aws configure set region "us-east-1" --profile "terrafirm"
       - exit 1
       - |
         if aws ec2 get-instance-profile --instance-profile-name "${AWS_PROFILE}" ; then
