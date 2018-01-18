@@ -50,7 +50,7 @@ phases:
           aws iam create-instance-profile --instance-profile-name "${INSTANCE_PROFILE}"
         fi
       - |
-        if [ -n "${INSTANCE_ROLE}" ] ; then
+        if [ "${INSTANCE_ROLE}" != "none" ] ; then
           echo "Role provided (${INSTANCE_ROLE})"
           aws iam add-role-to-instance-profile --role-name "${INSTANCE_ROLE}" --instance-profile-name "${INSTANCE_PROFILE}"
         fi        
