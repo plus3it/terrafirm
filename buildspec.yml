@@ -78,7 +78,6 @@ phases:
             fi
           fi
         fi
-      - exit 1
       - #-------------------------------------------------------------------------------------------------
       - TF_VAR_cb_ip="$(curl http://checkip.amazonaws.com)" ; export TF_VAR_cb_ip
       - echo "IP of CodeBuild instance is $TF_VAR_cb_ip"
