@@ -40,14 +40,6 @@ resource "aws_security_group" "terrafirm_ssh" {
     protocol    = "tcp"
     cidr_blocks = ["${var.cb_ip}/32"]
   }
-  
-  # Special SSH access 
-  ingress {
-    from_port   = 122
-    to_port     = 122
-    protocol    = "tcp"
-    cidr_blocks = ["${var.cb_ip}/32"]
-  }  
 
   # outbound internet access
   egress {
