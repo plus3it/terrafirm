@@ -211,15 +211,15 @@ data "null_data_source" "spel_instance_amis" {
 
 # bread & butter - this tells TF the provision/create the actual instance
 resource "aws_instance" "spels" {
-  count = "0"
-  #count = "${length(data.null_data_source.spel_instance_amis.inputs)}"
-  ami = "${lookup(data.null_data_source.spel_instance_amis.inputs, count.index)}"
-  instance_type = "${var.lx_instance_type}"
-  iam_instance_profile = "${var.instance_profile}"
-  key_name = "${aws_key_pair.auth.id}"
-  vpc_security_group_ids = ["${aws_security_group.terrafirm_ssh.id}"]
-  user_data = "${file("linux/userdata.sh")}"
-  associate_public_ip_address = "${var.associate_public_ip_address}"
+  count                        = "0"
+  #count                       = "${length(data.null_data_source.spel_instance_amis.inputs)}"
+  ami                          = "${lookup(data.null_data_source.spel_instance_amis.inputs, count.index)}"
+  instance_type                = "${var.lx_instance_type}"
+  iam_instance_profile         = "${var.instance_profile}"
+  key_name                     = "${aws_key_pair.auth.id}"
+  vpc_security_group_ids       = ["${aws_security_group.terrafirm_ssh.id}"]
+  user_data                    = "${file("linux/userdata.sh")}"
+  associate_public_ip_address  = "${var.associate_public_ip_address}"
   
   timeouts {
     create = "40m"
@@ -228,13 +228,13 @@ resource "aws_instance" "spels" {
   
   connection {
     #ssh connection to tier-2 instance
-    user     = "${var.ssh_user}"
+    user        = "${var.ssh_user}"
     private_key = "${var.private_key}"
-    timeout   = "30m"
+    timeout     = "30m"
   }
   
   provisioner "file" {
-    source = "linux/watchmaker_test.sh"
+    source      = "linux/watchmaker_test.sh"
     destination = "~/watchmaker_test.sh"
   }
   
@@ -258,15 +258,15 @@ data "null_data_source" "windows_instance_amis" {
 
 # bread & butter - this tells TF the provision/create the actual instance
 resource "aws_instance" "windows" {
-  #count = "1"
-  count = "${length(data.null_data_source.windows_instance_amis.inputs)}"
-  ami = "${lookup(data.null_data_source.windows_instance_amis.inputs, count.index)}"
-  instance_type = "${var.win_instance_type}"
-  key_name = "${aws_key_pair.auth.id}"
-  iam_instance_profile = "${var.instance_profile}"
-  vpc_security_group_ids = ["${aws_security_group.terrafirm_winrm.id}"]
-  user_data = "${file("windows/userdata.ps1")}"
-  associate_public_ip_address = "${var.associate_public_ip_address}"  
+  #count                        = "1"
+  count                        = "${length(data.null_data_source.windows_instance_amis.inputs)}"
+  ami                          = "${lookup(data.null_data_source.windows_instance_amis.inputs, count.index)}"
+  instance_type                = "${var.win_instance_type}"
+  key_name                     = "${aws_key_pair.auth.id}"
+  iam_instance_profile         = "${var.instance_profile}"
+  vpc_security_group_ids       = ["${aws_security_group.terrafirm_winrm.id}"]
+  user_data                    = "${file("windows/userdata.ps1")}"
+  associate_public_ip_address  = "${var.associate_public_ip_address}"  
   
   timeouts {
     create = "120m"
@@ -281,7 +281,7 @@ resource "aws_instance" "windows" {
   }
   
   provisioner "file" {
-    source = "windows/watchmaker_test.ps1"
+    source      = "windows/watchmaker_test.ps1"
     destination = "C:\\scripts\\watchmaker_test.ps1"
   }
   
