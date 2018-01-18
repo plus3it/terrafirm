@@ -43,11 +43,11 @@ phases:
       - echo "This profile is to contain a role in creating the instance.)"
       - TF_VAR_instance_profile="${INSTANCE_PROFILE}" ; export TF_VAR_instance_profile
       - |
-        if aws ec2 get-instance-profile --instance-profile-name "${INSTANCE_PROFILE}" ; then
+        if aws iam get-instance-profile --instance-profile-name "${INSTANCE_PROFILE}" ; then
           echo "Profile already exists..."
         else
           echo "Creating a profile "
-          aws ec2 create-instance-profile --instance-profile-name "${INSTANCE_PROFILE}"
+          aws iam create-instance-profile --instance-profile-name "${INSTANCE_PROFILE}"
         fi
       - |
         if [ -n "${INSTANCE_ROLE}" ] ; then
