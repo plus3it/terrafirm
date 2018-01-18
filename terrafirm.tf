@@ -1,6 +1,4 @@
-provider "aws" {
-  profile = "customprofile"
-}
+provider "aws" {}
 
 #used for importing the key pair created using aws cli
 resource "aws_key_pair" "auth" {
