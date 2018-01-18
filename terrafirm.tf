@@ -257,8 +257,8 @@ data "null_data_source" "windows_instance_amis" {
 
 # bread & butter - this tells TF the provision/create the actual instance
 resource "aws_instance" "windows" {
-  count = "1"
-  #count = "${length(data.null_data_source.windows_instance_amis.inputs)}"
+  #count = "1"
+  count = "${length(data.null_data_source.windows_instance_amis.inputs)}"
   ami = "${lookup(data.null_data_source.windows_instance_amis.inputs, count.index)}"
   instance_type = "t2.medium"
   key_name = "${aws_key_pair.auth.id}"
