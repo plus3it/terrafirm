@@ -44,11 +44,11 @@ phases:
       - TF_VAR_instance_profile="${INSTANCE_PROFILE}" ; export TF_VAR_instance_profile
       - |
         if aws iam get-instance-profile --instance-profile-name "${INSTANCE_PROFILE}" ; then
-          echo "Profile already exists..."
-        else
-          echo "Creating a profile "
-          aws iam create-instance-profile --instance-profile-name "${INSTANCE_PROFILE}"
+          echo "Profile already exists. Deleting instance profile..."
+          aws iam delete-instance-profile --instance-profile-name "${INSTANCE_PROFILE}"
         fi
+      - echo "Creating instance profile..."
+      - aws iam create-instance-profile --instance-profile-name "${INSTANCE_PROFILE}"
       - |
         if [ "${INSTANCE_ROLE}" != "none" ] ; then
           echo "Role provided (${INSTANCE_ROLE})"
