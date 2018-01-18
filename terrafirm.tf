@@ -215,6 +215,7 @@ resource "aws_instance" "spels" {
   #count = "${length(data.null_data_source.spel_instance_amis.inputs)}"
   ami = "${lookup(data.null_data_source.spel_instance_amis.inputs, count.index)}"
   instance_type = "t2.micro"
+  iam_instance_profile = "${var.instance_profile}"
   key_name = "${aws_key_pair.auth.id}"
   vpc_security_group_ids = ["${aws_security_group.terrafirm_ssh.id}"]
   user_data = "${file("linux/userdata.sh")}"
@@ -262,6 +263,7 @@ resource "aws_instance" "windows" {
   ami = "${lookup(data.null_data_source.windows_instance_amis.inputs, count.index)}"
   instance_type = "t2.medium"
   key_name = "${aws_key_pair.auth.id}"
+  iam_instance_profile = "${var.instance_profile}"
   vpc_security_group_ids = ["${aws_security_group.terrafirm_winrm.id}"]
   user_data = "${file("windows/userdata.ps1")}"
   associate_public_ip_address = "${var.associate_public_ip_address}"  
