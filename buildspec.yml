@@ -23,8 +23,7 @@ phases:
     commands:
       - echo "Terraform version " ; ./terraform --version
       - |
-        if [ -n "${REGION}" ]
-        then
+        if [ -n "${REGION}" ] ; then
           aws configure set region $REGION --profile $NAMED_PROFILE
         fi
       - TF_VAR_cb_ip="$(curl http://checkip.amazonaws.com)" ; export TF_VAR_cb_ip
@@ -62,8 +61,7 @@ phases:
         fi
       - echo "AWS instance profile setup............................................."
       - |
-        if [ -z "${AWS_PROFILE}" ]
-        then
+        if [ -z "${AWS_PROFILE}" ] ; then
           echo "No instance profile given, using default (terrafirm)..."
           AWS_PROFILE=terrafirm ; export AWS_PROFILE
         fi
@@ -75,7 +73,12 @@ phases:
         else
           echo "Creating a profile "
           aws ec2 create-instance-profile --instance-profile-name "${AWS_PROFILE}"
+        fi
+        if [ -n "${INSTANCE_ROLE}" ] ; then
+          echo "Role provided (${INSTANCE_ROLE})"
+          aws iam add-role-to-instance-profile --role-name "${INSTANCE_ROLE}" --instance-profile-name "${AWS_PROFILE}"
         fi        
+      - echo "Throwing it over the fence to Terraform................................"
       - echo "Initializing Terraform " ; ./terraform init -input=false
       - echo "Importing key pair " ; ./terraform import aws_key_pair.auth "${KEY_PAIR_NAME}"
       - echo "Create provisiong plan " ; ./terraform plan -out=tfplan -input=false
