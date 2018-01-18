@@ -22,6 +22,31 @@ phases:
   pre_build:
     commands:
       - echo "Terraform version " ; ./terraform --version
+      - echo "AWS instance profile setup............................................."
+      - |
+        if [ -z "${AWS_PROFILE}" ] ; then
+          echo "No instance profile given, using default (terrafirm)..."
+          AWS_PROFILE=terrafirm ; export AWS_PROFILE
+        fi
+      - echo "AWS profile is $AWS_PROFILE"        
+      - TF_VAR_instance_profile="${AWS_PROFILE}" ; export TF_VAR_instance_profile
+      - |
+        if [ -n "${REGION}" ] ; then
+          aws configure set region "${REGION}" --profile "${AWS_PROFILE}"
+        fi
+      - |
+        if aws ec2 get-instance-profile --instance-profile-name "${AWS_PROFILE}" ; then
+          echo "Profile already exists..."
+        else
+          echo "Creating a profile "
+          aws ec2 create-instance-profile --instance-profile-name "${AWS_PROFILE}"
+        fi
+      - |
+        if [ -n "${INSTANCE_ROLE}" ] ; then
+          echo "Role provided (${INSTANCE_ROLE})"
+          aws iam add-role-to-instance-profile --role-name "${INSTANCE_ROLE}" --instance-profile-name "${AWS_PROFILE}"
+        fi        
+      - sleep 180      
       - TF_VAR_cb_ip="$(curl http://checkip.amazonaws.com)" ; export TF_VAR_cb_ip
       - echo "IP of CodeBuild instance is $TF_VAR_cb_ip"
       - | #avoid errors with invalid parameter values - only will show up as "true" or "false"
@@ -55,30 +80,7 @@ phases:
           echo "Creating a key pair "
           aws ec2 import-key-pair --key-name "${KEY_PAIR_NAME}" --public-key-material "${TF_VAR_public_key}"
         fi
-      - echo "AWS instance profile setup............................................."
-      - |
-        if [ -z "${AWS_PROFILE}" ] ; then
-          echo "No instance profile given, using default (terrafirm)..."
-          AWS_PROFILE=terrafirm ; export AWS_PROFILE
-        fi
-      - TF_VAR_instance_profile="${AWS_PROFILE}" ; export TF_VAR_instance_profile
-      - echo "AWS profile is $AWS_PROFILE"        
-      - |
-        if aws ec2 get-instance-profile --instance-profile-name "${AWS_PROFILE}" ; then
-          echo "Profile already exists..."
-        else
-          echo "Creating a profile "
-          aws ec2 create-instance-profile --instance-profile-name "${AWS_PROFILE}"
-        fi
-        if [ -n "${INSTANCE_ROLE}" ] ; then
-          echo "Role provided (${INSTANCE_ROLE})"
-          aws iam add-role-to-instance-profile --role-name "${INSTANCE_ROLE}" --instance-profile-name "${AWS_PROFILE}"
-        fi        
-      - |
-        if [ -n "${REGION}" ] ; then
-          aws configure set region "${REGION}" --profile "${AWS_PROFILE}"
-        fi
-      - sleep 180
+
       - echo "Throwing it over the fence to Terraform................................"
       - echo "Initializing Terraform " ; ./terraform init -input=false
       - echo "Importing key pair " ; ./terraform import aws_key_pair.auth "${KEY_PAIR_NAME}"
