@@ -21,6 +21,24 @@ phases:
       - echo "Installed Terraform."
   pre_build:
     commands:
+      - |
+        if [ -z "${NAMED_PROFILE}" ] ; then
+          echo "No named profile given, using default (terrafirm)..."
+          NAMED_PROFILE=terrafirm
+        else
+          NAMED_PROFILE="${NAMED_PROFILE}"
+        fi
+        export NAMED_PROFILE
+        echo "AWS profile is $NAMED_PROFILE"
+      - |
+        if [ -n "${REGION}" ] ; then
+          aws configure set region $REGION --profile $NAMED_PROFILE
+        fi
+      - echo "AWS Profile setup..."
+      - echo $NAMED_PROFILE
+      - AWS_PROFILE=$NAMED_PROFILE ; export AWS_PROFILE
+      - echo "Terraform version " ; ./terraform --version   
+      - exit 1
       - echo "Terraform version " ; ./terraform --version
       - echo "AWS instance profile setup............................................."
       - |
