@@ -51,11 +51,14 @@ phases:
           OLD_ROLE="$(aws iam get-instance-profile --instance-profile-name $INSTANCE_PROFILE | ./jq.dms -r '.InstanceProfile.Roles[0].RoleName')"
           if [ -n "${OLD_ROLE}" ] ; then
             echo "Profile has a role - ${OLD_ROLE}. Removing role..."
-            aws iam remove-role-from-instance-profile --role-name "${OLD_ROLE}" --instance-profile-name "${INSTANCE_PROFILE}"
+            if aws iam remove-role-from-instance-profile --role-name "${OLD_ROLE}" --instance-profile-name "${INSTANCE_PROFILE}" ; then
+              echo "Role removed!"
+            fi
           fi
-          aws iam delete-instance-profile --instance-profile-name "${INSTANCE_PROFILE}"
+          if aws iam delete-instance-profile --instance-profile-name "${INSTANCE_PROFILE}" ; then
+            echo "Instance profile deleted!"
+          fi
         fi
-      - exit 1
       - echo "Creating instance profile..."
       - aws iam create-instance-profile --instance-profile-name "${INSTANCE_PROFILE}"
       - |
