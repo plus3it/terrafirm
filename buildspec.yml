@@ -22,9 +22,9 @@ phases:
   pre_build:
     commands:
       - echo "Terraform version " ; ./terraform --version
-      - echo "SETUP - AWS CLI *named* profile................................................"
-      - echo "This is distinct from the instance profile that contains a role for creating the instance"
-      - echo "This profile is used by CLI"
+      - echo "SETUP - AWS CLI named profile................................................"
+      - echo "(This is distinct from the instance profile that contains a role for creating the instance."
+      - echo "This profile is used by CLI.)"
       - |
         if [ -z "${NAMED_PROFILE}" ] ; then
           echo "No CLI named profile given, using default (terrafirm)..."
@@ -35,27 +35,27 @@ phases:
           aws configure set region "${REGION}" --profile "${NAMED_PROFILE}"
         fi
       - #Setting this environment variable gives TF all the profile info (e.g., region)
+      - #Can't be set before first 'aws configure' call or CodeBuild barfs
       - AWS_PROFILE="${NAMED_PROFILE}" ; export AWS_PROFILE
+      - echo "AWS CLI named profile is $AWS_PROFILE"  
       - echo "SETUP - AWS instance profile setup............................................."
-      - echo "This is distinct from the named profile used by CLI"
-      - echo "This profile is to contain a role in creating the instance"
-
-      - echo "AWS profile is $AWS_PROFILE"        
-      - TF_VAR_instance_profile="${AWS_PROFILE}" ; export TF_VAR_instance_profile
-
+      - echo "(This is distinct from the named profile used by CLI."
+      - echo "This profile is to contain a role in creating the instance.)"
+      - TF_VAR_instance_profile="${INSTANCE_PROFILE}" ; export TF_VAR_instance_profile
       - |
-        if aws ec2 get-instance-profile --instance-profile-name "${AWS_PROFILE}" ; then
+        if aws ec2 get-instance-profile --instance-profile-name "${INSTANCE_PROFILE}" ; then
           echo "Profile already exists..."
         else
           echo "Creating a profile "
-          aws ec2 create-instance-profile --instance-profile-name "${AWS_PROFILE}"
+          aws ec2 create-instance-profile --instance-profile-name "${INSTANCE_PROFILE}"
         fi
       - |
         if [ -n "${INSTANCE_ROLE}" ] ; then
           echo "Role provided (${INSTANCE_ROLE})"
-          aws iam add-role-to-instance-profile --role-name "${INSTANCE_ROLE}" --instance-profile-name "${AWS_PROFILE}"
+          aws iam add-role-to-instance-profile --role-name "${INSTANCE_ROLE}" --instance-profile-name "${INSTANCE_PROFILE}"
         fi        
-      - sleep 180      
+      - sleep 180 
+      - exit 1
       - TF_VAR_cb_ip="$(curl http://checkip.amazonaws.com)" ; export TF_VAR_cb_ip
       - echo "IP of CodeBuild instance is $TF_VAR_cb_ip"
       - | #avoid errors with invalid parameter values - only will show up as "true" or "false"
