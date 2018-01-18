@@ -54,8 +54,6 @@ phases:
           echo "Role provided (${INSTANCE_ROLE})"
           aws iam add-role-to-instance-profile --role-name "${INSTANCE_ROLE}" --instance-profile-name "${INSTANCE_PROFILE}"
         fi        
-      - sleep 180 
-      - exit 1
       - TF_VAR_cb_ip="$(curl http://checkip.amazonaws.com)" ; export TF_VAR_cb_ip
       - echo "IP of CodeBuild instance is $TF_VAR_cb_ip"
       - | #avoid errors with invalid parameter values - only will show up as "true" or "false"
