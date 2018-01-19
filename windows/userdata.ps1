@@ -13,11 +13,6 @@ $admin.psbase.CommitChanges()
 
 #wm should go here
 
-# Set Administrator password
-$admin = [adsi]("WinNT://./xadministrator, user")
-$admin.psbase.invoke("SetPassword", "THIS_IS_NOT_THE_PASSWORD")
-$admin.psbase.CommitChanges()
-
 # open firewall for winrm
 netsh advfirewall firewall add rule name="WinRM in" protocol=TCP dir=in profile=any localport=5985 remoteip=any localip=any action=allow
 
@@ -34,6 +29,11 @@ C:\salt\salt-call --local -c C:\Watchmaker\salt\conf lgpo.set_reg_value `
 
 # this will become the watchmaker portion of install
 WATCHMAKER_INSTALL_GOES_HERE
+
+# Set Administrator password - should always go after wm install because username not yet changed
+$admin = [adsi]("WinNT://./xadministrator, user")
+$admin.psbase.invoke("SetPassword", "THIS_IS_NOT_THE_PASSWORD")
+$admin.psbase.CommitChanges()
 
 Stop-Transcript
 
