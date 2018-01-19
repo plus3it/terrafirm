@@ -99,19 +99,6 @@ phases:
       - TF_VAR_win_instance_type="${WIN_INSTANCE_TYPE}" ; export TF_VAR_win_instance_type
       - TF_VAR_lx_instance_type="${LX_INSTANCE_TYPE}" ; export TF_VAR_lx_instance_type
       - #-------------------------------------------------------------------------------------------------
-      - #"Creative" variable substitution required since windows userdata has chars that won't work with automatic method
-      - sed -i -e '/WATCHMAKER_INSTALL_GOES_HERE/{r windows/install_watchmaker.ps1' -e 'd}' windows/userdata.ps1
-      - sed -i "s/THIS_IS_NOT_THE_PASSWORD/${TF_VAR_term_passwd}/" windows/userdata.ps1
-      - sed -i "s,THIS_IS_NOT_THE_REPO,${GIT_REPO}," windows/userdata.ps1
-      - sed -i "s/THIS_IS_NOT_THE_BRANCH/${GIT_BRANCH}/" windows/userdata.ps1
-      - sed -i "s/WINRM_USER_GOES_HERE/${WINRM_USER}/" windows/userdata.ps1
-      - sed -i -e '/WATCHMAKER_INSTALL_GOES_HERE/{r linux/install_watchmaker.sh' -e 'd}' linux/userdata.sh
-      - sed -i "s,THIS_IS_NOT_THE_REPO,${GIT_REPO}," linux/userdata.sh
-      - sed -i "s/THIS_IS_NOT_THE_BRANCH/${GIT_BRANCH}/" linux/userdata.sh
-      - env
-      - cat windows/userdata.ps1
-      - exit 1
-      - #-------------------------------------------------------------------------------------------------
       - echo "AWS key setup..........................................................."      
       - TF_VAR_key_pair_name="${KEY_PAIR_NAME}" ; export TF_VAR_key_pair_name
       - TF_VAR_ssh_user="${SSH_USER}" ; export TF_VAR_ssh_user
@@ -126,6 +113,19 @@ phases:
           echo "Creating a key pair "
           aws ec2 import-key-pair --key-name "${KEY_PAIR_NAME}" --public-key-material "${TF_VAR_public_key}"
         fi
+      - #-------------------------------------------------------------------------------------------------
+      - #"Creative" variable substitution required since windows userdata has chars that won't work with automatic method
+      - sed -i -e '/WATCHMAKER_INSTALL_GOES_HERE/{r windows/install_watchmaker.ps1' -e 'd}' windows/userdata.ps1
+      - sed -i "s/THIS_IS_NOT_THE_PASSWORD/${TF_VAR_term_passwd}/" windows/userdata.ps1
+      - sed -i "s,THIS_IS_NOT_THE_REPO,${GIT_REPO}," windows/userdata.ps1
+      - sed -i "s/THIS_IS_NOT_THE_BRANCH/${GIT_BRANCH}/" windows/userdata.ps1
+      - sed -i "s/WINRM_USER_GOES_HERE/${WINRM_USER}/" windows/userdata.ps1
+      - sed -i -e '/WATCHMAKER_INSTALL_GOES_HERE/{r linux/install_watchmaker.sh' -e 'd}' linux/userdata.sh
+      - sed -i "s,THIS_IS_NOT_THE_REPO,${GIT_REPO}," linux/userdata.sh
+      - sed -i "s/THIS_IS_NOT_THE_BRANCH/${GIT_BRANCH}/" linux/userdata.sh
+      - env
+      - cat windows/userdata.ps1
+      - exit 1
       - #-------------------------------------------------------------------------------------------------
       - echo "Throwing it over the fence to Terraform................................"
       - echo "Initializing Terraform " ; ./terraform init -input=false
