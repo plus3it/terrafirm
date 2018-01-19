@@ -12,6 +12,10 @@ variable "instance_profile" {}
 variable "lx_instance_type" {}
 variable "win_instance_type" {}
 
+output "iam_thing" {
+  value = ["${aws_instance.spels.*.iam_instance_profile}"]
+}
+
 output "amicentos6" {
   value = "${data.aws_ami.centos6.id}"
 }
