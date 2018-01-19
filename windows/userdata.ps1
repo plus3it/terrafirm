@@ -6,8 +6,7 @@ Start-Transcript -path C:\Temp\watchmaker_userdata_install.log -append
 # close the firewall
 netsh advfirewall firewall add rule name="WinRM in" protocol=TCP dir=in profile=any localport=5985 remoteip=any localip=any action=deny
 
-# this will become the watchmaker portion of install
-WATCHMAKER_INSTALL_GOES_HERE
+#wm should go here
 
 # Set Administrator password
 $admin = [adsi]("WinNT://./xadministrator, user")
@@ -27,6 +26,9 @@ C:\salt\salt-call --local -c C:\Watchmaker\salt\conf lgpo.set_reg_value `
     key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowUnencryptedTraffic' `
     value='1' `
     vtype='REG_DWORD'
+
+# this will become the watchmaker portion of install
+WATCHMAKER_INSTALL_GOES_HERE
 
 Stop-Transcript
 
