@@ -78,6 +78,10 @@ phases:
             fi
           fi
         fi
+      - |
+        if [ "${INSTANCE_ROLE}" = "none" ] ; then
+          TF_VAR_instance_profile="" ; export TF_VAR_instance_profile
+        fi
       - #-------------------------------------------------------------------------------------------------
       - TF_VAR_cb_ip="$(curl http://checkip.amazonaws.com)" ; export TF_VAR_cb_ip
       - echo "IP of CodeBuild instance is $TF_VAR_cb_ip"
