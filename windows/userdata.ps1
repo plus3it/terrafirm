@@ -31,7 +31,7 @@ C:\salt\salt-call --local -c C:\Watchmaker\salt\conf lgpo.set_reg_value `
 WATCHMAKER_INSTALL_GOES_HERE
 
 # Set Administrator password - should always go after wm install because username not yet changed
-$admin = [adsi]("WinNT://./xadministrator, user")
+$admin = [adsi]("WinNT://./WINRM_USER_GOES_HERE, user")
 $admin.psbase.invoke("SetPassword", "THIS_IS_NOT_THE_PASSWORD")
 $admin.psbase.CommitChanges()
 
