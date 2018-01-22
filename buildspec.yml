@@ -10,23 +10,24 @@ env:
     LX_SECURITY_GRP:    "terrafirm_ssh_sg"
     KEY_PAIR_NAME:      "svc_terrafirm2"
     NAMED_PROFILE:      "terrafirm"
-    # Below here are variables that can (and likely are) overwritten from the AWS CodeBuild project    
-    REGION:             "us-east-1"
-    WINRM_USER:         "Administrator"
-    PS_PASSWD_KEY:      "/path/to/parameter/store" #will fail without being defined elsewhere
-    PS_PRIVATE_KEY:     "/path/to/parameter/store" #will fail without being defined elsewhere
-    PS_PUBLIC_KEY:      "/path/to/parameter/store" #will fail without being defined elsewhere
-    SSH_USER:           "root"
-    ASSIGN_PUBLIC_IP:   "false"
-    GIT_REPO:           "https://github.com/plus3it/watchmaker.git"
-    GIT_BRANCH:         "master"
-    DESTROY_AFTER_TEST: "true"
-    INSTANCE_PROFILE:   "none" #optional in AWS CodeBuild project - leave this here
-    LX_INSTANCE_TYPE:   "t2.micro"
-    WIN_INSTANCE_TYPE:  "t2.medium"
-    LX_WM_ARGS:         "-n --log-level debug --log-dir=/var/log/watchmaker"
-    WIN_WM_ARGS:        "-n --log-level debug --log-dir=C:\\Watchmaker\\Logs"
-    SUBNET_ID:          "none" #optional in AWS CodeBuild project - leave this here
+    # Below here are variables that can (and likely are) overwritten from the AWS CodeBuild project
+    # Values in CodeBuild take precedence so LEAVE ALL OF THESE HERE even if defining there
+    REGION:             "us-east-1"                                            #optional in CodeBuild
+    WINRM_USER:         "Administrator"                                        #optional in CodeBuild
+    PS_PASSWD_KEY:      "/path/to/parameter/store"                             #REQUIRED in CodeBuild
+    PS_PRIVATE_KEY:     "/path/to/parameter/store"                             #REQUIRED in CodeBuild
+    PS_PUBLIC_KEY:      "/path/to/parameter/store"                             #REQUIRED in CodeBuild
+    SSH_USER:           "root"                                                 #optional in CodeBuild
+    ASSIGN_PUBLIC_IP:   "false"                                                #optional in CodeBuild
+    GIT_REPO:           "https://github.com/plus3it/watchmaker.git"            #optional in CodeBuild
+    GIT_BRANCH:         "master"                                               #optional in CodeBuild
+    DESTROY_AFTER_TEST: "true"                                                 #optional in CodeBuild
+    INSTANCE_PROFILE:   "none"                                                 #optional in CodeBuild
+    LX_INSTANCE_TYPE:   "t2.micro"                                             #optional in CodeBuild
+    WIN_INSTANCE_TYPE:  "t2.medium"                                            #optional in CodeBuild
+    LX_WM_ARGS:         "-n --log-level debug --log-dir=/var/log/watchmaker"   #optional in CodeBuild
+    WIN_WM_ARGS:        "-n --log-level debug --log-dir=C:\\Watchmaker\\Logs"  #optional in CodeBuild
+    SUBNET_ID:          "none"                                                 #optional in CodeBuild
 
 phases:
   install:
