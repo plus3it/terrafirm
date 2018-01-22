@@ -27,4 +27,4 @@ cd watchmaker
 pip install --index-url "$PypiUrl" --editable .
 
 # Run watchmaker
-watchmaker -n --log-level debug --log-dir=C:\Watchmaker\Logs
+watchmaker WIN_COMMAND_LINE_ARGUMENTS_GO_HERE
