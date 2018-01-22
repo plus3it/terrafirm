@@ -10,6 +10,7 @@ resource "aws_key_pair" "auth" {
 resource "aws_security_group" "terrafirm_winrm" {
   name        = "${var.win_security_group}"
   description = "Used in terrafirm"
+  vpc_id      = "${var.vpc_id}"
 
   # SSH access from anywhere
   ingress {
@@ -32,7 +33,8 @@ resource "aws_security_group" "terrafirm_winrm" {
 resource "aws_security_group" "terrafirm_ssh" {
   name        = "${var.lx_security_group}"
   description = "Used in terrafirm"
-
+  vpc_id      = "${var.vpc_id}"
+  
   # SSH access 
   ingress {
     from_port   = 22
