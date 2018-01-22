@@ -14,8 +14,8 @@ variable "lx_instance_type" {}
 variable "win_instance_type" {}
 variable "subnet_id" {}
 variable "vpc_id" {}
-variable "build_win" {}
-variable "build_lx" {}
+variable "lx_all_one_none" {}
+variable "win_all_one_none" {}
 
 output "amicentos6" {
   value = "${data.aws_ami.centos6.id}"
