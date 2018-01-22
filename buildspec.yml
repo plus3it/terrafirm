@@ -48,19 +48,21 @@ phases:
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - AWS CLI named profile................................................"
       - echo "(CLI named profile environment variables take precedence over all)"
-      - |
-        if [ -z "${NAMED_PROFILE}" ] ; then
-          echo "No CLI named profile given, using default (terrafirm)..."
-          NAMED_PROFILE=terrafirm ; export NAMED_PROFILE
-        fi
+      - #|
+        #if [ -z "${NAMED_PROFILE}" ] ; then
+        #  echo "No CLI named profile given, using default (terrafirm)..."
+        #  NAMED_PROFILE=terrafirm ; export NAMED_PROFILE
+        #fi
       - |
         if [ -n "${REGION}" ] ; then
-          aws configure set region "${REGION}" --profile "${NAMED_PROFILE}"
+          #aws configure set region "${REGION}" --profile "${NAMED_PROFILE}"
+          aws configure set region "${REGION}"
+          TF_VAR_region="${REGION}" ; export TF_VAR_region
         fi
       - # Setting this environment variable gives TF all the profile info (e.g., region)
       - # "AWS_PROFILE" can't be set before first 'aws configure' call or AWS/CodeBuild barfs
-      - AWS_PROFILE="${NAMED_PROFILE}" ; export AWS_PROFILE
-      - echo "AWS CLI named profile is $AWS_PROFILE"  
+      - #AWS_PROFILE="${NAMED_PROFILE}" ; export AWS_PROFILE
+      - #echo "AWS CLI named profile is $AWS_PROFILE"  
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - AWS instance profile setup............................................."
       - echo "(This is distinct from the named profile used by CLI."
