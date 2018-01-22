@@ -21,4 +21,4 @@ cd watchmaker
 pip install --index-url "$PYPI_URL" --editable .
 
 # Run watchmaker
-watchmaker -n --log-level debug --log-dir=/var/log/watchmaker
+watchmaker LX_COMMAND_LINE_ARGUMENTS_GO_HERE
