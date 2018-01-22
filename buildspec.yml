@@ -57,6 +57,7 @@ phases:
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - AWS subnet............................................................."
       - # TF appears to just use default setting if subnet id is empty string
+      - TF_VAR_subnet_id="${SUBNET_ID}"
       - |
         if [ "${SUBNET_ID}" = "none" ] ; then
           TF_VAR_subnet_id=""
