@@ -55,8 +55,8 @@ phases:
         fi   
       - |
         case "${BUILD_WIN}" in
-	  none)
-	    TF_VAR_win_all_one_none=3
+          none)
+            TF_VAR_win_all_one_none=3
             ;;
           one)
             TF_VAR_win_all_one_none=2
@@ -67,8 +67,8 @@ phases:
         esac
       - |
         case "${BUILD_LX}" in
-	  none)
-	    TF_VAR_lx_all_one_none=3
+          none)
+            TF_VAR_lx_all_one_none=3
             ;;
           one)
             TF_VAR_lx_all_one_none=2
