@@ -216,7 +216,8 @@ data "null_data_source" "spel_instance_amis" {
 # bread & butter - this tells TF the provision/create the actual instance
 resource "aws_instance" "spels" {
   #count                        = "1"
-  count                        = "${length(data.null_data_source.spel_instance_amis.inputs)-var.lx_instance_negation}"
+  #count                        = "${length(data.null_data_source.spel_instance_amis.inputs)-var.lx_instance_negation}"
+  count                        = "${element(list(length(data.null_data_source.spel_instance_amis.inputs),1,0),var.lx_all_one_none)}"
   ami                          = "${lookup(data.null_data_source.spel_instance_amis.inputs, count.index)}"
   instance_type                = "${var.lx_instance_type}"
   iam_instance_profile         = "${var.instance_profile}"
@@ -264,7 +265,8 @@ data "null_data_source" "windows_instance_amis" {
 # bread & butter - this tells TF the provision/create the actual instance
 resource "aws_instance" "windows" {
   #count                        = "0"
-  count                        = "${length(data.null_data_source.windows_instance_amis.inputs)-var.win_instance_negation}"
+  #count                        = "${length(data.null_data_source.windows_instance_amis.inputs)-var.win_instance_negation}"
+  count                        = "${element(list(length(data.null_data_source.windows_instance_amis.inputs),1,0),var.win_all_one_none)}"
   ami                          = "${lookup(data.null_data_source.windows_instance_amis.inputs, count.index)}"
   instance_type                = "${var.win_instance_type}"
   key_name                     = "${aws_key_pair.auth.id}"
