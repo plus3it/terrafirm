@@ -53,8 +53,8 @@ phases:
           aws configure set region "${REGION}"
           TF_VAR_region="${REGION}" ; export TF_VAR_region
         fi   
-      - TF_VAR_build_win = "${BUILD_WIN}" ; export TF_VAR_build_win
-      - TF_VAR_build_lx = "${BUILD_LX}" ; export TF_VAR_build_lx
+      - TF_VAR_build_win="${BUILD_WIN}" ; export TF_VAR_build_win
+      - TF_VAR_build_lx="${BUILD_LX}" ; export TF_VAR_build_lx
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - AWS instance profile setup............................................."
       - echo "(This is distinct from the named profile used by CLI."
