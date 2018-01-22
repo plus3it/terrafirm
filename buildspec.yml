@@ -47,8 +47,7 @@ phases:
       - echo "Terraform version " ; ./terraform --version
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - AWS CLI named profile................................................"
-      - echo "(This is distinct from the instance profile that contains a role for creating the instance."
-      - echo "This profile is used by CLI.)"
+      - echo "(CLI named profile environment variables take precedence over all)"
       - |
         if [ -z "${NAMED_PROFILE}" ] ; then
           echo "No CLI named profile given, using default (terrafirm)..."
@@ -58,7 +57,7 @@ phases:
         if [ -n "${REGION}" ] ; then
           aws configure set region "${REGION}" --profile "${NAMED_PROFILE}"
         fi
-      - #Setting this environment variable gives TF all the profile info (e.g., region)
+      - # Setting this environment variable gives TF all the profile info (e.g., region)
       - # "AWS_PROFILE" can't be set before first 'aws configure' call or AWS/CodeBuild barfs
       - AWS_PROFILE="${NAMED_PROFILE}" ; export AWS_PROFILE
       - echo "AWS CLI named profile is $AWS_PROFILE"  
