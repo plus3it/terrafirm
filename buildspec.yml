@@ -124,9 +124,11 @@ phases:
       - sed -i "s,THIS_IS_NOT_THE_REPO,${GIT_REPO}," windows/userdata.ps1
       - sed -i "s/THIS_IS_NOT_THE_BRANCH/${GIT_BRANCH}/" windows/userdata.ps1
       - sed -i "s/WINRM_USER_GOES_HERE/${WINRM_USER}/" windows/userdata.ps1
+      - sed -i "s/WIN_COMMAND_LINE_ARGUMENTS_GO_HERE/${WIN_WM_ARGS}/" windows/userdata.ps1
       - sed -i -e '/WATCHMAKER_INSTALL_GOES_HERE/{r linux/install_watchmaker.sh' -e 'd}' linux/userdata.sh
       - sed -i "s,THIS_IS_NOT_THE_REPO,${GIT_REPO}," linux/userdata.sh
       - sed -i "s/THIS_IS_NOT_THE_BRANCH/${GIT_BRANCH}/" linux/userdata.sh
+      - sed -i "s/LX_COMMAND_LINE_ARGUMENTS_GO_HERE/${LX_WM_ARGS}/" linux/userdata.sh
       - #-------------------------------------------------------------------------------------------------  
       - echo "Throwing it over the fence to Terraform......................................"
       - echo "Initializing Terraform " ; ./terraform init -input=false
