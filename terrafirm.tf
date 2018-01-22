@@ -220,7 +220,7 @@ resource "aws_instance" "spels" {
   vpc_security_group_ids       = ["${aws_security_group.terrafirm_ssh.id}"]
   user_data                    = "${file("linux/userdata.sh")}"
   associate_public_ip_address  = "${var.associate_public_ip_address}"
-  subnet_id                    = ""
+  subnet_id                    = "${var.subnet_id}"
   
   timeouts {
     create = "40m"
@@ -268,6 +268,7 @@ resource "aws_instance" "windows" {
   vpc_security_group_ids       = ["${aws_security_group.terrafirm_winrm.id}"]
   user_data                    = "${file("windows/userdata.ps1")}"
   associate_public_ip_address  = "${var.associate_public_ip_address}"  
+  subnet_id                    = "${var.subnet_id}"
   
   timeouts {
     create = "120m"
