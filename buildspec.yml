@@ -24,7 +24,7 @@ env:
     LX_INSTANCE_TYPE: "t2.micro"
     WIN_INSTANCE_TYPE: "t2.medium"
     LX_WM_ARGS: "-n --log-level debug --log-dir=/var/log/watchmaker"
-    WIN_WM_ARGS: "-n --log-level debug --log-dir=C:\Watchmaker\Logs"
+    WIN_WM_ARGS: "-n --log-level debug --log-dir=C:\\Watchmaker\\Logs"
     SUBNET_ID: "none" #optional
 
 phases:
