@@ -9,7 +9,6 @@ env:
     WIN_SECURITY_GRP:   "terrafirm_winrm_sg"
     LX_SECURITY_GRP:    "terrafirm_ssh_sg"
     KEY_PAIR_NAME:      "svc_terrafirm2"
-    NAMED_PROFILE:      "terrafirm"
     # Below here are variables that can (and likely are) overwritten from the AWS CodeBuild project
     # Values in CodeBuild take precedence so LEAVE ALL OF THESE HERE even if defining there
     REGION:             "us-east-1"                                            #optional in CodeBuild
@@ -46,23 +45,12 @@ phases:
       - #-------------------------------------------------------------------------------------------------
       - echo "Terraform version " ; ./terraform --version
       - #-------------------------------------------------------------------------------------------------
-      - echo "SETUP - AWS CLI named profile................................................"
-      - echo "(CLI named profile environment variables take precedence over all)"
-      - #|
-        #if [ -z "${NAMED_PROFILE}" ] ; then
-        #  echo "No CLI named profile given, using default (terrafirm)..."
-        #  NAMED_PROFILE=terrafirm ; export NAMED_PROFILE
-        #fi
+      - echo "SETUP - AWS Basic Config................................................"
       - |
         if [ -n "${REGION}" ] ; then
-          #aws configure set region "${REGION}" --profile "${NAMED_PROFILE}"
           aws configure set region "${REGION}"
           TF_VAR_region="${REGION}" ; export TF_VAR_region
         fi
-      - # Setting this environment variable gives TF all the profile info (e.g., region)
-      - # "AWS_PROFILE" can't be set before first 'aws configure' call or AWS/CodeBuild barfs
-      - #AWS_PROFILE="${NAMED_PROFILE}" ; export AWS_PROFILE
-      - #echo "AWS CLI named profile is $AWS_PROFILE"  
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - AWS instance profile setup............................................."
       - echo "(This is distinct from the named profile used by CLI."
