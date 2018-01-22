@@ -95,7 +95,7 @@ phases:
       - # IP of CodeBuild instance for use by security group, so only open to one machine
       - TF_VAR_cb_ip="$(curl http://checkip.amazonaws.com)" ; export TF_VAR_cb_ip
       - echo "IP of CodeBuild instance is $TF_VAR_cb_ip"      
-      - #-------------------------------------------------------------------------------------------------
+      - # names to be used when creating security groups
       - TF_VAR_win_security_group="${WIN_SECURITY_GRP}" ; export TF_VAR_win_security_group
       - TF_VAR_lx_security_group="${LX_SECURITY_GRP}" ; export TF_VAR_lx_security_group
       - TF_VAR_win_instance_type="${WIN_INSTANCE_TYPE}" ; export TF_VAR_win_instance_type
