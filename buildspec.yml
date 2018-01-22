@@ -9,6 +9,7 @@ env:
     WIN_SECURITY_GRP: "terrafirm_winrm_sg"
     LX_SECURITY_GRP: "terrafirm_ssh_sg"
     KEY_PAIR_NAME: "svc_terrafirm2"
+    NAMED_PROFILE: "terrafirm"
 
 phases:
   install:
