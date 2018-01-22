@@ -60,6 +60,13 @@ phases:
           TF_VAR_win_instance_negation=10
         fi
       - export TF_VAR_win_instance_negation
+      - |
+        if [ "${BUILD_LX}" = "true" ] ; then
+          TF_VAR_lx_instance_negation=0
+        else
+          TF_VAR_lx_instance_negation=10
+        fi
+      - export TF_VAR_lx_instance_negation      
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - AWS instance profile setup............................................."
       - echo "(This is distinct from the named profile used by CLI."
