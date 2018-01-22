@@ -21,12 +21,12 @@ env:
     GIT_REPO:           "https://github.com/plus3it/watchmaker.git"
     GIT_BRANCH:         "master"
     DESTROY_AFTER_TEST: "true"
-    INSTANCE_PROFILE:   "none" #optional
+    INSTANCE_PROFILE:   "none" #optional in AWS CodeBuild project - leave this here
     LX_INSTANCE_TYPE:   "t2.micro"
     WIN_INSTANCE_TYPE:  "t2.medium"
     LX_WM_ARGS:         "-n --log-level debug --log-dir=/var/log/watchmaker"
     WIN_WM_ARGS:        "-n --log-level debug --log-dir=C:\\Watchmaker\\Logs"
-    SUBNET_ID:          "none" #optional
+    SUBNET_ID:          "none" #optional in AWS CodeBuild project - leave this here
 
 phases:
   install:
