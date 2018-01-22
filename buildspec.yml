@@ -3,29 +3,29 @@ version: 0.2
 
 env:
   variables:
-    TF_ZIP: https://releases.hashicorp.com/terraform/0.11.2/terraform_0.11.2_linux_amd64.zip
+    TF_ZIP:             https://releases.hashicorp.com/terraform/0.11.2/terraform_0.11.2_linux_amd64.zip
     TERRAFIRM_DESC_URL: https://github.com/YakDriver/terrafirm_win
-    JQ_INSTALL: https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
-    WIN_SECURITY_GRP: "terrafirm_winrm_sg"
-    LX_SECURITY_GRP: "terrafirm_ssh_sg"
-    KEY_PAIR_NAME: "svc_terrafirm2"
-    NAMED_PROFILE: "terrafirm"
-    REGION: "us-east-1"
-    WINRM_USER: "Administrator"
-    PS_PASSWD_KEY: "/path/to/parameter/store" #will fail without being defined elsewhere
-    PS_PRIVATE_KEY: "/path/to/parameter/store" #will fail without being defined elsewhere
-    PS_PUBLIC_KEY: "/path/to/parameter/store" #will fail without being defined elsewhere
-    SSH_USER: "root"
-    ASSIGN_PUBLIC_IP: "false"
-    GIT_REPO: "https://github.com/plus3it/watchmaker.git"
-    GIT_BRANCH: "master"
+    JQ_INSTALL:         https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
+    WIN_SECURITY_GRP:   "terrafirm_winrm_sg"
+    LX_SECURITY_GRP:    "terrafirm_ssh_sg"
+    KEY_PAIR_NAME:      "svc_terrafirm2"
+    NAMED_PROFILE:      "terrafirm"
+    REGION:             "us-east-1"
+    WINRM_USER:         "Administrator"
+    PS_PASSWD_KEY:      "/path/to/parameter/store" #will fail without being defined elsewhere
+    PS_PRIVATE_KEY:     "/path/to/parameter/store" #will fail without being defined elsewhere
+    PS_PUBLIC_KEY:      "/path/to/parameter/store" #will fail without being defined elsewhere
+    SSH_USER:           "root"
+    ASSIGN_PUBLIC_IP:   "false"
+    GIT_REPO:           "https://github.com/plus3it/watchmaker.git"
+    GIT_BRANCH:         "master"
     DESTROY_AFTER_TEST: "true"
-    INSTANCE_PROFILE: "none" #optional
-    LX_INSTANCE_TYPE: "t2.micro"
-    WIN_INSTANCE_TYPE: "t2.medium"
-    LX_WM_ARGS: "-n --log-level debug --log-dir=/var/log/watchmaker"
-    WIN_WM_ARGS: "-n --log-level debug --log-dir=C:\\Watchmaker\\Logs"
-    SUBNET_ID: "none" #optional
+    INSTANCE_PROFILE:   "none" #optional
+    LX_INSTANCE_TYPE:   "t2.micro"
+    WIN_INSTANCE_TYPE:  "t2.medium"
+    LX_WM_ARGS:         "-n --log-level debug --log-dir=/var/log/watchmaker"
+    WIN_WM_ARGS:        "-n --log-level debug --log-dir=C:\\Watchmaker\\Logs"
+    SUBNET_ID:          "none" #optional
 
 phases:
   install:
