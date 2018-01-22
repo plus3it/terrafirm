@@ -56,13 +56,18 @@ phases:
         fi
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - AWS subnet............................................................."
-      - # TF appears to just use default setting if subnet id is empty string
-      - TF_VAR_subnet_id="${SUBNET_ID}"
+      - # If subnet id is valid, finds the associated VPC and assigns variables. Otherwise, blanks (defaults)
+      - TF_VAR_subnet_id=""
+      - TF_VAR_vpc_id=""
       - |
-        if [ "${SUBNET_ID}" = "none" ] ; then
-          TF_VAR_subnet_id=""
-        fi        
-      - export TF_VAR_subnet_id
+        if [ "${SUBNET_ID}" != "none" ] ; then
+          VPC_ID="$(aws ec2 describe-subnets --filters "Name=subnet-id,Values=${SUBNET_ID}" | ./jq.dms -r '.Subnets[0].VpcId')"
+          if [ "${VPC_ID}" != "null" ] && [ -n "${VPC_ID}" ] ; then
+            TF_VAR_subnet_id="${SUBNET_ID}"
+            TF_VAR_vpc_id="${VPC_ID}"
+          fi
+        fi
+      - export TF_VAR_subnet_id ; export TF_VAR_vpc_id
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - Misc environment variables..........................................."      
       - | #avoid TF errors caused by invalid parameter values - only values variable can have are "true" or "false"
