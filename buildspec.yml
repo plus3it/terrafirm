@@ -27,8 +27,8 @@ env:
     LX_WM_ARGS:         "-n --log-level debug --log-dir=/var/log/watchmaker"   #optional in CodeBuild
     WIN_WM_ARGS:        "-n --log-level debug --log-dir=C:\\Watchmaker\\Logs"  #optional in CodeBuild
     SUBNET_ID:          "none"                                                 #optional in CodeBuild
-    BUILD_WIN:          "true"
-    BUILD_LX:           "false"
+    BUILD_WIN:          "one"
+    BUILD_LX:           "all"
 
 phases:
   install:
@@ -53,8 +53,32 @@ phases:
           aws configure set region "${REGION}"
           TF_VAR_region="${REGION}" ; export TF_VAR_region
         fi   
-      - TF_VAR_build_win="${BUILD_WIN}" ; export TF_VAR_build_win
-      - TF_VAR_build_lx="${BUILD_LX}" ; export TF_VAR_build_lx
+      - |
+        case "${BUILD_WIN}" in
+	        none)
+		        TF_VAR_win_all_one_none=3
+            ;;
+          one)
+            TF_VAR_win_all_one_none=2
+            ;;
+          *)
+            TF_VAR_win_all_one_none=1
+            ;;
+        esac
+      - |
+        case "${BUILD_LX}" in
+	        none)
+		        TF_VAR_lx_all_one_none=3
+            ;;
+          one)
+            TF_VAR_lx_all_one_none=2
+            ;;
+          *)
+            TF_VAR_lx_all_one_none=1
+            ;;
+        esac
+      - export TF_VAR_lx_all_one_none
+      - export TF_VAR_win_all_one_none
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - AWS instance profile setup............................................."
       - echo "(This is distinct from the named profile used by CLI."
