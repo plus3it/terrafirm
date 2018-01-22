@@ -55,6 +55,14 @@ phases:
           TF_VAR_instance_profile="" ; export TF_VAR_instance_profile
         fi
       - #-------------------------------------------------------------------------------------------------
+      - echo "SETUP - AWS subnet............................................................."
+      - # TF appears to just use default setting if subnet id is empty string
+      - |
+        if [ "${SUBNET_ID}" = "none" ] ; then
+          TF_VAR_subnet_id=""
+        fi        
+      - export TF_VAR_subnet_id
+      - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - Misc environment variables..........................................."      
       - | #avoid TF errors caused by invalid parameter values - only values variable can have are "true" or "false"
         if [ "${ASSIGN_PUBLIC_IP}" = "true" ] ; then
