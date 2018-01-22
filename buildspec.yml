@@ -52,21 +52,9 @@ phases:
         if [ -n "${REGION}" ] ; then
           aws configure set region "${REGION}"
           TF_VAR_region="${REGION}" ; export TF_VAR_region
-        fi
-      - |
-        if [ "${BUILD_WIN}" = "true" ] ; then
-          TF_VAR_win_instance_negation=0
-        else
-          TF_VAR_win_instance_negation=10
-        fi
-      - export TF_VAR_win_instance_negation
-      - |
-        if [ "${BUILD_LX}" = "true" ] ; then
-          TF_VAR_lx_instance_negation=0
-        else
-          TF_VAR_lx_instance_negation=10
-        fi
-      - export TF_VAR_lx_instance_negation      
+        fi   
+      - TF_VAR_build_win = "${BUILD_WIN}" ; export TF_VAR_build_win
+      - TF_VAR_build_lx = "${BUILD_LX}" ; export TF_VAR_build_lx
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - AWS instance profile setup............................................."
       - echo "(This is distinct from the named profile used by CLI."
