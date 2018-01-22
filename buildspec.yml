@@ -6,6 +6,9 @@ env:
     TF_ZIP: https://releases.hashicorp.com/terraform/0.11.2/terraform_0.11.2_linux_amd64.zip
     TERRAFIRM_DESC_URL: https://github.com/YakDriver/terrafirm_win
     JQ_INSTALL: https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
+    WIN_SECURITY_GRP: "terrafirm_winrm_sg"
+    LX_SECURITY_GRP: "terrafirm_ssh_sg"
+    KEY_PAIR_NAME: "svc_terrafirm2"
 
 phases:
   install:
