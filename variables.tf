@@ -12,6 +12,7 @@ variable "instance_profile" {}
 variable "lx_instance_type" {}
 variable "win_instance_type" {}
 variable "subnet_id" {}
+variable "vpc_id" {}
 
 output "amicentos6" {
   value = "${data.aws_ami.centos6.id}"
