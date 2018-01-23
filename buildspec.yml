@@ -124,13 +124,15 @@ phases:
       - TF_VAR_lx_security_group="${LX_SECURITY_GRP}" ; export TF_VAR_lx_security_group
       - LX_SG_ID="$(aws ec2 describe-security-groups --group-names "${LX_SECURITY_GRP}" | ./jq.dms -r '.SecurityGroups[0].GroupId')"
       - |
-        if [ "${LX_SG_ID}" != "null" ] && [ -n "${LX_SG_ID}" ] ; then
-          aws ec2 delete-security-group --group-id "${LX_SG_ID}"
+        if [ "${LX_SG_ID}" = "null" ] || [ -z "${LX_SG_ID}" ] ; then
+          #aws ec2 delete-security-group --group-id "${LX_SG_ID}"
+          LX_SG_ID=""
         fi
       - WIN_SG_ID="$(aws ec2 describe-security-groups --group-names "${WIN_SECURITY_GRP}" | ./jq.dms -r '.SecurityGroups[0].GroupId')"
       - |
-        if [ "${WIN_SG_ID}" != "null" ] && [ -n "${WIN_SG_ID}" ] ; then
-          aws ec2 delete-security-group --group-id "${WIN_SG_ID}"
+        if [ "${WIN_SG_ID}" = "null" ] || [ -z "${WIN_SG_ID}" ] ; then
+          WIN_SG_ID=""
+          #aws ec2 delete-security-group --group-id "${WIN_SG_ID}"
         fi        
       - #-------------------------------------------------------------------------------------------------
       - # "Creative" variable substitution required since windows userdata has chars that won't work with automatic method
@@ -152,6 +154,14 @@ phases:
       - echo "Throwing it over the fence to Terraform......................................"
       - echo "Initializing Terraform " ; ./terraform init -input=false
       - echo "Importing key pair " ; ./terraform import aws_key_pair.auth "${KEY_PAIR_NAME}"
+      - |
+        if [ -n "${WIN_SG_ID}" ] ; then
+          echo "Importing WIN security group " ; ./terraform import aws_security_group.terrafirm_winrm "${WIN_SG_ID}"
+        fi
+      - |
+        if [ -n "${LX_SG_ID}" ] ; then
+          echo "Importing LX security group " ; ./terraform import aws_security_group.terrafirm_winrm "${LX_SG_ID}"
+        fi
       - echo "Create provisiong plan " ; ./terraform plan -out=tfplan -input=false
   build:
     commands:
