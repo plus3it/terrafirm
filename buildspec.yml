@@ -55,31 +55,15 @@ phases:
           TF_VAR_region="${REGION}" ; export TF_VAR_region
         fi   
       - |
-        case "${BUILD_WIN}" in
-          none)
-            TF_VAR_win_all_one_none=none
-            ;;
-          one)
-            TF_VAR_win_all_one_none=one
-            ;;
-          *)
-            TF_VAR_win_all_one_none=all
-            ;;
-        esac
+        if [ "${BUILD_WIN}" != "none" ] && [ "${BUILD_WIN}" != "one" ] ; then
+          BUILD_WIN=all
+        fi
+      - TF_VAR_win_all_one_none=BUILD_WIN ; export TF_VAR_win_all_one_none
       - |
-        case "${BUILD_LX}" in
-          none)
-            TF_VAR_lx_all_one_none=none
-            ;;
-          one)
-            TF_VAR_lx_all_one_none=one
-            ;;
-          *)
-            TF_VAR_lx_all_one_none=all
-            ;;
-        esac
-      - export TF_VAR_lx_all_one_none
-      - export TF_VAR_win_all_one_none
+        if [ "${BUILD_LX}" != "none" ] && [ "${BUILD_LX}" != "one" ] ; then
+          BUILD_LX=all
+        fi
+      - TF_VAR_lx_all_one_none=BUILD_LX ; export TF_VAR_lx_all_one_none
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - AWS instance profile setup............................................."
       - echo "(This is distinct from the named profile used by CLI."
