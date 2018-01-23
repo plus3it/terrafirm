@@ -27,8 +27,8 @@ env:
     LX_WM_ARGS:         "-n --log-level debug --log-dir=/var/log/watchmaker"   #optional in CodeBuild
     WIN_WM_ARGS:        "-n --log-level debug --log-dir=C:\\Watchmaker\\Logs"  #optional in CodeBuild
     SUBNET_ID:          "none"                                                 #optional in CodeBuild
-    BUILD_WIN:          "one"
-    BUILD_LX:           "all"
+    BUILD_WIN:          "all"                                                  #optional in CodeBuild
+    BUILD_LX:           "all"                                                  #optional in CodeBuild
 
 phases:
   install:
