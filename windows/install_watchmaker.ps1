@@ -27,4 +27,4 @@ cd watchmaker
 pip install --index-url "$PypiUrl" --editable .
 
 # Run watchmaker
-watchmaker WIN_COMMAND_LINE_ARGUMENTS_GO_HERE
+watchmaker COMMON_COMMAND_LINE_ARGUMENTS_GO_HERE WIN_COMMAND_LINE_ARGUMENTS_GO_HERE
