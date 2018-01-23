@@ -215,8 +215,6 @@ data "null_data_source" "spel_instance_amis" {
 
 # bread & butter - this tells TF the provision/create the actual instance
 resource "aws_instance" "spels" {
-  #count                        = "1"
-  #count                        = "${length(data.null_data_source.spel_instance_amis.inputs)-var.lx_instance_negation}"
   count                        = "${lookup(map("all",length(data.null_data_source.spel_instance_amis.inputs),"one",1,"none",0),var.lx_all_one_none)}"
   ami                          = "${lookup(data.null_data_source.spel_instance_amis.inputs, count.index)}"
   instance_type                = "${var.lx_instance_type}"
