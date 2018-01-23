@@ -80,7 +80,7 @@ phases:
       - TF_VAR_subnet_id=""
       - TF_VAR_vpc_id=""
       - |
-        if [ "${SUBNET_ID}" != "none" ] ; then
+        if [ -n "${SUBNET_ID}" ] && [ "${SUBNET_ID}" != "none" ] ; then
           VPC_ID="$(aws ec2 describe-subnets --filters "Name=subnet-id,Values=${SUBNET_ID}" | ./jq.dms -r '.Subnets[0].VpcId')"
           if [ "${VPC_ID}" != "null" ] && [ -n "${VPC_ID}" ] ; then
             TF_VAR_subnet_id="${SUBNET_ID}"
