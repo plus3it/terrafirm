@@ -58,12 +58,12 @@ phases:
         if [ "${BUILD_WIN}" != "none" ] && [ "${BUILD_WIN}" != "one" ] ; then
           BUILD_WIN=all
         fi
-      - TF_VAR_win_all_one_none=BUILD_WIN ; export TF_VAR_win_all_one_none
+      - TF_VAR_win_all_one_none="${BUILD_WIN}" ; export TF_VAR_win_all_one_none
       - |
         if [ "${BUILD_LX}" != "none" ] && [ "${BUILD_LX}" != "one" ] ; then
           BUILD_LX=all
         fi
-      - TF_VAR_lx_all_one_none=BUILD_LX ; export TF_VAR_lx_all_one_none
+      - TF_VAR_lx_all_one_none="${BUILD_LX}" ; export TF_VAR_lx_all_one_none
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - AWS instance profile setup............................................."
       - echo "(This is distinct from the named profile used by CLI."
