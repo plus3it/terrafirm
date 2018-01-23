@@ -124,12 +124,12 @@ phases:
       - TF_VAR_lx_security_group="${LX_SECURITY_GRP}" ; export TF_VAR_lx_security_group
       - LX_SG_ID="$(aws ec2 describe-security-groups --group-names "${LX_SECURITY_GRP}" | ./jq.dms -r '.SecurityGroups[0].GroupId')"
       - |
-        if [ "${LX_SG_ID}" != "null" ] || [ -n "${LX_SG_ID}" ] ; then
+        if [ "${LX_SG_ID}" != "null" ] && [ -n "${LX_SG_ID}" ] ; then
           aws ec2 delete-security-group --group-id "${LX_SG_ID}"
         fi
       - WIN_SG_ID="$(aws ec2 describe-security-groups --group-names "${WIN_SECURITY_GRP}" | ./jq.dms -r '.SecurityGroups[0].GroupId')"
       - |
-        if [ "${WIN_SG_ID}" != "null" ] || [ -n "${WIN_SG_ID}" ] ; then
+        if [ "${WIN_SG_ID}" != "null" ] && [ -n "${WIN_SG_ID}" ] ; then
           aws ec2 delete-security-group --group-id "${WIN_SG_ID}"
         fi        
       - #-------------------------------------------------------------------------------------------------
