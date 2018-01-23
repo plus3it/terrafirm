@@ -56,25 +56,25 @@ phases:
       - |
         case "${BUILD_WIN}" in
           none)
-            TF_VAR_win_all_one_none=3
+            TF_VAR_win_all_one_none=none
             ;;
           one)
-            TF_VAR_win_all_one_none=2
+            TF_VAR_win_all_one_none=one
             ;;
           *)
-            TF_VAR_win_all_one_none=1
+            TF_VAR_win_all_one_none=all
             ;;
         esac
       - |
         case "${BUILD_LX}" in
           none)
-            TF_VAR_lx_all_one_none=3
+            TF_VAR_lx_all_one_none=none
             ;;
           one)
-            TF_VAR_lx_all_one_none=2
+            TF_VAR_lx_all_one_none=one
             ;;
           *)
-            TF_VAR_lx_all_one_none=1
+            TF_VAR_lx_all_one_none=all
             ;;
         esac
       - export TF_VAR_lx_all_one_none
