@@ -16,6 +16,11 @@ variable "tfi_subnet_id" {}
 variable "tfi_vpc_id" {}
 variable "tfi_lx_all_one_none" {}
 variable "tfi_win_all_one_none" {}
+variable "tfi_repo" {}
+variable "tfi_branch" {}
+variable "tfi_common_args" {}
+variable "tfi_windows_args" {}
+variable "tfi_username" {}
 
 output "amicentos6" {
   value = "${data.aws_ami.centos6.id}"
