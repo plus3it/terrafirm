@@ -4,7 +4,7 @@ version: 0.2
 env:
   variables:
     TFI_TF_ZIP:             https://releases.hashicorp.com/terraform/0.11.2/terraform_0.11.2_linux_amd64.zip
-    TFI__DESC_URL: https://github.com/YakDriver/terrafirm_win
+    TFI__DESC_URL:          https://github.com/YakDriver/terrafirm_win
     TFI_JQ_INSTALL:         https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
     TFI_WIN_SECURITY_GRP:   "terrafirm_winrm_sg"                                   #ephermeral name for sg
     TFI_LX_SECURITY_GRP:    "terrafirm_ssh_sg"                                     #ephermeral name for sg
@@ -20,13 +20,13 @@ env:
     TFI_GIT_REPO:           "https://github.com/plus3it/watchmaker.git"            #optional in CodeBuild
     TFI_GIT_BRANCH:         "master"                                               #optional in CodeBuild
     TFI_DESTROY_AFTER_TEST: "true"                                                 #optional in CodeBuild
-    TFI_INSTANCE_PROFILE:   "none"                                                 #optional in CodeBuild
+    TFI_INSTANCE_PROFILE:   ""                                                     #optional in CodeBuild
     TFI_LX_INSTANCE_TYPE:   "t2.micro"                                             #optional in CodeBuild
     TFI_WIN_INSTANCE_TYPE:  "t2.medium"                                            #optional in CodeBuild
     TFI_LX_WM_ARGS:         "--log-dir=/var/log/watchmaker"                        #optional in CodeBuild
     TFI_WIN_WM_ARGS:        "--log-dir=C:\\Watchmaker\\Logs"                       #optional in CodeBuild
     TFI_COMMON_WM_ARGS:     "-n --log-level debug"                                 #optional in CodeBuild
-    TFI_SUBNET_ID:          "none"                                                 #optional in CodeBuild
+    TFI_SUBNET_ID:          ""                                                     #optional in CodeBuild
     TFI_BUILD_WIN:          "all"                                                  #optional in CodeBuild
     TFI_BUILD_LX:           "all"                                                  #optional in CodeBuild
 
@@ -65,18 +65,13 @@ phases:
       - echo "(This is distinct from the named profile used by CLI."
       - echo "This profile is to contain a role in creating the instance.)"
       - TF_VAR_tfi_instance_profile="${TFI_INSTANCE_PROFILE}" ; export TF_VAR_tfi_instance_profile
-      - # TF appears to just use default setting if instance profile is empty string
-      - |
-        if [ "${TFI_INSTANCE_ROLE}" = "none" ] ; then
-          TF_VAR_tfi_instance_profile="" ; export TF_VAR_tfi_instance_profile
-        fi
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - AWS subnet............................................................."
       - # If subnet id is valid, finds the associated VPC and assigns variables. Otherwise, blanks (defaults)
       - TF_VAR_tfi_subnet_id=""
       - TF_VAR_tfi_vpc_id=""
       - |
-        if [ -n "${TFI_SUBNET_ID}" ] && [ "${TFI_SUBNET_ID}" != "none" ] ; then
+        if [ -n "${TFI_SUBNET_ID}" ] ; then
           TFI_VPC_ID="$(aws ec2 describe-subnets --filters "Name=subnet-id,Values=${TFI_SUBNET_ID}" | ./jq.dms -r '.Subnets[0].VpcId')"
           if [ "${TFI_VPC_ID}" != "null" ] && [ -n "${TFI_VPC_ID}" ] ; then
             TF_VAR_tfi_subnet_id="${TFI_SUBNET_ID}"
@@ -137,7 +132,9 @@ phases:
       - sed -i "s,THIS_IS_NOT_THE_REPO,${TFI_GIT_REPO}," windows/userdata.ps1
       - TF_VAR_tfi_repo="${TFI_GIT_REPO}" ; export TF_VAR_tfi_repo
       - TF_VAR_tfi_branch="${TFI_GIT_BRANCH}" ; export TF_VAR_tfi_branch
-
+      - TF_VAR_tfi_common_args="${TFI_COMMON_WM_ARGS}" ; export TF_VAR_tfi_common_args
+      - TF_VAR_tfi_windows_args="${TFI_WIN_WM_ARGS}" ; export TF_VAR_tfi_windows_args
+      - TF_VAR_tfi_username="${TFI_WIN_WM_ARGS}" ; export TF_VAR_tfi_username
       - sed -i "s/THIS_IS_NOT_THE_BRANCH/${TFI_GIT_BRANCH}/" windows/userdata.ps1
       - sed -i "s/WINRM_USER_GOES_HERE/${TFI_WINRM_USER}/" windows/userdata.ps1
       - sed -i "s^COMMON_COMMAND_LINE_ARGUMENTS_GO_HERE^${TFI_COMMON_WM_ARGS}^" windows/userdata.ps1
