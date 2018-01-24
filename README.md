@@ -7,25 +7,25 @@ This project is designed to work with **AWS CodeBuild**. In order to use it, you
 
 Variable | Default | Req/Opt (in CodeBuild) | Description
 --- | --- | --- | ---
-REGION | "us-east-1" | optional | AWS region
-WINRM_USER | "Administrator" | optional | username to use when connecting via WinRM to Windows instances
-PS_PASSWD_KEY | "/path/to/parameter/store" | REQUIRED | Ab
-PS_PRIVATE_KEY | "/path/to/parameter/store" | REQUIRED | Ab
-PS_PUBLIC_KEY | "/path/to/parameter/store" | REQUIRED | Ab
-SSH_USER | "root" | optional | Ab
-ASSIGN_PUBLIC_IP | "false" | optional | Ab
-GIT_REPO | "https://github.com/plus3it/watchmaker.git" | optional | Ab
-GIT_BRANCH | "master" | optional | Ab
-DESTROY_AFTER_TEST | "true" | optional | Ab
-INSTANCE_PROFILE | "none" | optional | Ab
-LX_INSTANCE_TYPE | "t2.micro" | optional | Ab
-WIN_INSTANCE_TYPE | "t2.medium" | optional | Ab
-LX_WM_ARGS | "--log-dir=/var/log/watchmaker" | optional | Ab
-WIN_WM_ARGS | "--log-dir=C:\\Watchmaker\\Logs" | optional | Ab
-COMMON_WM_ARGS | "-n --log-level debug" | optional | Ab
-SUBNET_ID | "none" | optional | Ab
-BUILD_WIN | "all" | optional | Ab
-BUILD_LX | "all" | optional | Ab
+`REGION` | us-east-1 | optional | AWS region
+`WINRM_USER` | Administrator | optional | username to use when connecting via WinRM to Windows instances
+`PS_PASSWD_KEY` | /path/to/parameter/store | REQUIRED | Ab
+`PS_PRIVATE_KEY` | /path/to/parameter/store | REQUIRED | Ab
+`PS_PUBLIC_KEY` | /path/to/parameter/store | REQUIRED | Ab
+`SSH_USER` | root | optional | Ab
+`ASSIGN_PUBLIC_IP` | false | optional | Ab
+`GIT_REPO` | https://github.com/plus3it/watchmaker.git | optional | Ab
+`GIT_BRANCH` | master | optional | Ab
+`DESTROY_AFTER_TEST` | true | optional | Ab
+`INSTANCE_PROFILE` | none | optional | Ab
+`LX_INSTANCE_TYPE` | t2.micro | optional | Ab
+`WIN_INSTANCE_TYPE` | t2.medium | optional | Ab
+`LX_WM_ARGS` | --log-dir=/var/log/watchmaker | optional | Ab
+`WIN_WM_ARGS` | --log-dir=C:\\Watchmaker\\Logs | optional | Ab
+`COMMON_WM_ARGS` | -n --log-level debug | optional | Ab
+`SUBNET_ID` | none | optional | Ab
+`BUILD_WIN` | all | optional | Ab
+`BUILD_LX` | all | optional | Ab
 
 
 - `REGION`            : . E.g., us-east-1
