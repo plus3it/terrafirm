@@ -135,6 +135,9 @@ phases:
       - sed -i -e '/WATCHMAKER_INSTALL_GOES_HERE/{r windows/install_watchmaker.ps1' -e 'd}' windows/userdata.ps1
       - sed -i "s/THIS_IS_NOT_THE_PASSWORD/${TF_VAR_tfi_term_passwd}/" windows/userdata.ps1
       - sed -i "s,THIS_IS_NOT_THE_REPO,${TFI_GIT_REPO}," windows/userdata.ps1
+      - TF_VAR_tfi_repo="${TFI_GIT_REPO}" ; export TF_VAR_tfi_repo
+      - TF_VAR_tfi_branch="${TFI_GIT_BRANCH}" ; export TF_VAR_tfi_branch
+
       - sed -i "s/THIS_IS_NOT_THE_BRANCH/${TFI_GIT_BRANCH}/" windows/userdata.ps1
       - sed -i "s/WINRM_USER_GOES_HERE/${TFI_WINRM_USER}/" windows/userdata.ps1
       - sed -i "s^COMMON_COMMAND_LINE_ARGUMENTS_GO_HERE^${TFI_COMMON_WM_ARGS}^" windows/userdata.ps1

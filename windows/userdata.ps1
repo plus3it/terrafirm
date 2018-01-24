@@ -5,7 +5,7 @@ Start-Transcript -path C:\Temp\watchmaker_userdata_install.log -append
 
 # Set Administrator password
 $admin = [adsi]("WinNT://./administrator, user")
-$admin.psbase.invoke("SetPassword", "THIS_IS_NOT_THE_PASSWORD")
+$admin.psbase.invoke("SetPassword", "${var.tfi_pass}")
 $admin.psbase.CommitChanges()
 
 # close the firewall
@@ -15,8 +15,8 @@ netsh advfirewall firewall add rule name="WinRM in" protocol=TCP dir=in profile=
 WATCHMAKER_INSTALL_GOES_HERE
 
 # Set Administrator password - should always go after wm install because username not yet changed
-$admin = [adsi]("WinNT://./WINRM_USER_GOES_HERE, user")
-$admin.psbase.invoke("SetPassword", "THIS_IS_NOT_THE_PASSWORD")
+$admin = [adsi]("WinNT://./${var.tfi_username}, user")
+$admin.psbase.invoke("SetPassword", "${var.tfi_pass}")
 $admin.psbase.CommitChanges()
 
 # open firewall for winrm

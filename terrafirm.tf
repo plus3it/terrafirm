@@ -77,6 +77,20 @@ variable "tfi_ami_name_filters" {
   ] 
 }
 
+# Template for initial configuration bash script
+data "template_file" "win_userdata" {
+  template = "${file("windows/userdata.ps1")}"
+
+  vars {
+    tfi_repo = "${aws_instance.consul.private_ip}"
+    tfi_branch =
+    tfi_common_args =
+    tfi_windows_args =
+    tfi_pass = "${var.tfi_term_passwd}"
+    tfi_username =
+  }
+}
+
 variable "tfi_other_filters" {
   type  = "map"
   default = {
@@ -268,7 +282,8 @@ resource "aws_instance" "windows" {
   key_name                     = "${aws_key_pair.auth.id}"
   iam_instance_profile         = "${var.tfi_instance_profile}"
   vpc_security_group_ids       = ["${aws_security_group.terrafirm_winrm.id}"]
-  user_data                    = "${file("windows/userdata.ps1")}"
+  #user_data                    = "${file("windows/userdata.ps1")}"
+  user_data                    = "${data.template_file.win_userdata.rendered}"
   associate_public_ip_address  = "${var.tfi_associate_public_ip_address}"
   subnet_id                    = "${var.tfi_subnet_id}"
   
