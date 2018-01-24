@@ -3,33 +3,32 @@ version: 0.2
 
 env:
   variables:
-    TF_ZIP:             https://releases.hashicorp.com/terraform/0.11.2/terraform_0.11.2_linux_amd64.zip
-    TERRAFIRM_DESC_URL: https://github.com/YakDriver/terrafirm_win
-    JQ_INSTALL:         https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
-    WIN_SECURITY_GRP:   "terrafirm_winrm_sg"
-    LX_SECURITY_GRP:    "terrafirm_ssh_sg"
-    KEY_PAIR_NAME:      "svc_terrafirm2"
+    TFI_TF_ZIP:             https://releases.hashicorp.com/terraform/0.11.2/terraform_0.11.2_linux_amd64.zip
+    TFI__DESC_URL: https://github.com/YakDriver/terrafirm_win
+    TFI_JQ_INSTALL:         https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
+    TFI_WIN_SECURITY_GRP:   "terrafirm_winrm_sg"                                   #ephermeral name for sg
+    TFI_LX_SECURITY_GRP:    "terrafirm_ssh_sg"                                     #ephermeral name for sg
+    TFI_KEY_PAIR_NAME:      "svc_terrafirm2"                                       #ephermeral name for keypair
     # Below here are variables that can (and likely are) overwritten from the AWS CodeBuild project
     # Values in CodeBuild take precedence so LEAVE ALL OF THESE HERE even if defining there
-    REGION:             "us-east-1"                                            #optional in CodeBuild
-    WINRM_USER:         "Administrator"                                        #optional in CodeBuild
-    PS_PASSWD_KEY:      "/path/to/parameter/store"                             #REQUIRED in CodeBuild
-    PS_PRIVATE_KEY:     "/path/to/parameter/store"                             #REQUIRED in CodeBuild
-    PS_PUBLIC_KEY:      "/path/to/parameter/store"                             #REQUIRED in CodeBuild
-    SSH_USER:           "root"                                                 #optional in CodeBuild
-    ASSIGN_PUBLIC_IP:   "false"                                                #optional in CodeBuild
-    GIT_REPO:           "https://github.com/plus3it/watchmaker.git"            #optional in CodeBuild
-    GIT_BRANCH:         "master"                                               #optional in CodeBuild
-    DESTROY_AFTER_TEST: "true"                                                 #optional in CodeBuild
-    INSTANCE_PROFILE:   "none"                                                 #optional in CodeBuild
-    LX_INSTANCE_TYPE:   "t2.micro"                                             #optional in CodeBuild
-    WIN_INSTANCE_TYPE:  "t2.medium"                                            #optional in CodeBuild
-    LX_WM_ARGS:         "--log-dir=/var/log/watchmaker"                        #optional in CodeBuild
-    WIN_WM_ARGS:        "--log-dir=C:\\Watchmaker\\Logs"                       #optional in CodeBuild
-    COMMON_WM_ARGS:     "-n --log-level debug"                                 #optional in CodeBuild
-    SUBNET_ID:          "none"                                                 #optional in CodeBuild
-    BUILD_WIN:          "all"                                                  #optional in CodeBuild
-    BUILD_LX:           "all"                                                  #optional in CodeBuild
+    TFI_WINRM_USER:         "Administrator"                                        #optional in CodeBuild
+    TFI_PS_PASSWD_KEY:      "/path/to/parameter/store"                             #REQUIRED in CodeBuild
+    TFI_PS_PRIVATE_KEY:     "/path/to/parameter/store"                             #REQUIRED in CodeBuild
+    TFI_PS_PUBLIC_KEY:      "/path/to/parameter/store"                             #REQUIRED in CodeBuild
+    TFI_SSH_USER:           "root"                                                 #optional in CodeBuild
+    TFI_ASSIGN_PUBLIC_IP:   "false"                                                #optional in CodeBuild
+    TFI_GIT_REPO:           "https://github.com/plus3it/watchmaker.git"            #optional in CodeBuild
+    TFI_GIT_BRANCH:         "master"                                               #optional in CodeBuild
+    TFI_DESTROY_AFTER_TEST: "true"                                                 #optional in CodeBuild
+    TFI_INSTANCE_PROFILE:   "none"                                                 #optional in CodeBuild
+    TFI_LX_INSTANCE_TYPE:   "t2.micro"                                             #optional in CodeBuild
+    TFI_WIN_INSTANCE_TYPE:  "t2.medium"                                            #optional in CodeBuild
+    TFI_LX_WM_ARGS:         "--log-dir=/var/log/watchmaker"                        #optional in CodeBuild
+    TFI_WIN_WM_ARGS:        "--log-dir=C:\\Watchmaker\\Logs"                       #optional in CodeBuild
+    TFI_COMMON_WM_ARGS:     "-n --log-level debug"                                 #optional in CodeBuild
+    TFI_SUBNET_ID:          "none"                                                 #optional in CodeBuild
+    TFI_BUILD_WIN:          "all"                                                  #optional in CodeBuild
+    TFI_BUILD_LX:           "all"                                                  #optional in CodeBuild
 
 phases:
   install:
@@ -37,11 +36,11 @@ phases:
       - echo "Installing unzip............"
       - apt -y install unzip
       - echo "Installing jq..............."
-      - curl -L "${JQ_INSTALL}" -o jq.dms && chmod +x jq.dms
+      - curl -L "${TFI_JQ_INSTALL}" -o jq.dms && chmod +x jq.dms
       - ./jq.dms --version
       - echo "Installing Terraform..."
       - echo `pwd`
-      - curl -L "${TF_ZIP}" -o tf.zip && unzip tf.zip
+      - curl -L "${TFI_TF_ZIP}" -o tf.zip && unzip tf.zip
       - echo "Installed Terraform."
   pre_build:
     commands:
@@ -49,29 +48,25 @@ phases:
       - echo "Terraform version " ; ./terraform --version
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - AWS Basic Config......................................................."
+      - aws configure set region "${AWS_REGION}"
       - |
-        if [ -n "${REGION}" ] ; then
-          aws configure set region "${REGION}"
-          TF_VAR_region="${REGION}" ; export TF_VAR_region
-        fi   
-      - |
-        if [ "${BUILD_WIN}" != "none" ] && [ "${BUILD_WIN}" != "one" ] ; then
-          BUILD_WIN=all
+        if [ "${TFI_BUILD_WIN}" != "none" ] && [ "${TFI_BUILD_WIN}" != "one" ] ; then
+          TFI_BUILD_WIN=all
         fi
-      - TF_VAR_win_all_one_none="${BUILD_WIN}" ; export TF_VAR_win_all_one_none
+      - TF_VAR_win_all_one_none="${TFI_BUILD_WIN}" ; export TF_VAR_win_all_one_none
       - |
-        if [ "${BUILD_LX}" != "none" ] && [ "${BUILD_LX}" != "one" ] ; then
-          BUILD_LX=all
+        if [ "${TFI_BUILD_LX}" != "none" ] && [ "${TFI_BUILD_LX}" != "one" ] ; then
+          TFI_BUILD_LX=all
         fi
-      - TF_VAR_lx_all_one_none="${BUILD_LX}" ; export TF_VAR_lx_all_one_none
+      - TF_VAR_lx_all_one_none="${TFI_BUILD_LX}" ; export TF_VAR_lx_all_one_none
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - AWS instance profile setup............................................."
       - echo "(This is distinct from the named profile used by CLI."
       - echo "This profile is to contain a role in creating the instance.)"
-      - TF_VAR_instance_profile="${INSTANCE_PROFILE}" ; export TF_VAR_instance_profile
+      - TF_VAR_instance_profile="${TFI_INSTANCE_PROFILE}" ; export TF_VAR_instance_profile
       - # TF appears to just use default setting if instance profile is empty string
       - |
-        if [ "${INSTANCE_ROLE}" = "none" ] ; then
+        if [ "${TFI_INSTANCE_ROLE}" = "none" ] ; then
           TF_VAR_instance_profile="" ; export TF_VAR_instance_profile
         fi
       - #-------------------------------------------------------------------------------------------------
@@ -80,19 +75,19 @@ phases:
       - TF_VAR_subnet_id=""
       - TF_VAR_vpc_id=""
       - |
-        if [ -n "${SUBNET_ID}" ] && [ "${SUBNET_ID}" != "none" ] ; then
-          VPC_ID="$(aws ec2 describe-subnets --filters "Name=subnet-id,Values=${SUBNET_ID}" | ./jq.dms -r '.Subnets[0].VpcId')"
-          if [ "${VPC_ID}" != "null" ] && [ -n "${VPC_ID}" ] ; then
-            TF_VAR_subnet_id="${SUBNET_ID}"
-            TF_VAR_vpc_id="${VPC_ID}"
+        if [ -n "${TFI_SUBNET_ID}" ] && [ "${TFI_SUBNET_ID}" != "none" ] ; then
+          TFI_VPC_ID="$(aws ec2 describe-subnets --filters "Name=subnet-id,Values=${TFI_SUBNET_ID}" | ./jq.dms -r '.Subnets[0].VpcId')"
+          if [ "${TFI_VPC_ID}" != "null" ] && [ -n "${TFI_VPC_ID}" ] ; then
+            TF_VAR_subnet_id="${TFI_SUBNET_ID}"
+            TF_VAR_vpc_id="${TFI_VPC_ID}"
           fi
         fi
       - export TF_VAR_subnet_id ; export TF_VAR_vpc_id
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - Misc environment variables..........................................."      
       - | #avoid TF errors caused by invalid parameter values - only values variable can have are "true" or "false"
-        if [ "${ASSIGN_PUBLIC_IP}" = "true" ] ; then
-          TF_VAR_associate_public_ip_address="${ASSIGN_PUBLIC_IP}"
+        if [ "${TFI_ASSIGN_PUBLIC_IP}" = "true" ] ; then
+          TF_VAR_associate_public_ip_address="${TFI_ASSIGN_PUBLIC_IP}"
         else
           TF_VAR_associate_public_ip_address="false"
         fi
@@ -100,37 +95,37 @@ phases:
       - # IP of CodeBuild instance for use by security group, so only open to one machine
       - TF_VAR_cb_ip="$(curl http://checkip.amazonaws.com)" ; export TF_VAR_cb_ip
       - echo "IP of CodeBuild instance is $TF_VAR_cb_ip"     
-      - TF_VAR_win_instance_type="${WIN_INSTANCE_TYPE}" ; export TF_VAR_win_instance_type
-      - TF_VAR_lx_instance_type="${LX_INSTANCE_TYPE}" ; export TF_VAR_lx_instance_type        
+      - TF_VAR_win_instance_type="${TFI_WIN_INSTANCE_TYPE}" ; export TF_VAR_win_instance_type
+      - TF_VAR_lx_instance_type="${TFI_LX_INSTANCE_TYPE}" ; export TF_VAR_lx_instance_type        
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - AWS key setup........................................................"      
-      - TF_VAR_key_pair_name="${KEY_PAIR_NAME}" ; export TF_VAR_key_pair_name
-      - TF_VAR_ssh_user="${SSH_USER}" ; export TF_VAR_ssh_user
-      - TF_VAR_term_user="${WINRM_USER}" ; export TF_VAR_term_user
-      - TF_VAR_term_passwd="$(aws ssm get-parameters --name ${PS_PASSWD_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_term_passwd
-      - TF_VAR_private_key="$(aws ssm get-parameters --name ${PS_PRIVATE_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_private_key
-      - TF_VAR_public_key="$(aws ssm get-parameters --name ${PS_PUBLIC_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_public_key
+      - TF_VAR_key_pair_name="${TFI_KEY_PAIR_NAME}" ; export TF_VAR_key_pair_name
+      - TF_VAR_ssh_user="${TFI_SSH_USER}" ; export TF_VAR_ssh_user
+      - TF_VAR_term_user="${TFI_WINRM_USER}" ; export TF_VAR_term_user
+      - TF_VAR_term_passwd="$(aws ssm get-parameters --name ${TFI_PS_PASSWD_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_term_passwd
+      - TF_VAR_private_key="$(aws ssm get-parameters --name ${TFI_PS_PRIVATE_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_private_key
+      - TF_VAR_public_key="$(aws ssm get-parameters --name ${TFI_PS_PUBLIC_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_public_key
       - |
-        if aws ec2 describe-key-pairs --key-name "${KEY_PAIR_NAME}" ; then
+        if aws ec2 describe-key-pairs --key-name "${TFI_KEY_PAIR_NAME}" ; then
           echo "Key pair already exists..."
         else
           echo "Creating a key pair "
-          aws ec2 import-key-pair --key-name "${KEY_PAIR_NAME}" --public-key-material "${TF_VAR_public_key}"
+          aws ec2 import-key-pair --key-name "${TFI_KEY_PAIR_NAME}" --public-key-material "${TF_VAR_public_key}"
         fi
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - AWS security groups.................................................."
       - # names to be used when creating security groups
-      - TF_VAR_win_security_group="${WIN_SECURITY_GRP}" ; export TF_VAR_win_security_group
-      - TF_VAR_lx_security_group="${LX_SECURITY_GRP}" ; export TF_VAR_lx_security_group
-      - LX_SG_ID="$(aws ec2 describe-security-groups --group-names "${LX_SECURITY_GRP}" | ./jq.dms -r '.SecurityGroups[0].GroupId')"
+      - TF_VAR_win_security_group="${TFI_WIN_SECURITY_GRP}" ; export TF_VAR_win_security_group
+      - TF_VAR_lx_security_group="${TFI_LX_SECURITY_GRP}" ; export TF_VAR_lx_security_group
+      - TFI_LX_SG_ID="$(aws ec2 describe-security-groups --group-names "${TFI_LX_SECURITY_GRP}" | ./jq.dms -r '.SecurityGroups[0].GroupId')"
       - |
-        if [ "${LX_SG_ID}" != "null" ] && [ -n "${LX_SG_ID}" ] ; then
-          aws ec2 delete-security-group --group-id "${LX_SG_ID}"
+        if [ "${TFI_LX_SG_ID}" != "null" ] && [ -n "${TFI_LX_SG_ID}" ] ; then
+          aws ec2 delete-security-group --group-id "${TFI_LX_SG_ID}"
         fi
-      - WIN_SG_ID="$(aws ec2 describe-security-groups --group-names "${WIN_SECURITY_GRP}" | ./jq.dms -r '.SecurityGroups[0].GroupId')"
+      - TFI_WIN_SG_ID="$(aws ec2 describe-security-groups --group-names "${TFI_WIN_SECURITY_GRP}" | ./jq.dms -r '.SecurityGroups[0].GroupId')"
       - |
-        if [ "${WIN_SG_ID}" != "null" ] && [ -n "${WIN_SG_ID}" ] ; then
-          aws ec2 delete-security-group --group-id "${WIN_SG_ID}"
+        if [ "${TFI_WIN_SG_ID}" != "null" ] && [ -n "${TFI_WIN_SG_ID}" ] ; then
+          aws ec2 delete-security-group --group-id "${TFI_WIN_SG_ID}"
         fi        
       - #-------------------------------------------------------------------------------------------------
       - # "Creative" variable substitution required since windows userdata has chars that won't work with automatic method
@@ -138,20 +133,20 @@ phases:
       - echo "SETUP - userdata files......................................................."   
       - sed -i -e '/WATCHMAKER_INSTALL_GOES_HERE/{r windows/install_watchmaker.ps1' -e 'd}' windows/userdata.ps1
       - sed -i "s/THIS_IS_NOT_THE_PASSWORD/${TF_VAR_term_passwd}/" windows/userdata.ps1
-      - sed -i "s,THIS_IS_NOT_THE_REPO,${GIT_REPO}," windows/userdata.ps1
-      - sed -i "s/THIS_IS_NOT_THE_BRANCH/${GIT_BRANCH}/" windows/userdata.ps1
-      - sed -i "s/WINRM_USER_GOES_HERE/${WINRM_USER}/" windows/userdata.ps1
-      - sed -i "s^COMMON_COMMAND_LINE_ARGUMENTS_GO_HERE^${COMMON_WM_ARGS}^" windows/userdata.ps1
-      - sed -i "s^WIN_COMMAND_LINE_ARGUMENTS_GO_HERE^${WIN_WM_ARGS}^" windows/userdata.ps1
+      - sed -i "s,THIS_IS_NOT_THE_REPO,${TFI_GIT_REPO}," windows/userdata.ps1
+      - sed -i "s/THIS_IS_NOT_THE_BRANCH/${TFI_GIT_BRANCH}/" windows/userdata.ps1
+      - sed -i "s/WINRM_USER_GOES_HERE/${TFI_WINRM_USER}/" windows/userdata.ps1
+      - sed -i "s^COMMON_COMMAND_LINE_ARGUMENTS_GO_HERE^${TFI_COMMON_WM_ARGS}^" windows/userdata.ps1
+      - sed -i "s^WIN_COMMAND_LINE_ARGUMENTS_GO_HERE^${TFI_WIN_WM_ARGS}^" windows/userdata.ps1
       - sed -i -e '/WATCHMAKER_INSTALL_GOES_HERE/{r linux/install_watchmaker.sh' -e 'd}' linux/userdata.sh
-      - sed -i "s,THIS_IS_NOT_THE_REPO,${GIT_REPO}," linux/userdata.sh
-      - sed -i "s/THIS_IS_NOT_THE_BRANCH/${GIT_BRANCH}/" linux/userdata.sh
-      - sed -i "s^COMMON_COMMAND_LINE_ARGUMENTS_GO_HERE^${COMMON_WM_ARGS}^" linux/userdata.sh
-      - sed -i "s^LX_COMMAND_LINE_ARGUMENTS_GO_HERE^${LX_WM_ARGS}^" linux/userdata.sh
+      - sed -i "s,THIS_IS_NOT_THE_REPO,${TFI_GIT_REPO}," linux/userdata.sh
+      - sed -i "s/THIS_IS_NOT_THE_BRANCH/${TFI_GIT_BRANCH}/" linux/userdata.sh
+      - sed -i "s^COMMON_COMMAND_LINE_ARGUMENTS_GO_HERE^${TFI_COMMON_WM_ARGS}^" linux/userdata.sh
+      - sed -i "s^LX_COMMAND_LINE_ARGUMENTS_GO_HERE^${TFI_LX_WM_ARGS}^" linux/userdata.sh
       - #-------------------------------------------------------------------------------------------------  
       - echo "Throwing it over the fence to Terraform......................................"
       - echo "Initializing Terraform " ; ./terraform init -input=false
-      - echo "Importing key pair " ; ./terraform import aws_key_pair.auth "${KEY_PAIR_NAME}"
+      - echo "Importing key pair " ; ./terraform import aws_key_pair.auth "${TFI_KEY_PAIR_NAME}"
       - echo "Create provisiong plan " ; ./terraform plan -out=tfplan -input=false
   build:
     commands:
@@ -165,12 +160,12 @@ phases:
   post_build:
     commands:
       - |
-        if [ "${DESTROY_AFTER_TEST}" = "true" ]; then
+        if [ "${TFI_DESTROY_AFTER_TEST}" = "true" ]; then
           echo "Destroying Terraform-created resources (e.g., security groups, instances, key pair)..."
           ./terraform destroy -input=false -force
-          if aws ec2 describe-key-pairs --key-name "${KEY_PAIR_NAME}" ; then
+          if aws ec2 describe-key-pairs --key-name "${TFI_KEY_PAIR_NAME}" ; then
             echo "Deleting key pair..."
-            aws ec2 delete-key-pair --key-name "${KEY_PAIR_NAME}"
+            aws ec2 delete-key-pair --key-name "${TFI_KEY_PAIR_NAME}"
           fi
         else
           echo "********* WARNING *********"
