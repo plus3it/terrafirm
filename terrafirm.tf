@@ -1,25 +1,25 @@
 provider "aws" {
-  region     = "${var.region}"
+  region     = "${var.tfi_region}"
 }
 
 #used for importing the key pair created using aws cli
 resource "aws_key_pair" "auth" {
-  key_name   = "${var.key_pair_name}"
-  public_key = "${var.public_key}"
+  key_name   = "${var.tfi_key_pair_name}"
+  public_key = "${var.tfi_public_key}"
 }
 
 # Security group to access the instances over WinRM
 resource "aws_security_group" "terrafirm_winrm" {
-  name        = "${var.win_security_group}"
+  name        = "${var.tfi_win_security_group}"
   description = "Used in terrafirm"
-  vpc_id      = "${var.vpc_id}"
+  vpc_id      = "${var.tfi_vpc_id}"
 
   # SSH access from anywhere
   ingress {
     from_port   = 5985
     to_port     = 5986
     protocol    = "tcp"
-    cidr_blocks = ["${var.cb_ip}/32"]
+    cidr_blocks = ["${var.tfi_cb_ip}/32"]
   }
 
   # outbound internet access
@@ -33,16 +33,16 @@ resource "aws_security_group" "terrafirm_winrm" {
 
 # Security group to access the instances over SSH
 resource "aws_security_group" "terrafirm_ssh" {
-  name        = "${var.lx_security_group}"
+  name        = "${var.tfi_lx_security_group}"
   description = "Used in terrafirm"
-  vpc_id      = "${var.vpc_id}"
+  vpc_id      = "${var.tfi_vpc_id}"
   
   # SSH access 
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["${var.cb_ip}/32"]
+    cidr_blocks = ["${var.tfi_cb_ip}/32"]
   }
 
   # outbound internet access
@@ -55,17 +55,17 @@ resource "aws_security_group" "terrafirm_ssh" {
 }
 
 #owners of canonical centos, rhel, linux amis
-variable "linux_ami_owners" {
+variable "tfi_linux_ami_owners" {
   default = ["701759196663", "self", "125523088429", "099720109477"]
 }
 
 #owners of canonical windows amis (basically Amazon)
-variable "windows_ami_owners" {
+variable "tfi_windows_ami_owners" {
   default = ["801119661308", "amazon"]
 }
 
 #these are just strings that are used by aws_ami data resources to find amis 
-variable "ami_name_filters" {
+variable "tfi_ami_name_filters" {
   default = [
     "spel-minimal-centos-6*",
     "spel-minimal-centos-7*",
@@ -77,7 +77,7 @@ variable "ami_name_filters" {
   ] 
 }
 
-variable "other_filters" {
+variable "tfi_other_filters" {
   type  = "map"
   default = {
     virtualization_type = "hvm"
@@ -90,15 +90,15 @@ data "aws_ami" "centos6" {
   
   filter {
     name = "virtualization-type"
-    values = ["${var.other_filters["virtualization_type"]}"]
+    values = ["${var.tfi_other_filters["virtualization_type"]}"]
   }
   
   filter {
     name = "name"
-    values = ["${element(var.ami_name_filters, 0)}"]
+    values = ["${element(var.tfi_ami_name_filters, 0)}"]
   }
   
-  owners = "${var.linux_ami_owners}"
+  owners = "${var.tfi_linux_ami_owners}"
 }
 
 #used just to find the ami id matching criteria, which is then used in provisioning resource
@@ -107,15 +107,15 @@ data "aws_ami" "centos7" {
   
   filter {
     name = "virtualization-type"
-    values = ["${var.other_filters["virtualization_type"]}"]
+    values = ["${var.tfi_other_filters["virtualization_type"]}"]
   }
   
   filter {
     name = "name"
-    values = ["${element(var.ami_name_filters, 1)}"]
+    values = ["${element(var.tfi_ami_name_filters, 1)}"]
   }
   
-  owners = "${var.linux_ami_owners}"
+  owners = "${var.tfi_linux_ami_owners}"
 }
 
 #used just to find the ami id matching criteria, which is then used in provisioning resource
@@ -124,15 +124,15 @@ data "aws_ami" "rhel6" {
   
   filter {
     name = "virtualization-type"
-    values = ["${var.other_filters["virtualization_type"]}"]
+    values = ["${var.tfi_other_filters["virtualization_type"]}"]
   }
   
   filter {
     name = "name"
-    values = ["${element(var.ami_name_filters, 2)}"]
+    values = ["${element(var.tfi_ami_name_filters, 2)}"]
   }
   
-  owners = "${var.linux_ami_owners}"
+  owners = "${var.tfi_linux_ami_owners}"
 }
 
 #used just to find the ami id matching criteria, which is then used in provisioning resource
@@ -141,15 +141,15 @@ data "aws_ami" "rhel7" {
   
   filter {
     name = "virtualization-type"
-    values = ["${var.other_filters["virtualization_type"]}"]
+    values = ["${var.tfi_other_filters["virtualization_type"]}"]
   }
   
   filter {
     name = "name"
-    values = ["${element(var.ami_name_filters, 3)}"]
+    values = ["${element(var.tfi_ami_name_filters, 3)}"]
   }
   
-  owners = "${var.linux_ami_owners}"
+  owners = "${var.tfi_linux_ami_owners}"
 }
 
 #used just to find the ami id matching criteria, which is then used in provisioning resource
@@ -158,15 +158,15 @@ data "aws_ami" "windows2016" {
   
   filter {
     name = "virtualization-type"
-    values = ["${var.other_filters["virtualization_type"]}"]
+    values = ["${var.tfi_other_filters["virtualization_type"]}"]
   }
   
   filter {
     name = "name"
-    values = ["${element(var.ami_name_filters, 4)}"]
+    values = ["${element(var.tfi_ami_name_filters, 4)}"]
   }
   
-  owners = "${var.windows_ami_owners}"
+  owners = "${var.tfi_windows_ami_owners}"
 }
 
 #used just to find the ami id matching criteria, which is then used in provisioning resource
@@ -175,15 +175,15 @@ data "aws_ami" "windows2012" {
   
   filter {
     name = "virtualization-type"
-    values = ["${var.other_filters["virtualization_type"]}"]
+    values = ["${var.tfi_other_filters["virtualization_type"]}"]
   }
 
   filter {
     name = "name"
-    values = ["${element(var.ami_name_filters, 5)}"]
+    values = ["${element(var.tfi_ami_name_filters, 5)}"]
   }
 
-  owners = "${var.windows_ami_owners}"
+  owners = "${var.tfi_windows_ami_owners}"
 }
 
 #used just to find the ami id matching criteria, which is then used in provisioning resource
@@ -192,15 +192,15 @@ data "aws_ami" "windows2008" {
   
   filter {
     name = "virtualization-type"
-    values = ["${var.other_filters["virtualization_type"]}"]
+    values = ["${var.tfi_other_filters["virtualization_type"]}"]
   }
 
   filter {
     name = "name"
-    values = ["${element(var.ami_name_filters, 6)}"]
+    values = ["${element(var.tfi_ami_name_filters, 6)}"]
   }
   
-  owners = "${var.windows_ami_owners}"
+  owners = "${var.tfi_windows_ami_owners}"
 }
 
 # data source (place to put the ami id strings), used to mitigate lack of intermediate variables and interpolation
@@ -215,15 +215,15 @@ data "null_data_source" "spel_instance_amis" {
 
 # bread & butter - this tells TF the provision/create the actual instance
 resource "aws_instance" "spels" {
-  count                        = "${lookup(map("all",length(data.null_data_source.spel_instance_amis.inputs),"one",1,"none",0),var.lx_all_one_none)}"
+  count                        = "${lookup(map("all",length(data.null_data_source.spel_instance_amis.inputs),"one",1,"none",0),var.tfi_lx_all_one_none)}"
   ami                          = "${lookup(data.null_data_source.spel_instance_amis.inputs, count.index)}"
-  instance_type                = "${var.lx_instance_type}"
-  iam_instance_profile         = "${var.instance_profile}"
+  instance_type                = "${var.tfi_lx_instance_type}"
+  iam_instance_profile         = "${var.tfi_instance_profile}"
   key_name                     = "${aws_key_pair.auth.id}"
   vpc_security_group_ids       = ["${aws_security_group.terrafirm_ssh.id}"]
   user_data                    = "${file("linux/userdata.sh")}"
-  associate_public_ip_address  = "${var.associate_public_ip_address}"
-  subnet_id                    = "${var.subnet_id}"
+  associate_public_ip_address  = "${var.tfi_associate_public_ip_address}"
+  subnet_id                    = "${var.tfi_subnet_id}"
   
   timeouts {
     create = "40m"
@@ -232,8 +232,8 @@ resource "aws_instance" "spels" {
   
   connection {
     #ssh connection to tier-2 instance
-    user        = "${var.ssh_user}"
-    private_key = "${var.private_key}"
+    user        = "${var.tfi_ssh_user}"
+    private_key = "${var.tfi_private_key}"
     timeout     = "30m"
   }
   
@@ -262,15 +262,15 @@ data "null_data_source" "windows_instance_amis" {
 
 # bread & butter - this tells TF the provision/create the actual instance
 resource "aws_instance" "windows" {
-  count                        = "${lookup(map("all",length(data.null_data_source.windows_instance_amis.inputs),"one",1,"none",0),var.win_all_one_none)}"
+  count                        = "${lookup(map("all",length(data.null_data_source.windows_instance_amis.inputs),"one",1,"none",0),var.tfi_win_all_one_none)}"
   ami                          = "${lookup(data.null_data_source.windows_instance_amis.inputs, count.index)}"
-  instance_type                = "${var.win_instance_type}"
+  instance_type                = "${var.tfi_win_instance_type}"
   key_name                     = "${aws_key_pair.auth.id}"
-  iam_instance_profile         = "${var.instance_profile}"
+  iam_instance_profile         = "${var.tfi_instance_profile}"
   vpc_security_group_ids       = ["${aws_security_group.terrafirm_winrm.id}"]
   user_data                    = "${file("windows/userdata.ps1")}"
-  associate_public_ip_address  = "${var.associate_public_ip_address}"  
-  subnet_id                    = "${var.subnet_id}"
+  associate_public_ip_address  = "${var.tfi_associate_public_ip_address}"
+  subnet_id                    = "${var.tfi_subnet_id}"
   
   timeouts {
     create = "120m"
@@ -279,8 +279,8 @@ resource "aws_instance" "windows" {
   
   connection {
     type     = "winrm"
-    user     = "${var.term_user}"
-    password = "${var.term_passwd}"
+    user     = "${var.tfi_term_user}"
+    password = "${var.tfi_term_passwd}"
     timeout   = "30m"
   }
   
