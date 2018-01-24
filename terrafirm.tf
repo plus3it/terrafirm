@@ -87,7 +87,7 @@ data "template_file" "win_userdata" {
     tfi_common_args = "${var.tfi_common_args}"
     tfi_windows_args = "${var.tfi_windows_args}"
     tfi_pass = "${var.tfi_term_passwd}"
-    tfi_username = "${var.tfi_username}"
+    tfi_username = "${var.tfi_term_user}"
   }
 }
 
