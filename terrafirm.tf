@@ -82,12 +82,12 @@ data "template_file" "win_userdata" {
   template = "${file("windows/userdata.ps1")}"
 
   vars {
-    tfi_repo = "${var.tfi_repo}"
-    tfi_branch = "${var.tfi_branch}"
-    tfi_common_args = "${var.tfi_common_args}"
-    tfi_windows_args = "${var.tfi_windows_args}"
-    tfi_pass = "${var.tfi_term_passwd}"
-    tfi_username = "${var.tfi_term_user}"
+    #tfi_repo = "${var.tfi_repo}"
+    #tfi_branch = "${var.tfi_branch}"
+    #tfi_common_args = "${var.tfi_common_args}"
+    #tfi_windows_args = "${var.tfi_windows_args}"
+    #tfi_pass = "${var.tfi_term_passwd}"
+    #tfi_username = "${var.tfi_term_user}"
   }
 }
 
