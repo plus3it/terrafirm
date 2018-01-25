@@ -6,9 +6,9 @@ env:
     TFI_TF_ZIP:             https://releases.hashicorp.com/terraform/0.11.2/terraform_0.11.2_linux_amd64.zip
     TFI__DESC_URL:          https://github.com/YakDriver/terrafirm_win
     TFI_JQ_INSTALL:         https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
-    TFI_WIN_SECURITY_GRP:   "terrafirm_winrm_sg"                                   #ephermeral name for sg
-    TFI_LX_SECURITY_GRP:    "terrafirm_ssh_sg"                                     #ephermeral name for sg
-    TFI_KEY_PAIR_NAME:      "svc_terrafirm2"                                       #ephermeral name for keypair
+    TFI_WIN_SECURITY_GRP:   "terrafirm_winrm_sg"                                   #ephemeral name for sg
+    TFI_LX_SECURITY_GRP:    "terrafirm_ssh_sg"                                     #ephemeral name for sg
+    TFI_KEY_PAIR_NAME:      "svc_terrafirm2"                                       #ephemeral name for keypair
     # Below here are variables that can (and likely are) overwritten from the AWS CodeBuild project
     # Values in CodeBuild take precedence so LEAVE ALL OF THESE HERE even if defining there
     TFI_PS_PASSWD_KEY:      "/path/to/parameter/store"                             #REQUIRED in CodeBuild
