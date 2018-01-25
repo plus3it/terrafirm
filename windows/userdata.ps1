@@ -15,8 +15,8 @@ netsh advfirewall firewall add rule name="WinRM in" protocol=TCP dir=in profile=
 WATCHMAKER_INSTALL_GOES_HERE
 
 # Set Administrator password - should always go after wm install because username not yet changed
-$admin = [adsi]("WinNT://./${var.tfi_rm_user}, user")
-$admin.psbase.invoke("SetPassword", "${var.tfi_rm_pass}")
+$admin = [adsi]("WinNT://./${tfi_rm_user}, user")
+$admin.psbase.invoke("SetPassword", "${tfi_rm_pass}")
 $admin.psbase.CommitChanges()
 
 # open firewall for winrm
