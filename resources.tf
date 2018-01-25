@@ -83,7 +83,7 @@ resource "aws_instance" "spels" {
   
   provisioner "remote-exec" {
     inline = [
-      "while [ ! -f /tmp/SETUP_COMPLETE_SIGNAL ]; do sleep 2; done",
+      "while [ ! -f /tmp/SETUP_COMPLETE_SIGNAL ]; do date ; sleep 10 ; done",
       "chmod +x ~/watchmaker_test.sh",
       "~/watchmaker_test.sh",
     ]
