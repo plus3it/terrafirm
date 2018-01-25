@@ -99,8 +99,6 @@ phases:
       - TF_VAR_tfi_ssh_user="${TFI_SSH_USER}" ; export TF_VAR_tfi_ssh_user
       - TF_VAR_tfi_term_user="${TFI_WINRM_USER}" ; export TF_VAR_tfi_term_user
       - TF_VAR_tfi_term_passwd="$(aws ssm get-parameters --name ${TFI_PS_PASSWD_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_tfi_term_passwd
-      - echo "Here is the password - ${TF_VAR_tfi_term_passwd}"
-      - exit 1
       - TF_VAR_tfi_private_key="$(aws ssm get-parameters --name ${TFI_PS_PRIVATE_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_tfi_private_key
       - TF_VAR_tfi_public_key="$(aws ssm get-parameters --name ${TFI_PS_PUBLIC_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_tfi_public_key
       - |
