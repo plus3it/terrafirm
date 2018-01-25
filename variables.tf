@@ -19,7 +19,7 @@ variable "tfi_branch" {}
 variable "tfi_common_args" {}
 variable "tfi_win_args" {}
 variable "tfi_lx_args" {}
-variable "tfi_rm_passwd" {}
+variable "tfi_rm_pass" {}
 variable "tfi_rm_user" {}
 variable "tfi_ssh_user" {}
 
