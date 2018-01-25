@@ -117,14 +117,15 @@ phases:
         if [ -n "${TF_VAR_tfi_vpc_id}" ] ; then
           vpc_flag="--vpc-id ${TF_VAR_tfi_vpc_id}"
         fi
-      - echo "VPC FLAG - ${vpc_flag}"
-      - exit 1
-      - TFI_LX_SG_ID="$(aws ec2 describe-security-groups --group-names "${TFI_LX_SECURITY_GRP}" "${vpc_flag}"| ./jq.dms -r '.SecurityGroups[0].GroupId')"
+      - #echo "VPC FLAG - ${vpc_flag}"
+      - #exit 1
+      - TFI_LX_SG_ID="$(aws ec2 describe-security-groups --filters Name=group-name,Values=${TFI_LX_SECURITY_GRP} | ./jq.dms -r '.SecurityGroups[0].GroupId')"
       - |
         if [ "${TFI_LX_SG_ID}" != "null" ] && [ -n "${TFI_LX_SG_ID}" ] ; then
           aws ec2 delete-security-group --group-id "${TFI_LX_SG_ID}"
         fi
-      - TFI_WIN_SG_ID="$(aws ec2 describe-security-groups --group-names "${TFI_WIN_SECURITY_GRP}" "${vpc_flag}"| ./jq.dms -r '.SecurityGroups[0].GroupId')"
+      - #TFI_WIN_SG_ID="$(aws ec2 describe-security-groups --group-names "${TFI_WIN_SECURITY_GRP}" "${vpc_flag}"| ./jq.dms -r '.SecurityGroups[0].GroupId')"
+      - TFI_WIN_SG_ID="$(aws ec2 describe-security-groups --filters Name=group-name,Values=${TFI_WIN_SECURITY_GRP} | ./jq.dms -r '.SecurityGroups[0].GroupId')"
       - |
         if [ "${TFI_WIN_SG_ID}" != "null" ] && [ -n "${TFI_WIN_SG_ID}" ] ; then
           aws ec2 delete-security-group --group-id "${TFI_WIN_SG_ID}"
