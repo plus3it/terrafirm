@@ -7,7 +7,7 @@ $GitUrl = "https://github.com/git-for-windows/git/releases/download/v2.14.3.wind
 $PypiUrl = "https://pypi.org/simple"
 
 # Download bootstrap file
-
+$BootstrapFile = "$${Env:Temp}\$($${BootstrapUrl}.split("/")[-1])"
 (New-Object System.Net.WebClient).DownloadFile($BootstrapUrl, $BootstrapFile)
 
 # Install python and git
