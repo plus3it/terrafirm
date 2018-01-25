@@ -51,8 +51,8 @@ phases:
       - TF_VAR_tfi_region="${AWS_REGION}" ; export TF_VAR_tfi_region
       - TF_VAR_tfi_win_all_one_none="${TFI_BUILD_WIN}" ; export TF_VAR_tfi_win_all_one_none
       - TF_VAR_tfi_lx_all_one_none="${TFI_BUILD_LX}" ; export TF_VAR_tfi_lx_all_one_none
-      - TF_VAR_tfi_win_security_grp="${TFI_WIN_SECURITY_GRP}" ; export TF_VAR_tfi_win_security_group
-      - TF_VAR_tfi_lx_security_grp="${TFI_LX_SECURITY_GRP}" ; export TF_VAR_tfi_lx_security_group     
+      - TF_VAR_tfi_win_security_grp="${TFI_WIN_SECURITY_GRP}" ; export TF_VAR_tfi_win_security_grp
+      - TF_VAR_tfi_lx_security_grp="${TFI_LX_SECURITY_GRP}" ; export TF_VAR_tfi_lx_security_grp     
       - TF_VAR_tfi_cb_ip="$(curl http://checkip.amazonaws.com)" ; export TF_VAR_tfi_cb_ip # IP of CodeBuild instance for use by security group, so only open to one machine
       - TF_VAR_tfi_key_pair_name="${TFI_KEY_PAIR_NAME}" ; export TF_VAR_tfi_key_pair_name
       - TF_VAR_tfi_private_key="$(aws ssm get-parameters --name ${TFI_PS_PRIVATE_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_tfi_private_key
