@@ -17,7 +17,8 @@ variable "tfi_win_all_one_none" {}
 variable "tfi_repo" {}
 variable "tfi_branch" {}
 variable "tfi_common_args" {}
-variable "tfi_windows_args" {}
+variable "tfi_win_args" {}
+variable "tfi_lx_args" {}
 variable "tfi_rm_passwd" {}
 variable "tfi_rm_user" {}
 variable "tfi_ssh_user" {}
