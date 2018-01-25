@@ -1,10 +1,10 @@
 variable "tfi_region" {}
 variable "tfi_win_security_grp" {}
 variable "tfi_lx_security_grp" {}
+variable "tfi_key_pair_name" {}
 variable "tfi_cb_ip" {}
 variable "tfi_subnet_id" {}
 variable "tfi_vpc_id" {}
-variable "tfi_key_pair_name" {}
 variable "tfi_build_win" {}
 variable "tfi_build_lx" {}
 variable "tfi_private_key" {}
