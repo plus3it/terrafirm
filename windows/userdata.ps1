@@ -4,9 +4,9 @@
 Start-Transcript -path C:\Temp\watchmaker_userdata_install.log -append
 
 # Set Administrator password
-$admin = [adsi]("WinNT://./administrator, user")
-$admin.psbase.invoke("SetPassword", "${var.tfi_term_passwd}")
-$admin.psbase.CommitChanges()
+#$admin = [adsi]("WinNT://./administrator, user")
+#$admin.psbase.invoke("SetPassword", "${var.tfi_term_passwd}")
+#$admin.psbase.CommitChanges()
 
 # close the firewall
 netsh advfirewall firewall add rule name="WinRM in" protocol=TCP dir=in profile=any localport=5985 remoteip=any localip=any action=deny
