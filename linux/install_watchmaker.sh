@@ -1,5 +1,5 @@
-GIT_REPO=THIS_IS_NOT_THE_REPO
-GIT_BRANCH=THIS_IS_NOT_THE_BRANCH
+GIT_REPO="${tfi_repo}"
+GIT_BRANCH="${tfi_branch}"
 
 PIP_URL=https://bootstrap.pypa.io/get-pip.py
 PYPI_URL=https://pypi.org/simple
@@ -21,4 +21,4 @@ cd watchmaker
 pip install --index-url "$PYPI_URL" --editable .
 
 # Run watchmaker
-watchmaker COMMON_COMMAND_LINE_ARGUMENTS_GO_HERE LX_COMMAND_LINE_ARGUMENTS_GO_HERE
+watchmaker ${tfi_common_args} ${tfi_lx_args}
