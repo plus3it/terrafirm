@@ -5,7 +5,7 @@ Start-Transcript -path C:\Temp\watchmaker_userdata_install.log -append
 
 # Set Administrator password
 #$admin = [adsi]("WinNT://./administrator, user")
-#$admin.psbase.invoke("SetPassword", "${var.tfi_rm_pass}")
+#$admin.psbase.invoke("SetPassword", "${tfi_rm_pass}")
 #$admin.psbase.CommitChanges()
 
 # close the firewall
