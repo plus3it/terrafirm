@@ -11,18 +11,18 @@ env:
     TFI_KEY_PAIR_NAME:      "svc_terrafirm2"                                       #ephemeral name for keypair
     # Below here are variables that can (and likely are) overwritten from the AWS CodeBuild project
     # Values in CodeBuild take precedence so LEAVE ALL OF THESE HERE even if defining there
+    TFI_SUBNET_ID:          ""                                                     #optional in CodeBuild
+    TFI_BUILD_WIN:          "all"                                                  #optional in CodeBuild
+    TFI_BUILD_LX:           "all"                                                  #optional in CodeBuild
     TFI_PS_PRIVATE_KEY:     "/path/to/parameter/store"                             #REQUIRED in CodeBuild
     TFI_PS_PUBLIC_KEY:      "/path/to/parameter/store"                             #REQUIRED in CodeBuild
     TFI_PS_PASSWD_KEY:      "/path/to/parameter/store"                             #REQUIRED in CodeBuild
-    TFI_BUILD_WIN:          "all"                                                  #optional in CodeBuild
-    TFI_BUILD_LX:           "all"                                                  #optional in CodeBuild
     TFI_RM_USER:            "Administrator"                                        #optional in CodeBuild
     TFI_SSH_USER:           "root"                                                 #optional in CodeBuild
     TFI_INSTANCE_PROFILE:   ""                                                     #optional in CodeBuild
     TFI_ASSIGN_PUBLIC_IP:   "false"                                                #optional in CodeBuild
     TFI_WIN_INSTANCE_TYPE:  "t2.medium"                                            #optional in CodeBuild
     TFI_LX_INSTANCE_TYPE:   "t2.micro"                                             #optional in CodeBuild
-    TFI_SUBNET_ID:          ""                                                     #optional in CodeBuild
     TFI_REPO:               "https://github.com/plus3it/watchmaker.git"            #optional in CodeBuild
     TFI_BRANCH:             "master"                                               #optional in CodeBuild
     TFI_COMMON_ARGS:        "-n --log-level debug"                                 #optional in CodeBuild
