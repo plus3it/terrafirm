@@ -1,6 +1,4 @@
-provider "aws" {
-  region     = "${var.tfi_region}"
-}
+
 
 #used for importing the key pair created using aws cli
 resource "aws_key_pair" "auth" {
