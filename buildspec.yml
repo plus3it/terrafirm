@@ -61,7 +61,7 @@ phases:
       - TF_VAR_tfi_rm_user="${TFI_RM_USER}" ; export TF_VAR_tfi_rm_user      
       - TF_VAR_tfi_ssh_user="${TFI_SSH_USER}" ; export TF_VAR_tfi_ssh_user
       - TF_VAR_tfi_instance_profile="${TFI_INSTANCE_PROFILE}" ; export TF_VAR_tfi_instance_profile
-      - TF_VAR_tfi_associate_public_ip_address="${TFI_ASSIGN_PUBLIC_IP}" ; export TF_VAR_tfi_associate_public_ip_address
+      - TF_VAR_tfi_assign_public_ip="${TFI_ASSIGN_PUBLIC_IP}" ; export TF_VAR_tfi_assign_public_ip
       - TF_VAR_tfi_win_instance_type="${TFI_WIN_INSTANCE_TYPE}" ; export TF_VAR_tfi_win_instance_type
       - TF_VAR_tfi_lx_instance_type="${TFI_LX_INSTANCE_TYPE}" ; export TF_VAR_tfi_lx_instance_type
       - TF_VAR_tfi_repo="${TFI_REPO}" ; export TF_VAR_tfi_repo
