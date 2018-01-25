@@ -16,13 +16,13 @@ Variable | Default | Req/Opt (in CodeBuild) | Description
 `TFI_BRANCH` | master | optional | Which branch of the repository to use in getting watchmaker code.
 `TFI_ASSIGN_PUBLIC_IP` | false | optional | Whether or not to assign a public IP to the instances built by Terraform.
 `TFI_DESTROY_AFTER_TEST` | true | optional | Whether or not to destroy all resources created after the test. (WARNING: Depending on failure, Terraform may not always be able to destroy provisioned resources.)
-`TFI_INSTANCE_PROFILE` | none | optional | Instance profile to be used in provisioning resources. This is generally the same as the role if the role is an EC2 role.
+`TFI_INSTANCE_PROFILE` | [empty] | optional | Instance profile to be used in provisioning resources. This is generally the same as the role if the role is an EC2 role.
 `TFI_LX_INSTANCE_TYPE` | t2.micro | optional | AWS instance type for Linux instances.
 `TFI_WIN_INSTANCE_TYPE` | t2.medium | optional | AWS instance type for Windows instances.
 `TFI_LX_ARGS` | --log-dir=/var/log/watchmaker | optional | Command line arguments used when installing Watchmaker (Linux).
 `TFI_WIN_ARGS` | --log-dir=C:\\Watchmaker\\Logs | optional | Command line arguments used when installing Watchmaker (Windows).
 `TFI_COMMON_ARGS` | -n --log-level debug | optional | Command line arguments used when installing Watchmaker (Windows/Linux).
-`TFI_SUBNET_ID` | none | optional | Whether or not to use a subnet. CodeBuild instance must be able to access.
+`TFI_SUBNET_ID` | [empty] | optional | Whether or not to use a subnet. CodeBuild instance must be able to access.
 `TFI_BUILD_WIN` | all | optional | Whether or not to build all possible Windows instances. Acceptable values are "all", "one", or "none".
 `TFI_BUILD_LX` | all | optional | Whether or not to build all possible Linux instances. Acceptable values are "all", "one", or "none".
 
