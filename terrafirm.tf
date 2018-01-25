@@ -296,8 +296,8 @@ resource "aws_instance" "windows" {
   
   connection {
     type     = "winrm"
-    user     = "${var.tfi_term_user}"
-    password = "${var.tfi_term_passwd}"
+    user     = "${var.tfi_rm_user}"
+    password = "${var.tfi_rm_pass}"
     timeout   = "30m"
   }
   
