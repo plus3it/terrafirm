@@ -5,8 +5,8 @@ variable "tfi_cb_ip" {}
 variable "tfi_subnet_id" {}
 variable "tfi_vpc_id" {}
 variable "tfi_key_pair_name" {}
-variable "tfi_win_all_one_none" {}
-variable "tfi_lx_all_one_none" {}
+variable "tfi_build_win" {}
+variable "tfi_build_lx" {}
 variable "tfi_private_key" {}
 variable "tfi_public_key" {}
 variable "tfi_rm_pass" {}
