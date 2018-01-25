@@ -1,10 +1,7 @@
 variable "tfi_region" {}
 variable "tfi_private_key" {}
 variable "tfi_public_key" {}
-variable "tfi_term_user" {}
-variable "tfi_term_passwd" {}
 variable "tfi_key_pair_name" {}
-variable "tfi_ssh_user" {}
 variable "tfi_cb_ip" {}
 variable "tfi_associate_public_ip_address" {}
 variable "tfi_win_security_group" {}
@@ -16,11 +13,14 @@ variable "tfi_subnet_id" {}
 variable "tfi_vpc_id" {}
 variable "tfi_lx_all_one_none" {}
 variable "tfi_win_all_one_none" {}
+
 variable "tfi_repo" {}
 variable "tfi_branch" {}
 variable "tfi_common_args" {}
 variable "tfi_windows_args" {}
-variable "tfi_username" {}
+variable "tfi_rm_passwd" {}
+variable "tfi_rm_user" {}
+variable "tfi_ssh_user" {}
 
 output "amicentos6" {
   value = "${data.aws_ami.centos6.id}"
