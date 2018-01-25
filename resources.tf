@@ -7,7 +7,7 @@ resource "aws_key_pair" "auth" {
 
 # Security group to access the instances over WinRM
 resource "aws_security_group" "terrafirm_winrm" {
-  name        = "${var.tfi_win_security_group}"
+  name        = "${var.tfi_win_security_grp}"
   description = "Used in terrafirm"
   vpc_id      = "${var.tfi_vpc_id}"
 
@@ -30,7 +30,7 @@ resource "aws_security_group" "terrafirm_winrm" {
 
 # Security group to access the instances over SSH
 resource "aws_security_group" "terrafirm_ssh" {
-  name        = "${var.tfi_lx_security_group}"
+  name        = "${var.tfi_lx_security_grp}"
   description = "Used in terrafirm"
   vpc_id      = "${var.tfi_vpc_id}"
   
@@ -53,7 +53,7 @@ resource "aws_security_group" "terrafirm_ssh" {
 
 # bread & butter - this tells TF the provision/create the actual instance
 resource "aws_instance" "spels" {
-  count                        = "${lookup(map("all",length(data.null_data_source.spel_instance_amis.inputs),"one",1,"none",0),var.tfi_lx_all_one_none)}"
+  count                        = "${lookup(map("all",length(data.null_data_source.spel_instance_amis.inputs),"one",1,"none",0),var.tfi_build_lx)}"
   ami                          = "${lookup(data.null_data_source.spel_instance_amis.inputs, count.index)}"
   instance_type                = "${var.tfi_lx_instance_type}"
   iam_instance_profile         = "${var.tfi_instance_profile}"
@@ -61,7 +61,7 @@ resource "aws_instance" "spels" {
   vpc_security_group_ids       = ["${aws_security_group.terrafirm_ssh.id}"]
   #user_data                    = "${file("linux/userdata.sh")}"
   user_data                    = "${data.template_file.lx_userdata.rendered}"
-  associate_public_ip_address  = "${var.tfi_associate_public_ip_address}"
+  associate_public_ip_address  = "${var.tfi_assign_public_ip}"
   subnet_id                    = "${var.tfi_subnet_id}"
   
   timeouts {
@@ -92,7 +92,7 @@ resource "aws_instance" "spels" {
 
 # bread & butter - this tells TF the provision/create the actual instance
 resource "aws_instance" "windows" {
-  count                        = "${lookup(map("all",length(data.null_data_source.windows_instance_amis.inputs),"one",1,"none",0),var.tfi_win_all_one_none)}"
+  count                        = "${lookup(map("all",length(data.null_data_source.windows_instance_amis.inputs),"one",1,"none",0),var.tfi_build_win)}"
   ami                          = "${lookup(data.null_data_source.windows_instance_amis.inputs, count.index)}"
   instance_type                = "${var.tfi_win_instance_type}"
   key_name                     = "${aws_key_pair.auth.id}"
@@ -100,7 +100,7 @@ resource "aws_instance" "windows" {
   vpc_security_group_ids       = ["${aws_security_group.terrafirm_winrm.id}"]
   #user_data                    = "${file("windows/userdata.ps1")}"
   user_data                    = "${data.template_file.win_userdata.rendered}"
-  associate_public_ip_address  = "${var.tfi_associate_public_ip_address}"
+  associate_public_ip_address  = "${var.tfi_assign_public_ip}"
   subnet_id                    = "${var.tfi_subnet_id}"
   
   timeouts {
