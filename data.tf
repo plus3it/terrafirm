@@ -7,9 +7,20 @@ data "template_file" "win_userdata" {
     tfi_branch = "${var.tfi_branch}"
     tfi_common_args = "${var.tfi_common_args}"
     tfi_win_args = "${var.tfi_win_args}"
-    tfi_lx_args = "${var.tfi_lx_args}"
     tfi_rm_pass = "${var.tfi_rm_pass}"
     tfi_rm_user = "${var.tfi_rm_user}"
+  }
+}
+
+# Template for initial configuration bash script
+data "template_file" "lx_userdata" {
+  template = "${file("linux/userdata.sh")}"
+
+  vars {
+    tfi_repo = "${var.tfi_repo}"
+    tfi_branch = "${var.tfi_branch}"
+    tfi_common_args = "${var.tfi_common_args}"
+    tfi_lx_args = "${var.tfi_lx_args}"
     tfi_ssh_user = "${var.tfi_ssh_user}"
   }
 }
