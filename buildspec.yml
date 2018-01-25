@@ -46,7 +46,7 @@ phases:
       - #-------------------------------------------------------------------------------------------------
       - echo "Terraform version " ; ./terraform --version
       - #-------------------------------------------------------------------------------------------------
-      - echo "SETUP - AWS Basic Config......................................................."
+      - echo "SETUP - Simple Env Vars......................................................."
       - aws configure set region "${AWS_REGION}"
       - TF_VAR_tfi_region="${AWS_REGION}" ; export TF_VAR_tfi_region
       - TF_VAR_tfi_win_all_one_none="${TFI_BUILD_WIN}" ; export TF_VAR_tfi_win_all_one_none
@@ -58,8 +58,20 @@ phases:
       - TF_VAR_tfi_lx_instance_type="${TFI_LX_INSTANCE_TYPE}" ; export TF_VAR_tfi_lx_instance_type
       - TF_VAR_tfi_ssh_user="${TFI_SSH_USER}" ; export TF_VAR_tfi_ssh_user
       - TF_VAR_tfi_rm_user="${TFI_WINRM_USER}" ; export TF_VAR_tfi_rm_user
+      - TF_VAR_tfi_win_security_group="${TFI_WIN_SECURITY_GRP}" ; export TF_VAR_tfi_win_security_group
+      - TF_VAR_tfi_lx_security_group="${TFI_LX_SECURITY_GRP}" ; export TF_VAR_tfi_lx_security_group     
+      - TF_VAR_tfi_repo="${TFI_REPO}" ; export TF_VAR_tfi_repo
+      - TF_VAR_tfi_branch="${TFI_BRANCH}" ; export TF_VAR_tfi_branch
+      - TF_VAR_tfi_common_args="${TFI_COMMON_ARGS}" ; export TF_VAR_tfi_common_args
+      - TF_VAR_tfi_win_args="${TFI_WIN_ARGS}" ; export TF_VAR_tfi_win_args
+      - TF_VAR_tfi_lx_args="${TFI_LX_ARGS}" ; export TF_VAR_tfi_lx_args
+      - TF_VAR_tfi_rm_user="${TFI_RM_USER}" ; export TF_VAR_tfi_rm_user      
+      - TF_VAR_tfi_key_pair_name="${TFI_KEY_PAIR_NAME}" ; export TF_VAR_tfi_key_pair_name
+      - TF_VAR_tfi_rm_pass="$(aws ssm get-parameters --name ${TFI_PS_PASSWD_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_tfi_rm_pass
+      - TF_VAR_tfi_private_key="$(aws ssm get-parameters --name ${TFI_PS_PRIVATE_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_tfi_private_key
+      - TF_VAR_tfi_public_key="$(aws ssm get-parameters --name ${TFI_PS_PUBLIC_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_tfi_public_key
       - #-------------------------------------------------------------------------------------------------
-      - echo "SETUP - AWS subnet............................................................."
+      - echo "SETUP - Validate subnet, find VPC.........................................................."
       - # If subnet id is valid, finds the associated VPC and assigns variables. Otherwise, blanks (defaults)
       - TF_VAR_tfi_subnet_id=""
       - TF_VAR_tfi_vpc_id=""
@@ -73,11 +85,7 @@ phases:
         fi
       - export TF_VAR_tfi_subnet_id ; export TF_VAR_tfi_vpc_id
       - #-------------------------------------------------------------------------------------------------
-      - echo "SETUP - AWS key setup........................................................"      
-      - TF_VAR_tfi_key_pair_name="${TFI_KEY_PAIR_NAME}" ; export TF_VAR_tfi_key_pair_name
-      - TF_VAR_tfi_rm_pass="$(aws ssm get-parameters --name ${TFI_PS_PASSWD_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_tfi_rm_pass
-      - TF_VAR_tfi_private_key="$(aws ssm get-parameters --name ${TFI_PS_PRIVATE_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_tfi_private_key
-      - TF_VAR_tfi_public_key="$(aws ssm get-parameters --name ${TFI_PS_PUBLIC_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_tfi_public_key
+      - echo "SETUP - Create key pair if necessary......................................................."      
       - |
         if aws ec2 describe-key-pairs --key-name "${TFI_KEY_PAIR_NAME}" ; then
           echo "Key pair already exists..."
@@ -86,53 +94,31 @@ phases:
           aws ec2 import-key-pair --key-name "${TFI_KEY_PAIR_NAME}" --public-key-material "${TF_VAR_tfi_public_key}"
         fi
       - #-------------------------------------------------------------------------------------------------
-      - echo "SETUP - AWS security groups.................................................."
+      - echo "SETUP - Delete duplicate security groups..................................................."
       - # names to be used when creating security groups
-      - TF_VAR_tfi_win_security_group="${TFI_WIN_SECURITY_GRP}" ; export TF_VAR_tfi_win_security_group
-      - TF_VAR_tfi_lx_security_group="${TFI_LX_SECURITY_GRP}" ; export TF_VAR_tfi_lx_security_group
-      - |
-        if [ -n "${TF_VAR_tfi_vpc_id}" ] ; then
-          vpc_flag="--vpc-id ${TF_VAR_tfi_vpc_id}"
-        fi
-      - #echo "VPC FLAG - ${vpc_flag}"
-      - #exit 1
       - TFI_LX_SG_ID="$(aws ec2 describe-security-groups --filters Name=group-name,Values=${TFI_LX_SECURITY_GRP} | ./jq.dms -r '.SecurityGroups[0].GroupId')"
       - |
         if [ "${TFI_LX_SG_ID}" != "null" ] && [ -n "${TFI_LX_SG_ID}" ] ; then
           aws ec2 delete-security-group --group-id "${TFI_LX_SG_ID}"
         fi
-      - #TFI_WIN_SG_ID="$(aws ec2 describe-security-groups --group-names "${TFI_WIN_SECURITY_GRP}" "${vpc_flag}"| ./jq.dms -r '.SecurityGroups[0].GroupId')"
       - TFI_WIN_SG_ID="$(aws ec2 describe-security-groups --filters Name=group-name,Values=${TFI_WIN_SECURITY_GRP} | ./jq.dms -r '.SecurityGroups[0].GroupId')"
       - |
         if [ "${TFI_WIN_SG_ID}" != "null" ] && [ -n "${TFI_WIN_SG_ID}" ] ; then
           aws ec2 delete-security-group --group-id "${TFI_WIN_SG_ID}"
         fi        
       - #-------------------------------------------------------------------------------------------------
-      - # "Creative" variable substitution required since windows userdata has chars that won't work with automatic method
-      - # Should do this late in setup so that all variables needed are ready
-      - echo "SETUP - userdata files......................................................."   
+      - echo "SETUP - Assemble userdata files............................................................"   
       - sed -i -e '/WATCHMAKER_INSTALL_GOES_HERE/{r windows/install_watchmaker.ps1' -e 'd}' windows/userdata.ps1
       - sed -i -e '/WATCHMAKER_INSTALL_GOES_HERE/{r linux/install_watchmaker.sh' -e 'd}' linux/userdata.sh
-      - TF_VAR_tfi_repo="${TFI_REPO}" ; export TF_VAR_tfi_repo
-      - TF_VAR_tfi_branch="${TFI_BRANCH}" ; export TF_VAR_tfi_branch
-      - TF_VAR_tfi_common_args="${TFI_COMMON_ARGS}" ; export TF_VAR_tfi_common_args
-      - TF_VAR_tfi_win_args="${TFI_WIN_ARGS}" ; export TF_VAR_tfi_win_args
-      - TF_VAR_tfi_lx_args="${TFI_LX_ARGS}" ; export TF_VAR_tfi_lx_args
-      - TF_VAR_tfi_rm_user="${TFI_RM_USER}" ; export TF_VAR_tfi_rm_user
       - #-------------------------------------------------------------------------------------------------  
-      - echo "Throwing it over the fence to Terraform......................................"
+      - echo "SETUP - Complete, init Terraform..........................................................."         
       - echo "Initializing Terraform " ; ./terraform init -input=false
       - echo "Importing key pair " ; ./terraform import aws_key_pair.auth "${TFI_KEY_PAIR_NAME}"
       - echo "Create provisiong plan " ; ./terraform plan -out=tfplan -input=false
   build:
     commands:
-      - echo "Applying Terraform plan (which installs watchmaker) "
-      - echo "NOTE, this will fail if remote execute calls fail"
+      - echo "Apply Terraform..........................................................................." 
       - ./terraform apply -input=false tfplan
-      - #./terraform state pull -target=aws_instance.windows -input=false
-      - #AWS_INSTANCE_STATE="$(./terraform state pull -target=aws_instance.windows -input=false)" ; export AWS_INSTANCE_STATE
-      - #AWS_INSTANCE_ID="$(echo $AWS_INSTANCE_STATE | ./jq.dms -r '.modules[0].resources."aws_instance.windows".primary.id')" ; export AWS_INSTANCE_ID
-      - #AWS_INSTANCE_IP="$(echo $AWS_INSTANCE_STATE | ./jq.dms -r '.modules[0].resources."aws_instance.windows".primary.attributes.public_ip')" ; export AWS_INSTANCE_IP
   post_build:
     commands:
       - |
