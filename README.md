@@ -21,8 +21,7 @@ Variable | Default | Req/Opt (in CodeBuild) | Description
 `TFI_LX_INSTANCE_TYPE` | t2.micro | optional | AWS instance type for Linux instances.
 `TFI_REPO` | https://github.com/plus3it/watchmaker.git | optional | Which git repository to use in getting watchmaker code.
 `TFI_BRANCH` | master | optional | Which branch of the repository to use in getting watchmaker code.
-Depending on failure, Terraform may not always be able to destroy provisioned resources.)
 `TFI_COMMON_ARGS` | -n --log-level debug | optional | Command line arguments used when installing Watchmaker (Windows/Linux).
 `TFI_WIN_ARGS` | --log-dir=C:\\Watchmaker\\Logs | optional | Command line arguments used when installing Watchmaker (Windows).
 `TFI_LX_ARGS` | --log-dir=/var/log/watchmaker | optional | Command line arguments used when installing Watchmaker (Linux).
-`TFI_DESTROY_AFTER_TEST` | true | optional | Whether or not to destroy all resources created after the test. (WARNING: 
+`TFI_DESTROY_AFTER_TEST` | true | optional | Whether or not to destroy all resources created after the test. (WARNING: Depending on failure, Terraform may not always be able to destroy provisioned resources.)
