@@ -7,21 +7,21 @@ This project is designed to work with **AWS CodeBuild**. In order to use it, you
 
 Variable | Default | Req/Opt (in CodeBuild) | Description
 --- | --- | --- | ---
-`TFI_WINRM_USER` | Administrator | optional | username to use when connecting via WinRM to Windows instances
 `TFI_PS_PASSWD_KEY` | /path/to/parameter/store | REQUIRED | Name of a Parameter Store (PS) parameter containing the password used temporarily in WinRM connection to Windows instances.
 `TFI_PS_PRIVATE_KEY` | /path/to/parameter/store | REQUIRED | Name of a PS parameter containing the private key used in authenticating to instances created with the Key Pair.
 `TFI_PS_PUBLIC_KEY` | /path/to/parameter/store | REQUIRED | Name of a PS parameter containing the public key used in creating a Key Pair for use by Terrafirm.
 `TFI_SSH_USER` | root | optional | Which username to use when connecting via SSH to Linux instances.
+`TFI_RM_USER` | Administrator | optional | username to use when connecting via WinRM to Windows instances
+`TFI_REPO` | https://github.com/plus3it/watchmaker.git | optional | Which git repository to use in getting watchmaker code.
+`TFI_BRANCH` | master | optional | Which branch of the repository to use in getting watchmaker code.
 `TFI_ASSIGN_PUBLIC_IP` | false | optional | Whether or not to assign a public IP to the instances built by Terraform.
-`TFI_GIT_REPO` | https://github.com/plus3it/watchmaker.git | optional | Which git repository to use in getting watchmaker code.
-`TFI_GIT_BRANCH` | master | optional | Which branch of the repository to use in getting watchmaker code.
 `TFI_DESTROY_AFTER_TEST` | true | optional | Whether or not to destroy all resources created after the test. (WARNING: Depending on failure, Terraform may not always be able to destroy provisioned resources.)
 `TFI_INSTANCE_PROFILE` | none | optional | Instance profile to be used in provisioning resources. This is generally the same as the role if the role is an EC2 role.
 `TFI_LX_INSTANCE_TYPE` | t2.micro | optional | AWS instance type for Linux instances.
 `TFI_WIN_INSTANCE_TYPE` | t2.medium | optional | AWS instance type for Windows instances.
-`TFI_LX_WM_ARGS` | --log-dir=/var/log/watchmaker | optional | Command line arguments used when installing Watchmaker (Linux).
-`TFI_WIN_WM_ARGS` | --log-dir=C:\\Watchmaker\\Logs | optional | Command line arguments used when installing Watchmaker (Windows).
-`TFI_COMMON_WM_ARGS` | -n --log-level debug | optional | Command line arguments used when installing Watchmaker (Windows/Linux).
+`TFI_LX_ARGS` | --log-dir=/var/log/watchmaker | optional | Command line arguments used when installing Watchmaker (Linux).
+`TFI_WIN_ARGS` | --log-dir=C:\\Watchmaker\\Logs | optional | Command line arguments used when installing Watchmaker (Windows).
+`TFI_COMMON_ARGS` | -n --log-level debug | optional | Command line arguments used when installing Watchmaker (Windows/Linux).
 `TFI_SUBNET_ID` | none | optional | Whether or not to use a subnet. CodeBuild instance must be able to access.
 `TFI_BUILD_WIN` | all | optional | Whether or not to build all possible Windows instances. Acceptable values are "all", "one", or "none".
 `TFI_BUILD_LX` | all | optional | Whether or not to build all possible Linux instances. Acceptable values are "all", "one", or "none".
