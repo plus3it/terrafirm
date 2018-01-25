@@ -27,4 +27,4 @@ cd watchmaker
 pip install --index-url "$PypiUrl" --editable .
 
 # Run watchmaker
-watchmaker ${var.tfi_common_args} ${var.tfi_windows_args}
+watchmaker ${var.tfi_common_args} ${var.tfi_win_args}
