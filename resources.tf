@@ -83,7 +83,7 @@ resource "aws_instance" "spels" {
   
   provisioner "remote-exec" {
     inline = [
-      "while [ ! -f /tmp/SETUP_COMPLETE_SIGNAL ]; do date ; sleep 10 ; done",
+      "while [ ! -f /tmp/SETUP_COMPLETE_SIGNAL ]; do echo \"scale=0; $(($(wc -c < /tmp/watchmaker_userdata_install.log)<57046?$(wc -c < /tmp/watchmaker_userdata_install.log):57046))*100/57046\" | bc ; sleep 10 ; done",
       "chmod +x ~/watchmaker_test.sh",
       "~/watchmaker_test.sh",
     ]
