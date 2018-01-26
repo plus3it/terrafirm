@@ -28,6 +28,8 @@ env:
     TFI_COMMON_ARGS:        "-n --log-level debug"                                 #optional in CodeBuild
     TFI_WIN_ARGS:           "--log-dir=C:\\Watchmaker\\Logs"                       #optional in CodeBuild
     TFI_LX_ARGS:            "--log-dir=/var/log/watchmaker"                        #optional in CodeBuild
+    TFI_WIN_USERDATA_LOG:   "C:\\Temp\\userdata.log"
+    TFI_LX_USERDATA_LOG:    "/tmp/userdata.log"
     TFI_DESTROY_AFTER_TEST: "true"                                                 #optional in CodeBuild
 
 phases:
@@ -69,6 +71,8 @@ phases:
       - TF_VAR_tfi_common_args="${TFI_COMMON_ARGS}" ; export TF_VAR_tfi_common_args
       - TF_VAR_tfi_win_args="${TFI_WIN_ARGS}" ; export TF_VAR_tfi_win_args
       - TF_VAR_tfi_lx_args="${TFI_LX_ARGS}" ; export TF_VAR_tfi_lx_args
+      - TF_VAR_tfi_win_userdata_log="${TFI_USERDATA_LOG}" ; export TF_VAR_tfi_win_userdata_log
+      - TF_VAR_tfi_lx_userdata_log="${TFI_USERDATA_LOG}" ; export TF_VAR_tfi_lx_userdata_log
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - Validate subnet, find VPC.........................................................."
       - # If subnet id is valid, finds the associated VPC and assigns variables. Otherwise, blanks (defaults)
