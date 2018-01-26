@@ -55,8 +55,8 @@ resource "aws_security_group" "terrafirm_ssh" {
 resource "aws_instance" "spels" {
   #count                        = "${lookup(map("all",length(data.null_data_source.spel_instance_amis.inputs),"one",1,"none",0),var.tfi_build_lx)}"
   #ami                          = "${lookup(data.null_data_source.spel_instance_amis.inputs, count.index)}"
-  count                        = "${length(matchkeys(values(data.null_data_source.spel_instance_amis.inputs),keys(data.null_data_source.spel_instance_amis.inputs),list(var.tfi_lx_instances)))}"
-  ami                          = "${lookup(matchkeys(values(data.null_data_source.spel_instance_amis.inputs),keys(data.null_data_source.spel_instance_amis.inputs),list(var.tfi_lx_instances)), count.index)}"
+  count                        = "${length(matchkeys(values(data.null_data_source.spel_instance_amis.inputs),keys(data.null_data_source.spel_instance_amis.inputs),split(",", var.tfi_lx_instances)))}"
+  ami                          = "${lookup(matchkeys(values(data.null_data_source.spel_instance_amis.inputs),keys(data.null_data_source.spel_instance_amis.inputs),split(",", var.tfi_lx_instances)), count.index)}"
   instance_type                = "${var.tfi_lx_instance_type}"
   iam_instance_profile         = "${var.tfi_instance_profile}"
   key_name                     = "${aws_key_pair.auth.id}"
