@@ -83,7 +83,7 @@ resource "aws_instance" "spels" {
   
   provisioner "remote-exec" {
     inline = [
-      "while [ ! -f /tmp/SETUP_COMPLETE_SIGNAL ]; do echo \"scale=0; $(($(wc -c < "${var.tfi_lx_userdata_log}")<57046?$(wc -c < "${var.tfi_lx_userdata_log}"):57046))*100/57046\" | bc ; sleep 10 ; done",
+      "while [ ! -f /tmp/SETUP_COMPLETE_SIGNAL ]; do echo \"scale=0; $(($(wc -c < ${var.tfi_lx_userdata_log})<57046?$(wc -c < ${var.tfi_lx_userdata_log}):57046))*100/57046\" | bc ; sleep 10 ; done",
       "chmod +x ~/watchmaker_test.sh",
       "~/watchmaker_test.sh",
     ]
