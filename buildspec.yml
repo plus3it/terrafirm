@@ -141,6 +141,8 @@ phases:
       - echo "Terrafirm completed on $(date)"
 artifacts:
   files:
+    - "${TFI_WIN_USERDATA_LOG}"
+    - "${TFI_LX_USERDATA_LOG}"
     - '/tmp/userdata.log'
     - 'C:\\Temp\\userdata.log'
   discard-paths: yes
