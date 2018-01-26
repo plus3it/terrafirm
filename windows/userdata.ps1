@@ -1,7 +1,7 @@
 <powershell>
 
 # log of the userdata install
-Start-Transcript -path C:\Temp\userdata.log -append
+Start-Transcript -path ${tfi_win_userdata_log} -append
 
 # Set Administrator password
 #$admin = [adsi]("WinNT://./administrator, user")
