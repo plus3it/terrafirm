@@ -24,3 +24,4 @@ variable "tfi_lx_args" {}
 variable "tfi_win_userdata_log" {}
 variable "tfi_lx_userdata_log" {}
 variable "tfi_lx_instances" {}
+variable "tfi_win_instances" {}
