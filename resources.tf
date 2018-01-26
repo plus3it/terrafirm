@@ -94,8 +94,10 @@ resource "aws_instance" "spels" {
 
 # bread & butter - this tells TF the provision/create the actual instance
 resource "aws_instance" "windows" {
-  count                        = "${lookup(map("all",length(data.null_data_source.windows_instance_amis.inputs),"one",1,"none",0),var.tfi_build_win)}"
-  ami                          = "${lookup(data.null_data_source.windows_instance_amis.inputs, count.index)}"
+  #count                        = "${lookup(map("all",length(data.null_data_source.windows_instance_amis.inputs),"one",1,"none",0),var.tfi_build_win)}"
+  #ami                          = "${lookup(data.null_data_source.windows_instance_amis.inputs, count.index)}"
+  count                        = "${length(matchkeys(values(data.null_data_source.windows_instance_amis.inputs),keys(data.null_data_source.windows_instance_amis.inputs),split(",", var.tfi_win_instances)))}"
+  ami                          = "${element(matchkeys(values(data.null_data_source.windows_instance_amis.inputs),keys(data.null_data_source.windows_instance_amis.inputs),split(",", var.tfi_win_instances)), count.index)}"  
   instance_type                = "${var.tfi_win_instance_type}"
   key_name                     = "${aws_key_pair.auth.id}"
   iam_instance_profile         = "${var.tfi_instance_profile}"
