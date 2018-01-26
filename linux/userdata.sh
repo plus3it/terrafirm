@@ -2,7 +2,7 @@
 
 exec &> /tmp/watchmaker_userdata_install.log
 
-sleep 30
+sleep 20
 
 WATCHMAKER_INSTALL_GOES_HERE
 
