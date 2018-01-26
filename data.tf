@@ -149,10 +149,10 @@ data "aws_ami" "windows2008" {
 # data source (place to put the ami id strings), used to mitigate lack of intermediate variables and interpolation
 data "null_data_source" "spel_instance_amis" {
   inputs = {
-    "0" = "${data.aws_ami.centos6.id}"
-    "1" = "${data.aws_ami.centos7.id}"
-    "2" = "${data.aws_ami.rhel6.id}"
-    "3" = "${data.aws_ami.rhel7.id}"
+    "cent6" = "${data.aws_ami.centos6.id}"
+    "cent7" = "${data.aws_ami.centos7.id}"
+    "rhel6" = "${data.aws_ami.rhel6.id}"
+    "rhel7" = "${data.aws_ami.rhel7.id}"
   }
 }
 
