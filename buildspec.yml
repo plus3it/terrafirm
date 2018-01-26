@@ -32,6 +32,7 @@ env:
     TFI_LX_USERDATA_LOG:    "/tmp/userdata.log"
     TFI_DESTROY_AFTER_TEST: "true"                                                 #optional in CodeBuild
     TFI_LX_INSTANCES:       "centos6,rhel6"
+    TFI_WIN_INSTANCES:      "win08"
 
 phases:
   install:
@@ -75,6 +76,7 @@ phases:
       - TF_VAR_tfi_win_userdata_log="${TFI_WIN_USERDATA_LOG}" ; export TF_VAR_tfi_win_userdata_log
       - TF_VAR_tfi_lx_userdata_log="${TFI_LX_USERDATA_LOG}" ; export TF_VAR_tfi_lx_userdata_log
       - TF_VAR_tfi_lx_instances="${TFI_LX_INSTANCES}" ; export TF_VAR_tfi_lx_instances
+      - TF_VAR_tfi_win_instances="${TFI_WIN_INSTANCES}" ; export TF_VAR_tfi_win_instances
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - Validate subnet, find VPC.........................................................."
       - # If subnet id is valid, finds the associated VPC and assigns variables. Otherwise, blanks (defaults)
