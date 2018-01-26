@@ -1,7 +1,7 @@
 <powershell>
 
 # log of the userdata install
-Start-Transcript -path C:\Temp\watchmaker_userdata_install.log -append
+Start-Transcript -path C:\Temp\userdata.log -append
 
 # Set Administrator password
 #$admin = [adsi]("WinNT://./administrator, user")
