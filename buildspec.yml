@@ -144,5 +144,5 @@ phases:
       - echo $CODEBUILD_SRC_DIR 
 artifacts:
   files:
-    - **/*
+    - '**/*'
   discard-paths: yes
