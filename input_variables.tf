@@ -21,4 +21,6 @@ variable "tfi_branch" {}
 variable "tfi_common_args" {}
 variable "tfi_win_args" {}
 variable "tfi_lx_args" {}
+variable "tfi_win_userdata_log" {}
+variable "tfi_lx_userdata_log" {}
 
