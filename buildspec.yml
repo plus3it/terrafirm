@@ -139,6 +139,7 @@ phases:
           echo "***************************"
         fi
       - echo "Terrafirm completed on $(date)"
+      - echo $CODEBUILD_SRC_DIR 
 artifacts:
   files:
     - "${TFI_WIN_USERDATA_LOG}"
