@@ -9,6 +9,7 @@ data "template_file" "win_userdata" {
     tfi_win_args = "${var.tfi_win_args}"
     tfi_rm_pass = "${var.tfi_rm_pass}"
     tfi_rm_user = "${var.tfi_rm_user}"
+    tfi_win_userdata_log = "${var.tfi_win_userdata_log}"
   }
 }
 
@@ -22,6 +23,7 @@ data "template_file" "lx_userdata" {
     tfi_common_args = "${var.tfi_common_args}"
     tfi_lx_args = "${var.tfi_lx_args}"
     tfi_ssh_user = "${var.tfi_ssh_user}"
+    tfi_lx_userdata_log = "${var.tfi_lx_userdata_log}"
   }
 }
 
