@@ -1,6 +1,6 @@
 #!/bin/sh
 
-exec &> /tmp/watchmaker_userdata_install.log
+exec &> /tmp/userdata.log
 
 yum -y install bc
 
