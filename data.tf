@@ -159,8 +159,8 @@ data "null_data_source" "spel_instance_amis" {
 # data source (place to put the ami id strings), used to mitigate lack of intermediate variables and interpolation
 data "null_data_source" "windows_instance_amis" {
   inputs = {
-    "0" = "${data.aws_ami.windows2016.id}"
-    "1" = "${data.aws_ami.windows2012.id}"
-    "2" = "${data.aws_ami.windows2008.id}"
+    "win16" = "${data.aws_ami.windows2016.id}"
+    "win12" = "${data.aws_ami.windows2012.id}"
+    "win08" = "${data.aws_ami.windows2008.id}"
   }
 }
