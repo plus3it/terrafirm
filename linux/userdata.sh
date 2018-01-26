@@ -1,6 +1,6 @@
 #!/bin/sh
 
-exec &> /tmp/userdata.log
+exec &> ${tfi_lx_userdata_log}
 
 yum -y install bc
 
