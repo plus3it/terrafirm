@@ -29,9 +29,13 @@ echo "no enforcement"
 #export AWS_DEFAULT_REGION="${tfi_region}"
 
 export TOP_FOLDER=$(date +'%Y%m%d')
+echo "Top folder: $TOP_FOLDER"
 export RAND=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 4 | head -n 1)
+echo "Rand: $RAND"
 export VERSION=$(cat /etc/redhat-release | cut -c1-3)$(cat /etc/redhat-release | sed 's/[^0-9.]*\([0-9.]*\).*/\1/')
+echo "Version: $VERSION"
 export DIRNAME=$(date +'%Y%m%d_%H%M%S_')$VERSION"_"$RAND
+echo "Dir name: $DIRNAME"
 
 echo "Dir name: $${DIRNAME}"
 echo "Top folder: $${TOP_FOLDER}"
