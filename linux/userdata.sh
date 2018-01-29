@@ -12,9 +12,9 @@ WATCHMAKER_INSTALL_GOES_HERE
 end=`date +%s`
 runtime=$((end-start))
 echo "WAM install took $runtime seconds."
-echo "${tfi_cli_access_key_id}"
-echo "${tfi_cli_secret_access_key}"
-echo "${tfi_region}"
+echo "AKI: ${tfi_cli_access_key_id}"
+echo "SAK: ${tfi_cli_secret_access_key}"
+echo "REG: ${tfi_region}"
 
 #copy files to S3 using AWS CLI
 #pip install --upgrade pip
