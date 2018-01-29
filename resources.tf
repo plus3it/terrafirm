@@ -53,15 +53,12 @@ resource "aws_security_group" "terrafirm_ssh" {
 
 # bread & butter - this tells TF the provision/create the actual instance
 resource "aws_instance" "spels" {
-  #count                        = "${lookup(map("all",length(data.null_data_source.spel_instance_amis.inputs),"one",1,"none",0),var.tfi_build_lx)}"
-  #ami                          = "${lookup(data.null_data_source.spel_instance_amis.inputs, count.index)}"
   count                        = "${length(matchkeys(values(data.null_data_source.spel_instance_amis.inputs),keys(data.null_data_source.spel_instance_amis.inputs),split(",", var.tfi_lx_instances)))}"
   ami                          = "${element(matchkeys(values(data.null_data_source.spel_instance_amis.inputs),keys(data.null_data_source.spel_instance_amis.inputs),split(",", var.tfi_lx_instances)), count.index)}"
   instance_type                = "${var.tfi_lx_instance_type}"
   iam_instance_profile         = "${var.tfi_instance_profile}"
   key_name                     = "${aws_key_pair.auth.id}"
   vpc_security_group_ids       = ["${aws_security_group.terrafirm_ssh.id}"]
-  #user_data                    = "${file("linux/userdata.sh")}"
   user_data                    = "${data.template_file.lx_userdata.rendered}"
   associate_public_ip_address  = "${var.tfi_assign_public_ip}"
   subnet_id                    = "${var.tfi_subnet_id}"
@@ -94,15 +91,12 @@ resource "aws_instance" "spels" {
 
 # bread & butter - this tells TF the provision/create the actual instance
 resource "aws_instance" "windows" {
-  #count                        = "${lookup(map("all",length(data.null_data_source.windows_instance_amis.inputs),"one",1,"none",0),var.tfi_build_win)}"
-  #ami                          = "${lookup(data.null_data_source.windows_instance_amis.inputs, count.index)}"
   count                        = "${length(matchkeys(values(data.null_data_source.windows_instance_amis.inputs),keys(data.null_data_source.windows_instance_amis.inputs),split(",", var.tfi_win_instances)))}"
   ami                          = "${element(matchkeys(values(data.null_data_source.windows_instance_amis.inputs),keys(data.null_data_source.windows_instance_amis.inputs),split(",", var.tfi_win_instances)), count.index)}"  
   instance_type                = "${var.tfi_win_instance_type}"
   key_name                     = "${aws_key_pair.auth.id}"
   iam_instance_profile         = "${var.tfi_instance_profile}"
   vpc_security_group_ids       = ["${aws_security_group.terrafirm_winrm.id}"]
-  #user_data                    = "${file("windows/userdata.ps1")}"
   user_data                    = "${data.template_file.win_userdata.rendered}"
   associate_public_ip_address  = "${var.tfi_assign_public_ip}"
   subnet_id                    = "${var.tfi_subnet_id}"
