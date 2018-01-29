@@ -31,7 +31,7 @@ env:
     TFI_WIN_USERDATA_LOG:   "C:\\Temp\\userdata.log"
     TFI_LX_USERDATA_LOG:    "/tmp/userdata.log"
     TFI_DESTROY_AFTER_TEST: "true"                                                 #optional in CodeBuild
-    TFI_LX_INSTANCES:       "centos6,rhel6"
+    TFI_LX_INSTANCES:       "rhel6"
     TFI_WIN_INSTANCES:      "win08"
 
 phases:
