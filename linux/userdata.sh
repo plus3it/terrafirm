@@ -14,6 +14,7 @@ runtime=$((end-start))
 echo "WAM install took $runtime seconds."
 
 setenforce 0
+echo "no enforcement"
 #echo "AKI: ${tfi_cli_access_key_id}"
 #echo "SAK: ${tfi_cli_secret_access_key}"
 #echo "REG: ${tfi_region}"
