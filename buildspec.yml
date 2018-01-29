@@ -12,8 +12,8 @@ env:
     # Below here are variables that can (and likely are) overwritten from the AWS CodeBuild project
     # Values in CodeBuild take precedence so LEAVE ALL OF THESE HERE even if defining there
     TFI_SUBNET_ID:          ""                                                     #optional in CodeBuild
-    TFI_WIN_INSTANCES:      "win08,win12,win16"                                    #optional in Codebuild
-    TFI_LX_INSTANCES:       "centos6,centos7,rhel6,rhel7"                          #optional in CodeBuild
+    TFI_WIN_INSTANCES:      ""                                                     #optional in Codebuild
+    TFI_LX_INSTANCES:       ""                                                     #optional in CodeBuild
     TFI_PS_PRIVATE_KEY:     "/path/to/parameter/store"                             #REQUIRED in CodeBuild
     TFI_PS_PUBLIC_KEY:      "/path/to/parameter/store"                             #REQUIRED in CodeBuild
     TFI_PS_PASSWD_KEY:      "/path/to/parameter/store"                             #REQUIRED in CodeBuild
