@@ -28,11 +28,11 @@ export RAND=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 4 | head -n 1)
 export VERSION=$(cat /etc/redhat-release | cut -c1-3)$(cat /etc/redhat-release | sed 's/[^0-9.]*\([0-9.]*\).*/\1/')
 export DIRNAME=$(date +'%Y%m%d_%H%M%S_')$VERSION"_"$RAND
 
-echo "Dir name: ${DIRNAME}"
-echo "Top folder: ${TOP_FOLDER}"
+echo "Dir name: $${DIRNAME}"
+echo "Top folder: $${TOP_FOLDER}"
 
-aws s3 cp /tmp/userdata.log "s3://terrafirm/${TOP_FOLDER}/${DIRNAME}/userdata.log"
-aws s3 cp /var/log/cloud* "s3://terrafirm/${TOP_FOLDER}/${DIRNAME}/cloud-init/"
-aws s3 cp /var/log/watchmaker "s3://terrafirm/${TOP_FOLDER}/${DIRNAME}/watchmaker/" --recursive
+aws s3 cp /tmp/userdata.log "s3://terrafirm/$${TOP_FOLDER}/$${DIRNAME}/userdata.log"
+aws s3 cp /var/log/cloud* "s3://terrafirm/$${TOP_FOLDER}/$${DIRNAME}/cloud-init/"
+aws s3 cp /var/log/watchmaker "s3://terrafirm/$${TOP_FOLDER}/$${DIRNAME}/watchmaker/" --recursive
 
 touch /tmp/SETUP_COMPLETE_SIGNAL
