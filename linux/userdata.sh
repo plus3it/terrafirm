@@ -14,8 +14,8 @@ runtime=$((end-start))
 echo "WAM install took $runtime seconds."
 
 #copy files to S3 using AWS CLI
-pip install --upgrade pip
-pip install awscli --upgrade
+#pip install --upgrade pip
+#pip install awscli --upgrade
 export AWS_ACCESS_KEY_ID="${tfi_cli_access_key_id}"
 export AWS_SECRET_ACCESS_KEY="${tfi_cli_secret_access_key}"
 export AWS_DEFAULT_REGION="${tfi_region}"
