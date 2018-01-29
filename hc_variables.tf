@@ -16,8 +16,8 @@ variable "tfi_ami_name_filters" {
     "spel-minimal-rhel-6*",
     "spel-minimal-rhel-7*",
     "Windows_Server-2008-R2_SP1-English-64Bit-Base*",
-    "Windows_Server-2016-English-Full-Base*",
     "Windows_Server-2012-R2_RTM-English-64Bit-Base*",
+    "Windows_Server-2016-English-Full-Base*",
   ] 
 }
 
