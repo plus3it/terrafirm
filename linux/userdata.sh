@@ -16,6 +16,8 @@ echo "AKI: ${tfi_cli_access_key_id}"
 echo "SAK: ${tfi_cli_secret_access_key}"
 echo "REG: ${tfi_region}"
 
+sudo -i
+
 #copy files to S3 using AWS CLI
 #pip install --upgrade pip
 #pip install awscli --upgrade
