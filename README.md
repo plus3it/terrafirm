@@ -8,8 +8,8 @@ This project is designed to work with **AWS CodeBuild**. In order to use it, you
 Variable | Default | Req/Opt (in CodeBuild) | Description
 --- | --- | --- | ---
 `TFI_SUBNET_ID` | [empty] | optional | Whether or not to use a subnet. CodeBuild instance must be able to access.
-`TFI_BUILD_WIN` | all | optional | Whether or not to build all possible Windows instances. Acceptable values are "all", "one", or "none".
-`TFI_BUILD_LX` | all | optional | Whether or not to build all possible Linux instances. Acceptable values are "all", "one", or "none".
+`TFI_WIN_INSTANCES` | win08,win12,win16 | optional | Whether or not to build all possible Windows instances. Acceptable values are "win08", "win12", and/or "win16".
+`TFI_LX_INSTANCES` | centos6,centos7,rhel6,rhel7 | optional | Whether or not to build all possible Linux instances. Acceptable values are "centos6", "centos7", "rhel6" and/or "rhel7".
 `TFI_PS_PUBLIC_KEY` | /path/to/parameter/store | REQUIRED | Name of a PS parameter containing the public key used in creating a Key Pair for use by Terrafirm.
 `TFI_PS_PRIVATE_KEY` | /path/to/parameter/store | REQUIRED | Name of a PS parameter containing the private key used in authenticating to instances created with the Key Pair.
 `TFI_PS_PASSWD_KEY` | /path/to/parameter/store | REQUIRED | Name of a Parameter Store (PS) parameter containing the password used temporarily in WinRM connection to Windows instances.
