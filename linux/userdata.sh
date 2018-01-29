@@ -16,6 +16,7 @@ export AWS_DEFAULT_REGION="${tfi_region}"
 
 RAND=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 4 | head -n 1) ; export RAND
 DIRNAME=$(date +'%Y%m%d_%H%M%S_')$RAND ; export DIRNAME
+VERSION=$(cat /etc/redhat-release | cut -c1-3)$(cat /etc/redhat-release | sed 's/[^0-9.]*\([0-9.]*\).*/\1/') ; export VERSION
 
 aws s3 cp ${tfi_lx_userdata_log} s3://terrafirm/$DIRNAME/userdata_install.log
 aws s3 cp /var/log/cloud-init-output.log s3://terrafirm/$DIRNAME/cloud-init-output.log
