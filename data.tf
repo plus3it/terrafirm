@@ -96,14 +96,14 @@ data "aws_ami" "rhel7" {
 }
 
 #used just to find the ami id matching criteria, which is then used in provisioning resource
-data "aws_ami" "windows2016" {
+data "aws_ami" "windows2008" {
   most_recent = true
   
   filter {
     name = "virtualization-type"
     values = ["${var.tfi_other_filters["virtualization_type"]}"]
   }
-  
+
   filter {
     name = "name"
     values = ["${element(var.tfi_ami_name_filters, 4)}"]
@@ -130,14 +130,14 @@ data "aws_ami" "windows2012" {
 }
 
 #used just to find the ami id matching criteria, which is then used in provisioning resource
-data "aws_ami" "windows2008" {
+data "aws_ami" "windows2016" {
   most_recent = true
   
   filter {
     name = "virtualization-type"
     values = ["${var.tfi_other_filters["virtualization_type"]}"]
   }
-
+  
   filter {
     name = "name"
     values = ["${element(var.tfi_ami_name_filters, 6)}"]
@@ -159,8 +159,8 @@ data "null_data_source" "spel_instance_amis" {
 # data source (place to put the ami id strings), used to mitigate lack of intermediate variables and interpolation
 data "null_data_source" "windows_instance_amis" {
   inputs = {
-    "win16" = "${data.aws_ami.windows2016.id}"
-    "win12" = "${data.aws_ami.windows2012.id}"
     "win08" = "${data.aws_ami.windows2008.id}"
+    "win12" = "${data.aws_ami.windows2012.id}"
+    "win16" = "${data.aws_ami.windows2016.id}"
   }
 }
