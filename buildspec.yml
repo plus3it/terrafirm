@@ -73,6 +73,8 @@ phases:
       - TF_VAR_tfi_lx_args="${TFI_LX_ARGS}" ; export TF_VAR_tfi_lx_args
       - TF_VAR_tfi_win_userdata_log="${TFI_WIN_USERDATA_LOG}" ; export TF_VAR_tfi_win_userdata_log
       - TF_VAR_tfi_lx_userdata_log="${TFI_LX_USERDATA_LOG}" ; export TF_VAR_tfi_lx_userdata_log
+      - export TF_VAR_tfi_cli_access_key_id="$(aws ssm get-parameters --name ${TFI_CLI_ACCESS_KEY_ID} --with-decryption --query 'Parameters[0].Value' --out text)"
+      - export TF_VAR_tfi_cli_secret_access_key="$(aws ssm get-parameters --name ${TFI_CLI_SECRET_ACCESS_KEY} --with-decryption --query 'Parameters[0].Value' --out text)"
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - Validate subnet, find VPC.........................................................."
       - # If subnet id is valid, finds the associated VPC and assigns variables. Otherwise, blanks (defaults)
