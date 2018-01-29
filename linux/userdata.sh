@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 exec &> ${tfi_lx_userdata_log}
 
@@ -12,18 +12,20 @@ WATCHMAKER_INSTALL_GOES_HERE
 end=`date +%s`
 runtime=$((end-start))
 echo "WAM install took $runtime seconds."
-echo "AKI: ${tfi_cli_access_key_id}"
-echo "SAK: ${tfi_cli_secret_access_key}"
-echo "REG: ${tfi_region}"
 
-sudo -i
+setenforce 0
+#echo "AKI: ${tfi_cli_access_key_id}"
+#echo "SAK: ${tfi_cli_secret_access_key}"
+#echo "REG: ${tfi_region}"
+
+#sudo -i
 
 #copy files to S3 using AWS CLI
 #pip install --upgrade pip
 #pip install awscli --upgrade
-export AWS_ACCESS_KEY_ID="${tfi_cli_access_key_id}"
-export AWS_SECRET_ACCESS_KEY="${tfi_cli_secret_access_key}"
-export AWS_DEFAULT_REGION="${tfi_region}"
+#export AWS_ACCESS_KEY_ID="${tfi_cli_access_key_id}"
+#export AWS_SECRET_ACCESS_KEY="${tfi_cli_secret_access_key}"
+#export AWS_DEFAULT_REGION="${tfi_region}"
 
 export TOP_FOLDER=$(date +'%Y%m%d')
 export RAND=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 4 | head -n 1)
