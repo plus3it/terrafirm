@@ -2,6 +2,7 @@
 
 exec &> ${tfi_lx_userdata_log}
 
+whoami
 yum -y install bc
 
 #sleep 20
@@ -9,6 +10,7 @@ start=`date +%s`
 
 WATCHMAKER_INSTALL_GOES_HERE
 
+whoami
 end=`date +%s`
 runtime=$((end-start))
 echo "WAM install took $runtime seconds."
