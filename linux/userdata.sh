@@ -32,7 +32,9 @@ echo "no enforcement"
 
 export TOP_FOLDER=$(date +'%Y%m%d')
 echo "Top folder: $TOP_FOLDER"
-export RAND=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 4 | head -n 1)
+#$(sudo -i cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 4 | head -n 1) > /tmp/rand
+#export RAND=$(file(/tmp/rand))
+export RAND=abcd
 echo "Rand: $RAND"
 export VERSION=$(cat /etc/redhat-release | cut -c1-3)$(cat /etc/redhat-release | sed 's/[^0-9.]*\([0-9.]*\).*/\1/')
 echo "Version: $VERSION"
