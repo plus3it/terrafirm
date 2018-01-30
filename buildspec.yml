@@ -50,31 +50,29 @@ phases:
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - Simple Env Vars......................................................."
       - aws configure set region "${AWS_REGION}"
-      - TF_VAR_tfi_region="${AWS_REGION}" ; export TF_VAR_tfi_region
-      - TF_VAR_tfi_win_security_grp="${TFI_WIN_SECURITY_GRP}" ; export TF_VAR_tfi_win_security_grp
-      - TF_VAR_tfi_lx_security_grp="${TFI_LX_SECURITY_GRP}" ; export TF_VAR_tfi_lx_security_grp     
-      - TF_VAR_tfi_key_pair_name="${TFI_KEY_PAIR_NAME}" ; export TF_VAR_tfi_key_pair_name
-      - TF_VAR_tfi_cb_ip="$(curl http://checkip.amazonaws.com)" ; export TF_VAR_tfi_cb_ip # IP of CodeBuild instance for use by security group, so only open to one machine
-      - TF_VAR_tfi_win_instances="${TFI_WIN_INSTANCES}" ; export TF_VAR_tfi_win_instances
-      - TF_VAR_tfi_lx_instances="${TFI_LX_INSTANCES}" ; export TF_VAR_tfi_lx_instances
-      - TF_VAR_tfi_private_key="$(aws ssm get-parameters --name ${TFI_PS_PRIVATE_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_tfi_private_key
-      - TF_VAR_tfi_public_key="$(aws ssm get-parameters --name ${TFI_PS_PUBLIC_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_tfi_public_key
-      - TF_VAR_tfi_rm_pass="$(aws ssm get-parameters --name ${TFI_PS_PASSWD_KEY} --with-decryption --query 'Parameters[0].Value' --out text)" ; export TF_VAR_tfi_rm_pass
-      - TF_VAR_tfi_rm_user="${TFI_RM_USER}" ; export TF_VAR_tfi_rm_user      
-      - TF_VAR_tfi_ssh_user="${TFI_SSH_USER}" ; export TF_VAR_tfi_ssh_user
-      - TF_VAR_tfi_instance_profile="${TFI_INSTANCE_PROFILE}" ; export TF_VAR_tfi_instance_profile
-      - TF_VAR_tfi_assign_public_ip="${TFI_ASSIGN_PUBLIC_IP}" ; export TF_VAR_tfi_assign_public_ip
-      - TF_VAR_tfi_win_instance_type="${TFI_WIN_INSTANCE_TYPE}" ; export TF_VAR_tfi_win_instance_type
-      - TF_VAR_tfi_lx_instance_type="${TFI_LX_INSTANCE_TYPE}" ; export TF_VAR_tfi_lx_instance_type
-      - TF_VAR_tfi_repo="${TFI_REPO}" ; export TF_VAR_tfi_repo
-      - TF_VAR_tfi_branch="${TFI_BRANCH}" ; export TF_VAR_tfi_branch
-      - TF_VAR_tfi_common_args="${TFI_COMMON_ARGS}" ; export TF_VAR_tfi_common_args
-      - TF_VAR_tfi_win_args="${TFI_WIN_ARGS}" ; export TF_VAR_tfi_win_args
-      - TF_VAR_tfi_lx_args="${TFI_LX_ARGS}" ; export TF_VAR_tfi_lx_args
-      - TF_VAR_tfi_win_userdata_log="${TFI_WIN_USERDATA_LOG}" ; export TF_VAR_tfi_win_userdata_log
-      - TF_VAR_tfi_lx_userdata_log="${TFI_LX_USERDATA_LOG}" ; export TF_VAR_tfi_lx_userdata_log
-      - export TF_VAR_tfi_cli_access_key_id="$(aws ssm get-parameters --name ${TFI_CLI_ACCESS_KEY_ID} --with-decryption --query 'Parameters[0].Value' --out text)"
-      - export TF_VAR_tfi_cli_secret_access_key="$(aws ssm get-parameters --name ${TFI_CLI_SECRET_ACCESS_KEY} --with-decryption --query 'Parameters[0].Value' --out text)"
+      - export TF_VAR_tfi_region="${AWS_REGION}"
+      - export TF_VAR_tfi_win_security_grp="${TFI_WIN_SECURITY_GRP}"
+      - export TF_VAR_tfi_lx_security_grp="${TFI_LX_SECURITY_GRP}"
+      - export TF_VAR_tfi_key_pair_name="${TFI_KEY_PAIR_NAME}"
+      - export TF_VAR_tfi_cb_ip="$(curl http://checkip.amazonaws.com)" # IP of CodeBuild instance for use by security group, so only open to one machine
+      - export TF_VAR_tfi_win_instances="${TFI_WIN_INSTANCES}"
+      - export TF_VAR_tfi_lx_instances="${TFI_LX_INSTANCES}"
+      - export TF_VAR_tfi_private_key="$(aws ssm get-parameters --name ${TFI_PS_PRIVATE_KEY} --with-decryption --query 'Parameters[0].Value' --out text)"
+      - export TF_VAR_tfi_public_key="$(aws ssm get-parameters --name ${TFI_PS_PUBLIC_KEY} --with-decryption --query 'Parameters[0].Value' --out text)"
+      - export TF_VAR_tfi_rm_pass="$(aws ssm get-parameters --name ${TFI_PS_PASSWD_KEY} --with-decryption --query 'Parameters[0].Value' --out text)"
+      - export TF_VAR_tfi_rm_user="${TFI_RM_USER}"      
+      - export TF_VAR_tfi_ssh_user="${TFI_SSH_USER}"
+      - export TF_VAR_tfi_instance_profile="${TFI_INSTANCE_PROFILE}"
+      - export TF_VAR_tfi_assign_public_ip="${TFI_ASSIGN_PUBLIC_IP}"
+      - export TF_VAR_tfi_win_instance_type="${TFI_WIN_INSTANCE_TYPE}"
+      - export TF_VAR_tfi_lx_instance_type="${TFI_LX_INSTANCE_TYPE}"
+      - export TF_VAR_tfi_repo="${TFI_REPO}"
+      - export TF_VAR_tfi_branch="${TFI_BRANCH}"
+      - export TF_VAR_tfi_common_args="${TFI_COMMON_ARGS}"
+      - export TF_VAR_tfi_win_args="${TFI_WIN_ARGS}"
+      - export TF_VAR_tfi_lx_args="${TFI_LX_ARGS}"
+      - export TF_VAR_tfi_win_userdata_log="${TFI_WIN_USERDATA_LOG}
+      - export TF_VAR_tfi_lx_userdata_log="${TFI_LX_USERDATA_LOG}"
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - Validate subnet, find VPC.........................................................."
       - # If subnet id is valid, finds the associated VPC and assigns variables. Otherwise, blanks (defaults)
