@@ -9,6 +9,8 @@ env:
     TFI_WIN_SECURITY_GRP:   "terrafirm_winrm_sg"                                   #ephemeral name for sg
     TFI_LX_SECURITY_GRP:    "terrafirm_ssh_sg"                                     #ephemeral name for sg
     TFI_KEY_PAIR_NAME:      "svc_terrafirm2"                                       #ephemeral name for keypair
+    TFI_WIN_USERDATA_LOG:   "C:\\Temp\\userdata.log"                               #log for stdout of userdata
+    TFI_LX_USERDATA_LOG:    "/var/log/userdata.log"                                #log for stdout of userdata
     # Below here are variables that can (and likely are) overwritten from the AWS CodeBuild project
     # Values in CodeBuild take precedence so LEAVE ALL OF THESE HERE even if defining there
     TFI_SUBNET_ID:          ""                                                     #optional in CodeBuild
@@ -28,8 +30,6 @@ env:
     TFI_COMMON_ARGS:        "-n --log-level debug"                                 #optional in CodeBuild
     TFI_WIN_ARGS:           "--log-dir=C:\\Watchmaker\\Logs"                       #optional in CodeBuild
     TFI_LX_ARGS:            "--log-dir=/var/log/watchmaker"                        #optional in CodeBuild
-    TFI_WIN_USERDATA_LOG:   "C:\\Temp\\userdata.log"
-    TFI_LX_USERDATA_LOG:    "/tmp/userdata.log"
     TFI_DESTROY_AFTER_TEST: "true"                                                 #optional in CodeBuild
 
 phases:
