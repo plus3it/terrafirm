@@ -3,10 +3,10 @@
 # log of the userdata install
 Start-Transcript -path ${tfi_win_userdata_log} -append
 
-# Set Administrator password
-#$admin = [adsi]("WinNT://./administrator, user")
-#$admin.psbase.invoke("SetPassword", "${tfi_rm_pass}")
-#$admin.psbase.CommitChanges()
+# Set Administrator password, for logging in before wam changes Administrator account name to ${tfi_rm_user}
+$admin = [adsi]("WinNT://./administrator, user")
+$admin.psbase.invoke("SetPassword", "${tfi_rm_pass}")
+$admin.psbase.CommitChanges()
 
 # close the firewall
 netsh advfirewall firewall add rule name="WinRM in" protocol=TCP dir=in profile=any localport=5985 remoteip=any localip=any action=deny
@@ -32,6 +32,11 @@ C:\salt\salt-call --local -c C:\Watchmaker\salt\conf lgpo.set_reg_value `
     key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowUnencryptedTraffic' `
     value='1' `
     vtype='REG_DWORD'
+    
+$S3_TOP_FOLDER=Get-Date -UFormat "%Y%m%d"
+$RAND=-join ((48..57) + (65..90) + (97..122) | Get-Random -Count 4 | % {[char]$_})
+$OS_VERSION="Win" + (((Get-WmiObject -class Win32_OperatingSystem).Caption) -replace '.+(\d\d)\s(.{2}).+','$1$2')
+$S3_FOLDER=(Get-Date -UFormat "%Y%m%d_%H%M%S_") + $OS_VERSION + "_" + $RAND 
 
 Stop-Transcript
 
