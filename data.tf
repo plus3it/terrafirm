@@ -24,9 +24,6 @@ data "template_file" "lx_userdata" {
     tfi_lx_args = "${var.tfi_lx_args}"
     tfi_ssh_user = "${var.tfi_ssh_user}"
     tfi_lx_userdata_log = "${var.tfi_lx_userdata_log}"
-    tfi_cli_access_key_id = "${var.tfi_cli_access_key_id}"
-    tfi_cli_secret_access_key = "${var.tfi_cli_secret_access_key}"
-    tfi_region = "${var.tfi_region}"
   }
 }
 
