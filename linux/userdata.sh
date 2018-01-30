@@ -19,12 +19,7 @@ export OS_VERSION=$(cat /etc/redhat-release | cut -c1-3)$(cat /etc/redhat-releas
 export S3_FOLDER=$(date +'%Y%m%d_%H%M%S_')$OS_VERSION"_"$RAND
 
 aws s3 cp /tmp/userdata.log "s3://terrafirm/$${S3_TOP_FOLDER}/$${S3_FOLDER}/userdata.log"
-FILES=/var/log/cloud*
-for f in $FILES
-do
-  # wildcard with awscli works fine on 7.4 but not on 6.9 for whatever reason so for-looping it
-  aws s3 cp $f "s3://terrafirm/$${S3_TOP_FOLDER}/$${S3_FOLDER}/cloud-init/"
-done
+aws s3 cp /var/log "s3://terrafirm/$${S3_TOP_FOLDER}/$${S3_FOLDER}/cloud-init/" --recursive --exclude "*" --include "cloud*log"
 aws s3 cp /var/log/watchmaker "s3://terrafirm/$${S3_TOP_FOLDER}/$${S3_FOLDER}/watchmaker/" --recursive
 
 touch /tmp/SETUP_COMPLETE_SIGNAL
