@@ -27,7 +27,7 @@ echo "WAM install took $runtime seconds."
 #export AWS_DEFAULT_REGION="${tfi_region}"
 
 export S3_TOP_FOLDER=$(date +'%Y%m%d')
-export RAND=$(date +%N | cut-c1-c4) #don't use /dev/urandom here because there's not enough entropy yet! will block on RHEL
+export RAND=$(date +%N | cut -b 1-4) #using nanoseconds, don't use /dev/urandom here because there's not enough entropy yet! will block on RHEL
 export OS_VERSION=$(cat /etc/redhat-release | cut -c1-3)$(cat /etc/redhat-release | sed 's/[^0-9.]*\([0-9.]*\).*/\1/')
 export S3_FOLDER=$(date +'%Y%m%d_%H%M%S_')$OS_VERSION"_"$RAND
 
