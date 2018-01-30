@@ -1,6 +1,7 @@
 <powershell>
 
 # log of the userdata install
+mkdir C:\Temp -ErrorAction SilentlyContinue
 Start-Transcript -path ${tfi_win_userdata_log}
 
 # Set Administrator password, for logging in before wam changes Administrator account name to ${tfi_rm_user}
