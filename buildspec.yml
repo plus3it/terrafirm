@@ -36,6 +36,12 @@ env:
 phases:
   install:
     commands:
+      - echo CODEBUILD_SRC_DIR $CODEBUILD_SRC_DIR 
+      - echo CODEBUILD_SOURCE_VERSION $CODEBUILD_SOURCE_VERSION
+      - echo CODEBUILD_RESOLVED_SOURCE_VERSION $CODEBUILD_RESOLVED_SOURCE_VERSION
+      - echo CODEBUILD_KMS_KEY_ID $CODEBUILD_KMS_KEY_ID
+      - echo CODEBUILD_BUILD_ID $CODEBUILD_BUILD_ID
+      - exit 1
       - echo "Installing unzip............"
       - apt -y install unzip
       - echo "Installing jq..............."
@@ -141,4 +147,3 @@ phases:
           echo "***************************"
         fi
       - echo "Terrafirm completed on $(date)"
-      - echo $CODEBUILD_SRC_DIR 
