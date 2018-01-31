@@ -19,7 +19,7 @@ $start=Get-Date
 WATCHMAKER_INSTALL_GOES_HERE
 
 $end=Get-Date
-Write-Host ("WAM install took [{0}] seconds." -f (($end - $start).TotalSeconds))
+Write-Host ("WAM install took [{0}] seconds." -f (($end - $start).TotalSeconds)) -ErrorAction SilentlyContinue
 
 # Set Administrator password - should always go after wm install because username not yet changed
 $admin = [adsi]("WinNT://./${tfi_rm_user}, user")
