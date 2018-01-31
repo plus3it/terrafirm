@@ -12,8 +12,14 @@ $admin.psbase.CommitChanges()
 # close the firewall
 netsh advfirewall firewall add rule name="WinRM in" protocol=TCP dir=in profile=any localport=5985 remoteip=any localip=any action=deny
 
+# time wam install
+$start=Get-Date
+
 # this will become the watchmaker portion of install
 WATCHMAKER_INSTALL_GOES_HERE
+
+$end=Get-Date
+Write-Host ("WAM install took [{0}] seconds." -f (($end - $start).TotalSeconds))
 
 # Set Administrator password - should always go after wm install because username not yet changed
 $admin = [adsi]("WinNT://./${tfi_rm_user}, user")
