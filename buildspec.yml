@@ -74,6 +74,7 @@ phases:
       - export TF_VAR_tfi_lx_args="${TFI_LX_ARGS}"
       - export TF_VAR_tfi_win_userdata_log="${TFI_WIN_USERDATA_LOG}"
       - export TF_VAR_tfi_lx_userdata_log="${TFI_LX_USERDATA_LOG}"
+      - export TF_VAR_tfi_s3_bucket="${TFI_S3_BUCKET}"
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - Validate subnet, find VPC.........................................................."
       - # If subnet id is valid, finds the associated VPC and assigns variables. Otherwise, blanks (defaults)
