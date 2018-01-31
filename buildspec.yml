@@ -9,7 +9,7 @@ env:
     TFI_WIN_SECURITY_GRP:   "terrafirm_winrm_sg"                                   #ephemeral name for sg
     TFI_LX_SECURITY_GRP:    "terrafirm_ssh_sg"                                     #ephemeral name for sg
     TFI_KEY_PAIR_NAME:      "svc_terrafirm2"                                       #ephemeral name for keypair
-    TFI_WIN_USERDATA_LOG:   "C:\\Temp\\userdata.log"                               #log for stdout of userdata
+    TFI_WIN_USERDATA_LOG:   "C:\\Temp\\userdata.log"                               #log for transcript of userdata
     TFI_LX_USERDATA_LOG:    "/var/log/userdata.log"                                #log for stdout of userdata
     # Below here are variables that can (and likely are) overwritten from the AWS CodeBuild project
     # Values in CodeBuild take precedence so LEAVE ALL OF THESE HERE even if defining there
