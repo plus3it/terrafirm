@@ -31,6 +31,7 @@ env:
     TFI_WIN_ARGS:           "--log-dir=C:\\Watchmaker\\Logs"                       #optional in CodeBuild
     TFI_LX_ARGS:            "--log-dir=/var/log/watchmaker"                        #optional in CodeBuild
     TFI_DESTROY_AFTER_TEST: "true"                                                 #optional in CodeBuild
+    TFI_S3_BUCKET:          "mybucket"                                             #optional in CodeBuild
 
 phases:
   install:
