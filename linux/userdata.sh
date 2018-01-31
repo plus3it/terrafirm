@@ -13,7 +13,7 @@ end=`date +%s`
 runtime=$((end-start))
 echo "WAM install took $runtime seconds."
 
-export S3_TOP_KEYFIX=$(date +'%Y%m%d')
+export S3_TOP_KEYFIX=$(echo ${tfi_build_id} | cut -d'_' -f 1)
 export RAND=$(date +%N | cut -b 1-4) #using nanoseconds, don't use /dev/urandom here because there's not enough entropy yet! will block on RHEL
 export OS_VERSION=$(cat /etc/redhat-release | cut -c1-3)$(cat /etc/redhat-release | sed 's/[^0-9.]*\([0-9]\.[0-9]\).*/\1/')
 export S3_KEYFIX=$(date +'%Y%m%d_%H%M%S_')$OS_VERSION"_"$RAND
