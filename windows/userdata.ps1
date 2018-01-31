@@ -44,7 +44,7 @@ Stop-Transcript
 
 # upload logs to S3 bucket
 $S3_TOP_KEYFIX=("${tfi_build_id}" -split "_",2)[0]
-$BUILD_ID=("${tfi_build_id}" -split "_",2)[1]
+$BUILD_ID=("${tfi_build_id}" -split "_",3)[2]
 #$RAND=-join ((65..90) + (97..122) | Get-Random -Count 4 | % {[char]$_})
 $OS_VERSION="Win" + (((Get-WmiObject -class Win32_OperatingSystem).Caption) -replace '.+(\d\d)\s(.{2}).+','$1$2')
 If ($OS_VERSION.Substring($OS_VERSION.get_Length()-2) -eq 'Da') {
