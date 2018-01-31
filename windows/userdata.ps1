@@ -42,10 +42,10 @@ $RAND=-join ((48..57) + (65..90) + (97..122) | Get-Random -Count 4 | % {[char]$_
 $OS_VERSION="Win" + (((Get-WmiObject -class Win32_OperatingSystem).Caption) -replace '.+(\d\d)\s(.{2}).+','$1$2')
 $S3_KEYFIX=(Get-Date -UFormat "%Y%m%d_%H%M%S_") + $OS_VERSION + "_" + $RAND
 
-Write-S3Object -BucketName "terrafirm" -File ${tfi_win_userdata_log} -KeyPrefix $S3_TOP_KEYFIX/$S3_KEYFIX/ -ErrorAction SilentlyContinue
-Write-S3Object -BucketName "terrafirm" -Folder "C:\\Program Files\\Amazon\\Ec2ConfigService\\Logs" -KeyPrefix $S3_TOP_KEYFIX/$S3_KEYFIX/cloud-init/ -ErrorAction SilentlyContinue
-Write-S3Object -BucketName "terrafirm" -Folder "C:\\ProgramData\\Amazon\\EC2-Windows\\Launch\\Log" -KeyPrefix $S3_TOP_KEYFIX/$S3_KEYFIX/cloud-init/ -ErrorAction SilentlyContinue
-Write-S3Object -BucketName "terrafirm" -Folder "C:\\Watchmaker\\Logs" -KeyPrefix $S3_TOP_KEYFIX/$S3_KEYFIX/watchmaker/ -SearchPattern *.log -ErrorAction SilentlyContinue
+Write-S3Object -BucketName "${tfi_s3_bucket}" -File ${tfi_win_userdata_log} -KeyPrefix $S3_TOP_KEYFIX/$S3_KEYFIX/ -ErrorAction SilentlyContinue
+Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\Program Files\\Amazon\\Ec2ConfigService\\Logs" -KeyPrefix $S3_TOP_KEYFIX/$S3_KEYFIX/cloud-init/ -ErrorAction SilentlyContinue
+Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\ProgramData\\Amazon\\EC2-Windows\\Launch\\Log" -KeyPrefix $S3_TOP_KEYFIX/$S3_KEYFIX/cloud-init/ -ErrorAction SilentlyContinue
+Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\Watchmaker\\Logs" -KeyPrefix $S3_TOP_KEYFIX/$S3_KEYFIX/watchmaker/ -SearchPattern *.log -ErrorAction SilentlyContinue
 
 # script will setup winrm and set the timeout
 </powershell>
