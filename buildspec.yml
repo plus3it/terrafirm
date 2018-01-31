@@ -36,12 +36,6 @@ env:
 phases:
   install:
     commands:
-      - echo CODEBUILD_SRC_DIR $CODEBUILD_SRC_DIR 
-      - echo CODEBUILD_SOURCE_VERSION $CODEBUILD_SOURCE_VERSION
-      - echo CODEBUILD_RESOLVED_SOURCE_VERSION $CODEBUILD_RESOLVED_SOURCE_VERSION
-      - echo CODEBUILD_KMS_KEY_ID $CODEBUILD_KMS_KEY_ID
-      - echo CODEBUILD_BUILD_ID $CODEBUILD_BUILD_ID
-      - exit 1
       - echo "Installing unzip............"
       - apt -y install unzip
       - echo "Installing jq..............."
@@ -81,6 +75,7 @@ phases:
       - export TF_VAR_tfi_win_userdata_log="${TFI_WIN_USERDATA_LOG}"
       - export TF_VAR_tfi_lx_userdata_log="${TFI_LX_USERDATA_LOG}"
       - export TF_VAR_tfi_s3_bucket="${TFI_S3_BUCKET}"
+      - export TF_VAR_tfi_build_id=$(echo $CODEBUILD_BUILD_ID | cut -d'-' -f 5)
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - Validate subnet, find VPC.........................................................."
       - # If subnet id is valid, finds the associated VPC and assigns variables. Otherwise, blanks (defaults)
