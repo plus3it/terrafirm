@@ -25,17 +25,18 @@ end=`date +%s`
 runtime=$((end-start))
 echo "WAM install took $runtime seconds."
 
-echo "FIREWALL CHECKPOINT 3"
-#iptables -L -n -v
-#if rpm -q iptables ; then # does system have iptables?
-#  setenforce 0
-#  #iptables -D INPUT 1
-#  iptables -D INPUT -p tcp -s ${tfi_cb_ip} --dport 22 -j DROP #open port 22
-#  /sbin/service iptables save
-#  /sbin/service iptables restart
-#fi
-#echo "FIREWALL CHECKPOINT 4"
-#iptables -L -n -v
+
+if rpm -q iptables ; then # does system have iptables?
+  echo "FIREWALL CHECKPOINT 3"
+  iptables -L -n -v
+  setenforce 0
+  #iptables -D INPUT 1
+  iptables -D INPUT -p tcp -s ${tfi_cb_ip} --dport 122 -j ACCEPT #open port 22
+  /sbin/service iptables save
+  /sbin/service iptables restart
+  echo "FIREWALL CHECKPOINT 4"
+  iptables -L -n -v
+fi
 setenforce 0
 sed -i -e '5iPort 122' /etc/ssh/sshd_config
 service sshd restart
