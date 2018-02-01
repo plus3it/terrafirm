@@ -4,6 +4,12 @@ exec &> ${tfi_lx_userdata_log}
 
 yum -y install bc
 
+if rpm -q iptables ; then # does system have iptables?
+  iptables -A INPUT -p tcp --dport 22 -j REJECT #block port 22
+  /sbin/service iptables save
+  /sbin/service iptables restart
+fi
+
 #sleep 20
 start=`date +%s`
 
@@ -12,6 +18,14 @@ WATCHMAKER_INSTALL_GOES_HERE
 end=`date +%s`
 runtime=$((end-start))
 echo "WAM install took $runtime seconds."
+
+setenforce 0
+
+if rpm -q iptables ; then # does system have iptables?
+  iptables -A INPUT -p tcp --dport 22 -j ACCEPT #open port 22
+  /sbin/service iptables save
+  /sbin/service iptables restart
+fi
 
 export S3_TOP_KEYFIX=$(echo ${tfi_build_id} | cut -d'_' -f 1)
 export BUILD_ID=$(echo ${tfi_build_id} | cut -d'_' -f 3)
