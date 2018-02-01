@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 echo "*****************************************************************************"
 echo "Running Watchmaker test script: LINUX"
