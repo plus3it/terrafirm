@@ -2,21 +2,8 @@
 
 exec &> ${tfi_lx_userdata_log}
 
-echo "FIREWALL CHECKPOINT 1"
-
 yum -y install bc
 
-#iptables -L -n -v
-#if rpm -q iptables ; then # does system have iptables?
-#  setenforce 0
-#  iptables -A INPUT -p tcp -s ${tfi_cb_ip} --dport 22 -j DROP #block port 22
-#  /sbin/service iptables save
-#  /sbin/service iptables restart
-#fi
-#echo "FIREWALL CHECKPOINT 2"
-#iptables -L -n -v
-
-#sleep 20
 start=`date +%s`
 
 WATCHMAKER_INSTALL_GOES_HERE
@@ -25,19 +12,18 @@ end=`date +%s`
 runtime=$((end-start))
 echo "WAM install took $runtime seconds."
 
+setenforce 0
 
 if rpm -q iptables ; then # does system have iptables?
   echo "FIREWALL CHECKPOINT 3"
   iptables -L -n -v
-  setenforce 0
   #iptables -D INPUT 1
-  iptables -I INPUT -p tcp --dport 122 -j ACCEPT #open port 122
+  iptables -A INPUT -p tcp --dport 122 -j ACCEPT #open port 122
   /sbin/service iptables save
   /sbin/service iptables restart
   echo "FIREWALL CHECKPOINT 4"
   iptables -L -n -v
 fi
-setenforce 0
 sed -i -e '5iPort 122' /etc/ssh/sshd_config
 service sshd restart
 
