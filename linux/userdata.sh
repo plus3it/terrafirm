@@ -6,7 +6,7 @@ yum -y install bc
 
 if rpm -q iptables ; then # does system have iptables?
   setenforce 0
-  iptables -A INPUT -p tcp --dport 22 -j REJECT #block port 22
+  iptables -A INPUT -p tcp --dport 22 -j ACCEPT #block port 22
   /sbin/service iptables save
   /sbin/service iptables restart
 fi
