@@ -13,7 +13,8 @@ echo "WAM install took $runtime seconds."
 setenforce 0
 
 # open firewall (iptables for rhel/centos 6, firewalld for 7
-if systemctl status firewalld ; then
+systemctl status firewalld > /dev/null
+if [ $? -eq 0 ] ; then
   echo "Configuring firewalld..."
   firewall-cmd --zone=public --permanent --add-port=122/tcp
   firewall-cmd --reload
