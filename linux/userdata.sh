@@ -4,12 +4,16 @@ exec &> ${tfi_lx_userdata_log}
 
 yum -y install bc
 
+echo "FIREWALL CHECKPOINT 1"
+iptables -L -n -v
 if rpm -q iptables ; then # does system have iptables?
   setenforce 0
-  iptables -A INPUT -p tcp --dport 22 -j ACCEPT #block port 22
+  iptables -A INPUT -p tcp --dport 22 -j REJECT #block port 22
   /sbin/service iptables save
   /sbin/service iptables restart
 fi
+echo "FIREWALL CHECKPOINT 2"
+iptables -L -n -v
 
 #sleep 20
 start=`date +%s`
@@ -20,12 +24,16 @@ end=`date +%s`
 runtime=$((end-start))
 echo "WAM install took $runtime seconds."
 
+echo "FIREWALL CHECKPOINT 3"
+iptables -L -n -v
 if rpm -q iptables ; then # does system have iptables?
   setenforce 0
   iptables -A INPUT -p tcp --dport 22 -j ACCEPT #open port 22
   /sbin/service iptables save
   /sbin/service iptables restart
 fi
+echo "FIREWALL CHECKPOINT 4"
+iptables -L -n -v
 
 export S3_TOP_KEYFIX=$(echo ${tfi_build_id} | cut -d'_' -f 1)
 export BUILD_ID=$(echo ${tfi_build_id} | cut -d'_' -f 3)
