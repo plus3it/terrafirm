@@ -100,7 +100,7 @@ resource "aws_instance" "spels" {
     ]
     
     connection {
-      script_path = "/root/inline.sh"
+      script_path = "~/inline.sh"
     }
   }  
 }
