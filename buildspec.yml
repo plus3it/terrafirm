@@ -75,7 +75,9 @@ phases:
       - export TF_VAR_tfi_win_userdata_log="${TFI_WIN_USERDATA_LOG}"
       - export TF_VAR_tfi_lx_userdata_log="${TFI_LX_USERDATA_LOG}"
       - export TF_VAR_tfi_s3_bucket="${TFI_S3_BUCKET}"
-      - export TF_VAR_tfi_build_id=$(date +'%Y%m%d_%H%M_')$(echo $CODEBUILD_BUILD_ID | cut -d'-' -f 5)
+      - export TF_VAR_tfi_build_date=$(date +'%Y%m%d')
+      - export TF_VAR_tfi_build_hhmm=$(date +'%H%M')
+      - export TF_VAR_tfi_build_id=$(echo $CODEBUILD_BUILD_ID | cut -d'-' -f 5)
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - Validate subnet, find VPC.........................................................."
       - # If subnet id is valid, finds the associated VPC and assigns variables. Otherwise, blanks (defaults)
@@ -128,6 +130,10 @@ phases:
       - ./terraform apply -input=false tfplan
   post_build:
     commands:
+      - # save output information to file
+      - ./terraform output > terraform_output.txt
+      - aws s3 cp terraform_output.txt "s3://${TFI_S3_BUCKET}/${TF_VAR_tfi_build_date}/${TF_VAR_tfi_build_id}/terraform_output.txt" || true
+      - # decide whether to destroy or not
       - |
         if [ "${TFI_DESTROY_AFTER_TEST}" = "true" ]; then
           echo "Destroying Terraform-created resources (e.g., security groups, instances, key pair)..."
