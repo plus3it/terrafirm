@@ -28,6 +28,7 @@ data "template_file" "lx_userdata" {
     tfi_lx_userdata_log = "${var.tfi_lx_userdata_log}"
     tfi_s3_bucket = "${var.tfi_s3_bucket}"
     tfi_build_id = "${var.tfi_build_id}"
+    tfi_cb_ip = "${var.tfi_cb_ip}"
   }
 }
 
