@@ -31,7 +31,7 @@ if rpm -q iptables ; then # does system have iptables?
   iptables -L -n -v
   setenforce 0
   #iptables -D INPUT 1
-  iptables -D INPUT -p tcp -s ${tfi_cb_ip} --dport 122 -j ACCEPT #open port 22
+  iptables -I INPUT -p tcp -s ${tfi_cb_ip} --dport 122 -j ACCEPT #open port 22
   /sbin/service iptables save
   /sbin/service iptables restart
   echo "FIREWALL CHECKPOINT 4"
