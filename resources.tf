@@ -86,15 +86,15 @@ resource "aws_instance" "spels" {
   
   provisioner "file" {
     source      = "linux/watchmaker_test.sh"
-    destination = "/tmp/watchmaker_test.sh"
+    destination = "~/watchmaker_test.sh"
   }
   
   provisioner "remote-exec" {
     inline = [
       #"while [ ! -f /tmp/SETUP_COMPLETE_SIGNAL ]; do echo \"scale=0; $(($(wc -c < ${var.tfi_lx_userdata_log})<57046?$(wc -c < ${var.tfi_lx_userdata_log}):57046))*100/57046\" | bc | awk '{printf \"%d%% done\", $0}' ; sleep 10 ; done",
       #"sleep 30",
-      "chmod +x /tmp/watchmaker_test.sh",
-      "/tmp/watchmaker_test.sh",
+      "chmod +x ~/watchmaker_test.sh",
+      "~/watchmaker_test.sh",
     ]
   }  
 }
