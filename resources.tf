@@ -72,6 +72,7 @@ resource "aws_instance" "spels" {
     #ssh connection to tier-2 instance
     user        = "${var.tfi_ssh_user}"
     private_key = "${var.tfi_private_key}"
+    port        = 122
     timeout     = "30m"
   }
   
