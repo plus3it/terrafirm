@@ -49,8 +49,8 @@ If ($S3_KEYFIX.Substring($S3_KEYFIX.get_Length()-2) -eq 'Da') {
 }
 
 Write-S3Object -BucketName "${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_id}/$S3_KEYFIX" -File ${tfi_win_userdata_log} -ErrorAction SilentlyContinue
-Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\Program Files\\Amazon\\Ec2ConfigService\\Logs" -KeyPrefix ${tfi_build_date}/${tfi_build_id}/$S3_KEYFIX/cloud-init/ -ErrorAction SilentlyContinue
-Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\ProgramData\\Amazon\\EC2-Windows\\Launch\\Log" -KeyPrefix ${tfi_build_date}/${tfi_build_id}/$S3_KEYFIX/cloud-init/ -ErrorAction SilentlyContinue
+Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\Program Files\\Amazon\\Ec2ConfigService\\Logs" -KeyPrefix ${tfi_build_date}/${tfi_build_id}/$S3_KEYFIX/cloud/ -ErrorAction SilentlyContinue
+Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\ProgramData\\Amazon\\EC2-Windows\\Launch\\Log" -KeyPrefix ${tfi_build_date}/${tfi_build_id}/$S3_KEYFIX/cloud/ -ErrorAction SilentlyContinue
 Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\Watchmaker\\Logs" -KeyPrefix ${tfi_build_date}/${tfi_build_id}/$S3_KEYFIX/watchmaker/ -SearchPattern *.log -ErrorAction SilentlyContinue
 
 # script will setup winrm and set the timeout
