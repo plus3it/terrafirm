@@ -5,15 +5,19 @@ exec &> ${tfi_lx_userdata_log}
 yum -y install bc
 
 echo "FIREWALL CHECKPOINT 1"
-iptables -L -n -v
-if rpm -q iptables ; then # does system have iptables?
-  setenforce 0
-  iptables -A INPUT -p tcp -s ${tfi_cb_ip} --dport 22 -j DROP #block port 22
-  /sbin/service iptables save
-  /sbin/service iptables restart
-fi
-echo "FIREWALL CHECKPOINT 2"
-iptables -L -n -v
+setenforce 0
+sed '5iPort 122' /etc/ssh/sshd_config
+service sshd restart
+
+#iptables -L -n -v
+#if rpm -q iptables ; then # does system have iptables?
+#  setenforce 0
+#  iptables -A INPUT -p tcp -s ${tfi_cb_ip} --dport 22 -j DROP #block port 22
+#  /sbin/service iptables save
+#  /sbin/service iptables restart
+#fi
+#echo "FIREWALL CHECKPOINT 2"
+#iptables -L -n -v
 
 #sleep 20
 start=`date +%s`
@@ -25,16 +29,19 @@ runtime=$((end-start))
 echo "WAM install took $runtime seconds."
 
 echo "FIREWALL CHECKPOINT 3"
-iptables -L -n -v
-if rpm -q iptables ; then # does system have iptables?
-  setenforce 0
-  #iptables -D INPUT 1
-  iptables -D INPUT -p tcp -s ${tfi_cb_ip} --dport 22 -j DROP #open port 22
-  /sbin/service iptables save
-  /sbin/service iptables restart
-fi
-echo "FIREWALL CHECKPOINT 4"
-iptables -L -n -v
+#iptables -L -n -v
+#if rpm -q iptables ; then # does system have iptables?
+#  setenforce 0
+#  #iptables -D INPUT 1
+#  iptables -D INPUT -p tcp -s ${tfi_cb_ip} --dport 22 -j DROP #open port 22
+#  /sbin/service iptables save
+#  /sbin/service iptables restart
+#fi
+#echo "FIREWALL CHECKPOINT 4"
+#iptables -L -n -v
+setenforce 0
+sed -e '5d' /etc/ssh/sshd_config
+service sshd restart
 
 export S3_TOP_KEYFIX=$(echo ${tfi_build_id} | cut -d'_' -f 1)
 export BUILD_ID=$(echo ${tfi_build_id} | cut -d'_' -f 3)
