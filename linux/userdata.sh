@@ -30,10 +30,9 @@ sed -i -e 's/Port 22/#Port 22/g' /etc/ssh/sshd_config
 cat /etc/ssh/sshd_config
 service sshd restart
 
-export S3_TOP_KEYFIX=$(echo ${tfi_build_id} | cut -d'_' -f 1)
-export BUILD_ID=$(echo ${tfi_build_id} | cut -d'_' -f 2)"_"$(echo ${tfi_build_id} | cut -d'_' -f 3)
+export S3_TOP_KEYFIX=${tfi_build_date}
+export BUILD_ID=${tfi_build_id}
 export OS_VERSION=$(cat /etc/redhat-release | cut -c1-3)$(cat /etc/redhat-release | sed 's/[^0-9.]*\([0-9]\.[0-9]\).*/\1/')
-#export S3_KEYFIX=$(date +'%H%M%S_')$OS_VERSION
 export S3_KEYFIX=$OS_VERSION
 
 aws s3 cp ${tfi_lx_userdata_log} "s3://${tfi_s3_bucket}/$${S3_TOP_KEYFIX}/$${BUILD_ID}/$${S3_KEYFIX}/userdata.log" || true
