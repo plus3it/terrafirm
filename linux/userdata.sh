@@ -24,6 +24,7 @@ else
   firewall-cmd --reload
 fi
 sed -i -e '5iPort 122' /etc/ssh/sshd_config
+sed -i -e 's/Port 22/#Port 22/g' /etc/ssh/sshd_config
 service sshd restart
 
 export S3_TOP_KEYFIX=$(echo ${tfi_build_id} | cut -d'_' -f 1)
