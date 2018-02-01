@@ -34,7 +34,7 @@ service sshd restart
 export S3_KEYFIX=$(cat /etc/redhat-release | cut -c1-3)$(cat /etc/redhat-release | sed 's/[^0-9.]*\([0-9]\.[0-9]\).*/\1/')
 
 aws s3 cp ${tfi_lx_userdata_log} "s3://${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_id}/$${S3_KEYFIX}/userdata.log" || true
-aws s3 cp /var/log "s3://${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_id}/$${S3_KEYFIX}/cloud-init/" --recursive --exclude "*" --include "cloud*log" || true
+aws s3 cp /var/log "s3://${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_id}/$${S3_KEYFIX}/cloud/" --recursive --exclude "*" --include "cloud*log" || true
 aws s3 cp /var/log/watchmaker "s3://${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_id}/$${S3_KEYFIX}/watchmaker/" --recursive || true
 
 touch /tmp/SETUP_COMPLETE_SIGNAL
