@@ -42,7 +42,7 @@ sed -i -e '5iPort 122' /etc/ssh/sshd_config
 service sshd restart
 
 export S3_TOP_KEYFIX=$(echo ${tfi_build_id} | cut -d'_' -f 1)
-export BUILD_ID=$(echo ${tfi_build_id} | cut -d'_' -f 3)
+export BUILD_ID=$(echo ${tfi_build_id} | cut -d'_' -f 2)"_"$(echo ${tfi_build_id} | cut -d'_' -f 3)
 export OS_VERSION=$(cat /etc/redhat-release | cut -c1-3)$(cat /etc/redhat-release | sed 's/[^0-9.]*\([0-9]\.[0-9]\).*/\1/')
 #export S3_KEYFIX=$(date +'%H%M%S_')$OS_VERSION
 export S3_KEYFIX=$OS_VERSION
