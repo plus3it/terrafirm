@@ -2,12 +2,12 @@
 
 exec &> ${tfi_lx_userdata_log}
 
-yum -y install bc
-
 echo "FIREWALL CHECKPOINT 1"
 setenforce 0
 sed -i -e '5iPort 122' /etc/ssh/sshd_config
 service sshd restart
+
+yum -y install bc
 
 #iptables -L -n -v
 #if rpm -q iptables ; then # does system have iptables?
