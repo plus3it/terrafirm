@@ -2,8 +2,6 @@
 
 exec &> ${tfi_lx_userdata_log}
 
-yum -y install bc
-
 start=`date +%s`
 
 WATCHMAKER_INSTALL_GOES_HERE
@@ -14,15 +12,16 @@ echo "WAM install took $runtime seconds."
 
 setenforce 0
 
+# open firewall (iptables for rhel/centos 6, firewalld for 7
 if rpm -q iptables ; then # does system have iptables?
-  echo "FIREWALL CHECKPOINT 3"
-  iptables -L -n -v
-  #iptables -D INPUT 1
+  echo "Configuring iptables..."
   iptables -A INPUT -p tcp --dport 122 -j ACCEPT #open port 122
-  /sbin/service iptables save
-  /sbin/service iptables restart
-  echo "FIREWALL CHECKPOINT 4"
-  iptables -L -n -v
+  iptables save
+  iptables restart
+else
+  echo "Configuring firewalld..."
+  firewall-cmd --zone=public --permanent --add-port=122/tcp
+  firewall-cmd --reload
 fi
 sed -i -e '5iPort 122' /etc/ssh/sshd_config
 service sshd restart
