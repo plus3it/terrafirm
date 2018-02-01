@@ -98,6 +98,10 @@ resource "aws_instance" "spels" {
       "chmod +x ~/watchmaker_test.sh",
       "~/watchmaker_test.sh",
     ]
+    
+    connection {
+      script_path = "/root/inline.sh"
+    }
   }  
 }
 
