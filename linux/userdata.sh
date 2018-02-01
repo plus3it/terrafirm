@@ -13,16 +13,17 @@ echo "WAM install took $runtime seconds."
 setenforce 0
 
 # open firewall (iptables for rhel/centos 6, firewalld for 7
-if rpm -q iptables ; then # does system have iptables?
+if systemctl status firewalld ; then
+  echo "Configuring firewalld..."
+  firewall-cmd --zone=public --permanent --add-port=122/tcp
+  firewall-cmd --reload
+else
   echo "Configuring iptables..."
   iptables -A INPUT -p tcp --dport 122 -j ACCEPT #open port 122
   iptables save
   iptables restart
-else
-  echo "Configuring firewalld..."
-  firewall-cmd --zone=public --permanent --add-port=122/tcp
-  firewall-cmd --reload
 fi
+
 sed -i -e '5iPort 122' /etc/ssh/sshd_config
 sed -i -e 's/Port 22/#Port 22/g' /etc/ssh/sshd_config
 service sshd restart
