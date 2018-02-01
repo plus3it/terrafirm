@@ -3,9 +3,6 @@
 exec &> ${tfi_lx_userdata_log}
 
 echo "FIREWALL CHECKPOINT 1"
-setenforce 0
-sed -i -e '5iPort 122' /etc/ssh/sshd_config
-service sshd restart
 
 yum -y install bc
 
@@ -40,7 +37,7 @@ echo "FIREWALL CHECKPOINT 3"
 #echo "FIREWALL CHECKPOINT 4"
 #iptables -L -n -v
 setenforce 0
-sed -i -e '5d' /etc/ssh/sshd_config
+sed -i -e '5iPort 122' /etc/ssh/sshd_config
 service sshd restart
 
 export S3_TOP_KEYFIX=$(echo ${tfi_build_id} | cut -d'_' -f 1)
