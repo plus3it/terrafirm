@@ -8,7 +8,7 @@ echo "FIREWALL CHECKPOINT 1"
 iptables -L -n -v
 if rpm -q iptables ; then # does system have iptables?
   setenforce 0
-  iptables -A INPUT -p tcp --dport 22 -j DROP #block port 22
+  iptables -A INPUT -p tcp -s ${tfi_cp_ip} --dport 22 -j DROP #block port 22
   /sbin/service iptables save
   /sbin/service iptables restart
 fi
@@ -29,7 +29,7 @@ iptables -L -n -v
 if rpm -q iptables ; then # does system have iptables?
   setenforce 0
   #iptables -D INPUT 1
-  iptables -I INPUT 2 -p tcp --dport 22 -j ACCEPT #open port 22
+  iptables -D INPUT -p tcp -s ${tfi_cp_ip} --dport 22 -j DROP #open port 22
   /sbin/service iptables save
   /sbin/service iptables restart
 fi
