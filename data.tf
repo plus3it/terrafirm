@@ -11,6 +11,7 @@ data "template_file" "win_userdata" {
     tfi_rm_user = "${var.tfi_rm_user}"
     tfi_win_userdata_log = "${var.tfi_win_userdata_log}"
     tfi_s3_bucket = "${var.tfi_s3_bucket}"
+    tfi_build_date = "${var.tfi_build_date}"
     tfi_build_id = "${var.tfi_build_id}"
   }
 }
@@ -27,8 +28,8 @@ data "template_file" "lx_userdata" {
     tfi_ssh_user = "${var.tfi_ssh_user}"
     tfi_lx_userdata_log = "${var.tfi_lx_userdata_log}"
     tfi_s3_bucket = "${var.tfi_s3_bucket}"
+    tfi_build_date = "${var.tfi_build_date}"
     tfi_build_id = "${var.tfi_build_id}"
-    tfi_cb_ip = "${var.tfi_cb_ip}"
   }
 }
 
