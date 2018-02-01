@@ -28,7 +28,8 @@ echo "FIREWALL CHECKPOINT 3"
 iptables -L -n -v
 if rpm -q iptables ; then # does system have iptables?
   setenforce 0
-  iptables -I INPUT 2 -p tcp --dport 22 -j ACCEPT #open port 22
+  iptables -D INPUT 2
+  #iptables -I INPUT 2 -p tcp --dport 22 -j ACCEPT #open port 22
   /sbin/service iptables save
   /sbin/service iptables restart
 fi
