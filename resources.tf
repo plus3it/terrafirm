@@ -41,6 +41,14 @@ resource "aws_security_group" "terrafirm_ssh" {
     protocol    = "tcp"
     cidr_blocks = ["${var.tfi_cb_ip}/32"]
   }
+  
+  # SSH access 
+  ingress {
+    from_port   = 122
+    to_port     = 122
+    protocol    = "tcp"
+    cidr_blocks = ["${var.tfi_cb_ip}/32"]
+  }  
 
   # outbound internet access
   egress {
@@ -72,6 +80,7 @@ resource "aws_instance" "spels" {
     #ssh connection to tier-2 instance
     user        = "${var.tfi_ssh_user}"
     private_key = "${var.tfi_private_key}"
+    port        = 122
     timeout     = "30m"
   }
   
@@ -82,10 +91,13 @@ resource "aws_instance" "spels" {
   
   provisioner "remote-exec" {
     inline = [
-      "while [ ! -f /tmp/SETUP_COMPLETE_SIGNAL ]; do echo \"scale=0; $(($(wc -c < ${var.tfi_lx_userdata_log})<57046?$(wc -c < ${var.tfi_lx_userdata_log}):57046))*100/57046\" | bc | awk '{printf \"%d%% done\", $0}' ; sleep 10 ; done",
       "chmod +x ~/watchmaker_test.sh",
       "~/watchmaker_test.sh",
     ]
+    
+    connection {
+      script_path = "~/inline.sh"
+    }
   }  
 }
 

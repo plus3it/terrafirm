@@ -4,7 +4,7 @@ version: 0.2
 env:
   variables:
     TFI_DESC_URL:           https://github.com/YakDriver/terrafirm
-    TFI_TF_ZIP:             https://releases.hashicorp.com/terraform/0.11.2/terraform_0.11.2_linux_amd64.zip
+    TFI_TF_ZIP:             https://releases.hashicorp.com/terraform/0.11.3/terraform_0.11.3_linux_amd64.zip
     TFI_JQ_INSTALL:         https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
     TFI_WIN_SECURITY_GRP:   "terrafirm_winrm_sg"                                   #ephemeral name for sg
     TFI_LX_SECURITY_GRP:    "terrafirm_ssh_sg"                                     #ephemeral name for sg
@@ -75,7 +75,9 @@ phases:
       - export TF_VAR_tfi_win_userdata_log="${TFI_WIN_USERDATA_LOG}"
       - export TF_VAR_tfi_lx_userdata_log="${TFI_LX_USERDATA_LOG}"
       - export TF_VAR_tfi_s3_bucket="${TFI_S3_BUCKET}"
-      - export TF_VAR_tfi_build_id=$(date +'%Y%m%d_%H%M_')$(echo $CODEBUILD_BUILD_ID | cut -d'-' -f 5)
+      - export TF_VAR_tfi_build_date=$(date +'%Y%m%d')
+      - export TF_VAR_tfi_build_id=$(date +'%H%M')"_"$(echo $CODEBUILD_BUILD_ID | cut -d'-' -f 5)
+      - #export TF_VAR_tfi_build_id=$(echo $CODEBUILD_BUILD_ID | cut -d'-' -f 5)
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - Validate subnet, find VPC.........................................................."
       - # If subnet id is valid, finds the associated VPC and assigns variables. Otherwise, blanks (defaults)
@@ -93,7 +95,8 @@ phases:
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - Create key pair if necessary......................................................."      
       - |
-        if aws ec2 describe-key-pairs --key-name "${TFI_KEY_PAIR_NAME}" ; then
+        aws ec2 describe-key-pairs --key-name "${TFI_KEY_PAIR_NAME}" > /dev/null
+        if [ $? -eq 0 ] ; then
           echo "Key pair already exists..."
         else
           echo "Creating a key pair "
@@ -127,11 +130,16 @@ phases:
       - ./terraform apply -input=false tfplan
   post_build:
     commands:
+      - # save output information to file
+      - ./terraform output > terraform_output.txt
+      - aws s3 cp terraform_output.txt "s3://${TFI_S3_BUCKET}/${TF_VAR_tfi_build_date}/${TF_VAR_tfi_build_id}/terraform_output.txt" || true
+      - # decide whether to destroy or not
       - |
         if [ "${TFI_DESTROY_AFTER_TEST}" = "true" ]; then
           echo "Destroying Terraform-created resources (e.g., security groups, instances, key pair)..."
           ./terraform destroy -input=false -force
-          if aws ec2 describe-key-pairs --key-name "${TFI_KEY_PAIR_NAME}" ; then
+          aws ec2 describe-key-pairs --key-name "${TFI_KEY_PAIR_NAME}" > /dev/null
+          if [ $? -eq 0 ] ; then
             echo "Deleting key pair..."
             aws ec2 delete-key-pair --key-name "${TFI_KEY_PAIR_NAME}"
           fi

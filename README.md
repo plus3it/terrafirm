@@ -1,7 +1,7 @@
 # terrafirm
 Terrafirm launches Windows and Linux instances and installs [Watchmaker](https://github.com/plus3it/watchmaker) to test that it installs and runs.
 
-This project is designed to work with **AWS CodeBuild**. In order to use it, you will need to provide certain environment variables.
+This project is designed to work with [AWS CodeBuild](https://aws.amazon.com/codebuild/). In order to use it, you will need to provide environment variables in your CodeBuild project.
 
 ## ENVIRONMENT VARIABLES EXPECTED BY TERRAFIRM
 

@@ -43,20 +43,15 @@ C:\salt\salt-call --local -c C:\Watchmaker\salt\conf lgpo.set_reg_value `
 Stop-Transcript
 
 # upload logs to S3 bucket
-$S3_TOP_KEYFIX=("${tfi_build_id}" -split "_",2)[0]
-$BUILD_ID=("${tfi_build_id}" -split "_",3)[2]
-#$RAND=-join ((65..90) + (97..122) | Get-Random -Count 4 | % {[char]$_})
-$OS_VERSION="Win" + (((Get-WmiObject -class Win32_OperatingSystem).Caption) -replace '.+(\d\d)\s(.{2}).+','$1$2')
-If ($OS_VERSION.Substring($OS_VERSION.get_Length()-2) -eq 'Da') {
-  $OS_VERSION=$OS_VERSION -replace ".{2}$"
+$S3_KEYFIX="Win" + (((Get-WmiObject -class Win32_OperatingSystem).Caption) -replace '.+(\d\d)\s(.{2}).+','$1$2')
+If ($S3_KEYFIX.Substring($S3_KEYFIX.get_Length()-2) -eq 'Da') {
+  $S3_KEYFIX=$S3_KEYFIX -replace ".{2}$"
 }
-#$S3_KEYFIX=(Get-Date -UFormat "%H%M%S_") + $OS_VERSION
-$S3_KEYFIX=$OS_VERSION
 
-Write-S3Object -BucketName "${tfi_s3_bucket}/$S3_TOP_KEYFIX/$BUILD_ID/$S3_KEYFIX" -File ${tfi_win_userdata_log} -ErrorAction SilentlyContinue
-Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\Program Files\\Amazon\\Ec2ConfigService\\Logs" -KeyPrefix $S3_TOP_KEYFIX/$BUILD_ID/$S3_KEYFIX/cloud-init/ -ErrorAction SilentlyContinue
-Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\ProgramData\\Amazon\\EC2-Windows\\Launch\\Log" -KeyPrefix $S3_TOP_KEYFIX/$BUILD_ID/$S3_KEYFIX/cloud-init/ -ErrorAction SilentlyContinue
-Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\Watchmaker\\Logs" -KeyPrefix $S3_TOP_KEYFIX/$BUILD_ID/$S3_KEYFIX/watchmaker/ -SearchPattern *.log -ErrorAction SilentlyContinue
+Write-S3Object -BucketName "${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_id}/$S3_KEYFIX" -File ${tfi_win_userdata_log} -ErrorAction SilentlyContinue
+Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\Program Files\\Amazon\\Ec2ConfigService\\Logs" -KeyPrefix ${tfi_build_date}/${tfi_build_id}/$S3_KEYFIX/cloud/ -ErrorAction SilentlyContinue
+Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\ProgramData\\Amazon\\EC2-Windows\\Launch\\Log" -KeyPrefix ${tfi_build_date}/${tfi_build_id}/$S3_KEYFIX/cloud/ -ErrorAction SilentlyContinue
+Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\Watchmaker\\Logs" -KeyPrefix ${tfi_build_date}/${tfi_build_id}/$S3_KEYFIX/watchmaker/ -SearchPattern *.log -ErrorAction SilentlyContinue
 
 # script will setup winrm and set the timeout
 </powershell>
