@@ -15,11 +15,16 @@ yum -y install git
 pip install --index-url="$PYPI_URL" --upgrade pip setuptools boto3
 
 # Clone watchmaker
-git clone "$GIT_REPO" --branch "$GIT_BRANCH" --recursive
+git clone "$GIT_REPO" --recursive
 cd watchmaker
-if [ ! -z "$GIT_PR" ] ; then
-  git fetch origin pull/$GIT_PR/head:pr-$GIT_PR
-  git checkout pr-$GIT_PR
+if [ ! -z "$GIT_REF" ] ; then
+  re='^[0-9]+$'
+  if [[ "$GIT_REF" =~ $re ]] ; then
+    git fetch origin pull/$GIT_REF/head:pr-$GIT_REF
+    git checkout pr-$GIT_REF
+  else
+    git checkout $GIT_REF
+  fi
 fi
 
 # Install watchmaker
