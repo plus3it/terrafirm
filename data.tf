@@ -152,6 +152,70 @@ data "aws_ami" "windows2016" {
   owners = "${var.tfi_windows_ami_owners}"
 }
 
+data "aws_ami" "win16sql16s" {
+  most_recent = true
+  
+  filter {
+    name = "virtualization-type"
+    values = ["${var.tfi_other_filters["virtualization_type"]}"]
+  }
+  
+  filter {
+    name = "name"
+    values = ["${element(var.tfi_ami_name_filters, 7)}"]
+  }
+  
+  owners = "${var.tfi_windows_ami_owners}"
+}
+
+data "aws_ami" "win16sql16e" {
+  most_recent = true
+  
+  filter {
+    name = "virtualization-type"
+    values = ["${var.tfi_other_filters["virtualization_type"]}"]
+  }
+  
+  filter {
+    name = "name"
+    values = ["${element(var.tfi_ami_name_filters, 8)}"]
+  }
+  
+  owners = "${var.tfi_windows_ami_owners}"
+}
+
+data "aws_ami" "win16sql17s" {
+  most_recent = true
+  
+  filter {
+    name = "virtualization-type"
+    values = ["${var.tfi_other_filters["virtualization_type"]}"]
+  }
+  
+  filter {
+    name = "name"
+    values = ["${element(var.tfi_ami_name_filters, 9)}"]
+  }
+  
+  owners = "${var.tfi_windows_ami_owners}"
+}
+
+data "aws_ami" "win16sql17e" {
+  most_recent = true
+  
+  filter {
+    name = "virtualization-type"
+    values = ["${var.tfi_other_filters["virtualization_type"]}"]
+  }
+  
+  filter {
+    name = "name"
+    values = ["${element(var.tfi_ami_name_filters, 10)}"]
+  }
+  
+  owners = "${var.tfi_windows_ami_owners}"
+}
+
 # data source (place to put the ami id strings), used to mitigate lack of intermediate variables and interpolation
 data "null_data_source" "spel_instance_amis" {
   inputs = {
@@ -168,5 +232,9 @@ data "null_data_source" "windows_instance_amis" {
     "win08" = "${data.aws_ami.windows2008.id}"
     "win12" = "${data.aws_ami.windows2012.id}"
     "win16" = "${data.aws_ami.windows2016.id}"
+    "win16sql16s" = "${data.aws_ami.win16sql16s.id}"
+    "win16sql16e" = "${data.aws_ami.win16sql16e.id}"
+    "win16sql17s" = "${data.aws_ami.win16sql17s.id}"
+    "win16sql17e" = "${data.aws_ami.win16sql17e.id}"
   }
 }

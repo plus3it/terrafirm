@@ -26,3 +26,19 @@ output "ami2012" {
 output "ami2008" {
   value = "${data.aws_ami.windows2008.id}"
 }
+
+output "amiwin16sql16s" {
+  value = "${data.aws_ami.win16sql16s.id}"
+}
+
+output "amiwin16sql16e" {
+  value = "${data.aws_ami.win16sql16e.id}"
+}
+
+output "amiwin16sql17s" {
+  value = "${data.aws_ami.win16sql17s.id}"
+}
+
+output "amiwin16sql17e" {
+  value = "${data.aws_ami.win16sql17e.id}"
+}
