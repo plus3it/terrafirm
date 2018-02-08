@@ -1,5 +1,6 @@
 GIT_REPO="${tfi_repo}"
 GIT_BRANCH="${tfi_branch}"
+GIT_PR="${tfi_pr}"
 
 PIP_URL=https://bootstrap.pypa.io/get-pip.py
 PYPI_URL=https://pypi.org/simple
@@ -15,9 +16,13 @@ pip install --index-url="$PYPI_URL" --upgrade pip setuptools boto3
 
 # Clone watchmaker
 git clone "$GIT_REPO" --branch "$GIT_BRANCH" --recursive
+cd watchmaker
+if [ ! -z "$GIT_PR" ] ; then
+  git fetch origin pull/$GIT_PR/head:pr-$GIT_PR
+  git checkout pr-$GIT_PR
+fi
 
 # Install watchmaker
-cd watchmaker
 pip install --index-url "$PYPI_URL" --editable .
 
 # Run watchmaker
