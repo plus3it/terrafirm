@@ -17,8 +17,7 @@ variable "tfi_assign_public_ip" {}
 variable "tfi_win_instance_type" {}
 variable "tfi_lx_instance_type" {}
 variable "tfi_repo" {}
-variable "tfi_branch" {}
-variable "tfi_pr" {}
+variable "tfi_ref" {}
 variable "tfi_common_args" {}
 variable "tfi_win_args" {}
 variable "tfi_lx_args" {}
