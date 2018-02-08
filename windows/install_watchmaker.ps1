@@ -23,7 +23,7 @@ pip install --index-url="$PypiUrl" --upgrade pip setuptools boto3
 # Clone watchmaker
 git clone "$GitRepo" --branch "$GitBranch" --recursive
 cd watchmaker
-if (-not ([string]::IsNullOrEmpty($GitPr)))
+if ($GitPr)
 {
   git fetch origin pull/$GitPr/head:pr-$GitPr
   git checkout pr-$GitPr
