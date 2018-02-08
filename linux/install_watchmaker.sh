@@ -1,6 +1,5 @@
-GIT_REPO="${tfi_repo}"
-GIT_BRANCH="${tfi_branch}"
-GIT_PR="${tfi_pr}"
+GIT_REPO="${tfi_git_repo}"
+GIT_REF="${tfi_git_ref}"
 
 PIP_URL=https://bootstrap.pypa.io/get-pip.py
 PYPI_URL=https://pypi.org/simple
