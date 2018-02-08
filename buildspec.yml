@@ -46,7 +46,6 @@ phases:
       - echo `pwd`
       - curl -L "${TFI_TF_ZIP}" -o tf.zip && unzip tf.zip
       - env
-      - exit 1
   pre_build:
     commands:
       - #-------------------------------------------------------------------------------------------------
