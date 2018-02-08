@@ -19,9 +19,10 @@ Variable | Default | Req/Opt (in CodeBuild) | Description
 `TFI_ASSIGN_PUBLIC_IP` | false | optional | Whether or not to assign a public IP to the instances built by Terraform.
 `TFI_WIN_INSTANCE_TYPE` | t2.medium | optional | AWS instance type for Windows instances.
 `TFI_LX_INSTANCE_TYPE` | t2.micro | optional | AWS instance type for Linux instances.
-`TFI_REPO` | https://github.com/plus3it/watchmaker.git | optional | Which git repository to use in getting watchmaker code.
-`TFI_BRANCH` | master | optional | Which branch of the repository to use in getting watchmaker code.
+`TFI_GIT_REPO` | https://github.com/plus3it/watchmaker.git | optional | Which git repository to use in getting watchmaker code.
+`TFI_GIT_REF` | master | optional | Which branch or pull request number of the repository to use in getting watchmaker code.
 `TFI_COMMON_ARGS` | -n --log-level debug | optional | Command line arguments used when installing Watchmaker (Windows/Linux).
 `TFI_WIN_ARGS` | --log-dir=C:\\Watchmaker\\Logs | optional | Command line arguments used when installing Watchmaker (Windows).
 `TFI_LX_ARGS` | --log-dir=/var/log/watchmaker | optional | Command line arguments used when installing Watchmaker (Linux).
 `TFI_DESTROY_AFTER_TEST` | true | optional | Whether or not to destroy all resources created after the test. (WARNING: Depending on failure, Terraform may not always be able to destroy provisioned resources.)
+`TFI_S3_BUCKET` | mybucket | optional | Which S3 bucket to place logs from installs and output from Terraform.
