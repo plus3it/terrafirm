@@ -24,7 +24,7 @@ git clone "$GitRepo" --recursive
 cd watchmaker
 if ($GitRef)
 {
-  if($GitRef -match "$[0-9]+^")
+  if($GitRef -match "^[0-9]+$")
   {
     git fetch origin pull/$GitRef/head:pr-$GitRef
     git checkout pr-$GitRef
