@@ -17,8 +17,7 @@ pip install --index-url="$PYPI_URL" --upgrade pip setuptools boto3
 git clone "$GIT_REPO" --recursive
 cd watchmaker
 if [ ! -z "$GIT_REF" ] ; then
-  re='^[0-9]+$'
-  if [[ "$GIT_REF" =~ $re ]] ; then
+  if [[ "$GIT_REF" =~ '^[0-9]+$' ]] ; then
     git fetch origin pull/$GIT_REF/head:pr-$GIT_REF
     git checkout pr-$GIT_REF
   else
