@@ -25,8 +25,8 @@ env:
     TFI_ASSIGN_PUBLIC_IP:   "false"                                                #optional in CodeBuild
     TFI_WIN_INSTANCE_TYPE:  "t2.medium"                                            #optional in CodeBuild
     TFI_LX_INSTANCE_TYPE:   "t2.micro"                                             #optional in CodeBuild
-    TFI_GIT_REPO:           "https://github.com/plus3it/watchmaker.git"            #optional in CodeBuild
-    TFI_GIT_REF:            "master"                                               #optional in CodeBuild
+    TFI_REPO:               "https://github.com/plus3it/watchmaker.git"            #optional in CodeBuild
+    TFI_REF:                "master"                                               #optional in CodeBuild
     TFI_COMMON_ARGS:        "-n --log-level debug"                                 #optional in CodeBuild
     TFI_WIN_ARGS:           "--log-dir=C:\\Watchmaker\\Logs"                       #optional in CodeBuild
     TFI_LX_ARGS:            "--log-dir=/var/log/watchmaker"                        #optional in CodeBuild
@@ -48,7 +48,7 @@ phases:
   pre_build:
     commands:
       - #-------------------------------------------------------------------------------------------------
-      - echo "Terraform version " ; ./terraform --version
+      - echo -n "Version - " ; ./terraform --version
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - Simple Env Vars......................................................."
       - aws configure set region "${AWS_REGION}"
@@ -96,7 +96,7 @@ phases:
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - Create key pair if necessary......................................................."      
       - |
-        aws ec2 describe-key-pairs --key-name "${TFI_KEY_PAIR_NAME}" > /dev/null
+        aws ec2 describe-key-pairs --key-name "${TFI_KEY_PAIR_NAME}" 2> /dev/null
         if [ $? -eq 0 ] ; then
           echo "Key pair already exists..."
         else
@@ -139,7 +139,7 @@ phases:
         if [ "${TFI_DESTROY_AFTER_TEST}" = "true" ]; then
           echo "Destroying Terraform-created resources (e.g., security groups, instances, key pair)..."
           ./terraform destroy -input=false -force
-          aws ec2 describe-key-pairs --key-name "${TFI_KEY_PAIR_NAME}" > /dev/null
+          aws ec2 describe-key-pairs --key-name "${TFI_KEY_PAIR_NAME}" 2> /dev/null
           if [ $? -eq 0 ] ; then
             echo "Deleting key pair..."
             aws ec2 delete-key-pair --key-name "${TFI_KEY_PAIR_NAME}"
