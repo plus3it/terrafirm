@@ -25,8 +25,8 @@ env:
     TFI_ASSIGN_PUBLIC_IP:   "false"                                                #optional in CodeBuild
     TFI_WIN_INSTANCE_TYPE:  "t2.medium"                                            #optional in CodeBuild
     TFI_LX_INSTANCE_TYPE:   "t2.micro"                                             #optional in CodeBuild
-    TFI_REPO:               "https://github.com/plus3it/watchmaker.git"            #optional in CodeBuild
-    TFI_REF:                "master"                                               #optional in CodeBuild
+    TFI_GIT_REPO:               "https://github.com/plus3it/watchmaker.git"            #optional in CodeBuild
+    TFI_GIT_REF:                "master"                                               #optional in CodeBuild
     TFI_COMMON_ARGS:        "-n --log-level debug"                                 #optional in CodeBuild
     TFI_WIN_ARGS:           "--log-dir=C:\\Watchmaker\\Logs"                       #optional in CodeBuild
     TFI_LX_ARGS:            "--log-dir=/var/log/watchmaker"                        #optional in CodeBuild
