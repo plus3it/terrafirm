@@ -123,13 +123,13 @@ phases:
       - sed -i -e '/WATCHMAKER_INSTALL_GOES_HERE/{r linux/install_watchmaker.sh' -e 'd}' linux/userdata.sh
       - #-------------------------------------------------------------------------------------------------  
       - echo "SETUP - Complete, init Terraform..........................................................."         
-      - echo "Initializing Terraform " ; ./terraform init -input=false
-      - echo "Importing key pair " ; ./terraform import aws_key_pair.auth "${TFI_KEY_PAIR_NAME}"
-      - echo "Create provisiong plan " ; ./terraform plan -out=tfplan -input=false
+      - echo "Initializing Terraform " ; ./terraform init -no-color -input=false
+      - echo "Importing key pair " ; ./terraform import -no-color aws_key_pair.auth "${TFI_KEY_PAIR_NAME}"
+      - echo "Create provisiong plan " ; ./terraform plan -no-color -out=tfplan -input=false
   build:
     commands:
       - echo "Apply Terraform..........................................................................." 
-      - ./terraform apply -input=false tfplan
+      - ./terraform apply -no-color -input=false tfplan
   post_build:
     commands:
       - # save output information to file
