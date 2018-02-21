@@ -9,7 +9,7 @@ PYPI_URL=https://pypi.org/simple
 stage="install python/git" && curl "$PIP_URL" | python - --index-url="$PYPI_URL" wheel==0.29.0
 
 # Install git
-yum -y install git
+retry 5 yum -y install git
 
 # Upgrade pip and setuptools
 stage="upgrade pip/setuptools/boto3" && pip install --index-url="$PYPI_URL" --upgrade pip setuptools boto3

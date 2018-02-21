@@ -2,6 +2,47 @@
 
 exec &> ${tfi_lx_userdata_log}
 
+retry()
+{
+    local n=0
+    local try=$1
+    local cmd="$${*: 2}"
+    local result=1
+    [[ $# -le 1 ]] && {
+        echo "Usage $0 <number_of_retry_attempts> <Command>"
+        exit $result
+    }
+
+    echo "Will try $try time(s) :: $cmd"
+
+    if [[ "$${SHELLOPTS}" == *":errexit:"* ]]
+    then
+        set +e
+        local ERREXIT=1
+    fi
+
+    until [[ $n -ge $try ]]
+    do
+        sleep $n
+        $cmd
+        result=$?
+        if [[ $result -eq 0 ]]
+        then
+            break
+        else
+            ((n++))
+            echo "Attempt $n, command failed :: $cmd"
+        fi
+    done
+
+    if [[ "$${ERREXIT}" == "1" ]]
+    then
+        set -e
+    fi
+
+    return $result
+}  # ----------  end of function retry  ----------
+
 finally() {
   local exit_code="$${1:-0}"
 
