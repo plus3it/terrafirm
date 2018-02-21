@@ -34,15 +34,7 @@ resource "aws_security_group" "terrafirm_ssh" {
   description = "Used in terrafirm"
   vpc_id      = "${var.tfi_vpc_id}"
   
-  # SSH access 
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["${var.tfi_cb_ip}/32"]
-  }
-  
-  # SSH access 
+  # Non-standard port SSH access 
   ingress {
     from_port   = 122
     to_port     = 122
