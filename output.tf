@@ -1,4 +1,3 @@
-
 output "amicentos6" {
   value = "${data.aws_ami.centos6.id}"
 }
