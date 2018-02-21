@@ -77,8 +77,10 @@ phases:
       - export TF_VAR_tfi_lx_userdata_log="${TFI_LX_USERDATA_LOG}"
       - export TF_VAR_tfi_s3_bucket="${TFI_S3_BUCKET}"
       - export TF_VAR_tfi_build_date=$(date +'%Y%m%d')
-      - export TF_VAR_tfi_build_id=$(date +'%H%M')"_"$(echo $CODEBUILD_BUILD_ID | cut -d'-' -f 5)
-      - #export TF_VAR_tfi_build_id=$(echo $CODEBUILD_BUILD_ID | cut -d'-' -f 5)
+      - # real cb env looks like "<build project>:<build uuid>" - here using last chunk (eg, 4b3efe3d6796) for shortness
+      - build_id=$(echo $CODEBUILD_BUILD_ID | cut -d':' -f 2 | cut -d'-' -f 5)
+      - export TF_VAR_tfi_build_id=$(date +'%H%M')"_"$build_id
+      - export TF_VAR_tfi_instance_name_tag="terrafirm-$build_id"
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - Validate subnet, find VPC.........................................................."
       - # If subnet id is valid, finds the associated VPC and assigns variables. Otherwise, blanks (defaults)
@@ -122,13 +124,13 @@ phases:
       - sed -i -e '/WATCHMAKER_INSTALL_GOES_HERE/{r linux/install_watchmaker.sh' -e 'd}' linux/userdata.sh
       - #-------------------------------------------------------------------------------------------------  
       - echo "SETUP - Complete, init Terraform..........................................................."         
-      - echo "Initializing Terraform " ; ./terraform init -input=false
-      - echo "Importing key pair " ; ./terraform import aws_key_pair.auth "${TFI_KEY_PAIR_NAME}"
-      - echo "Create provisiong plan " ; ./terraform plan -out=tfplan -input=false
+      - echo "Initializing Terraform " ; ./terraform init -no-color -input=false
+      - echo "Importing key pair " ; ./terraform import -no-color aws_key_pair.auth "${TFI_KEY_PAIR_NAME}"
+      - echo "Create provisiong plan " ; ./terraform plan -no-color -out=tfplan -input=false
   build:
     commands:
       - echo "Apply Terraform..........................................................................." 
-      - ./terraform apply -input=false tfplan
+      - ./terraform apply -no-color -input=false tfplan
   post_build:
     commands:
       - # save output information to file

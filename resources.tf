@@ -1,4 +1,3 @@
-
 #used for importing the key pair created using aws cli
 resource "aws_key_pair" "auth" {
   key_name   = "${var.tfi_key_pair_name}"
@@ -33,22 +32,14 @@ resource "aws_security_group" "terrafirm_ssh" {
   name        = "${var.tfi_lx_security_grp}"
   description = "Used in terrafirm"
   vpc_id      = "${var.tfi_vpc_id}"
-  
-  # SSH access 
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["${var.tfi_cb_ip}/32"]
-  }
-  
-  # SSH access 
+
+  # Non-standard port SSH access 
   ingress {
     from_port   = 122
     to_port     = 122
     protocol    = "tcp"
     cidr_blocks = ["${var.tfi_cb_ip}/32"]
-  }  
+  }
 
   # outbound internet access
   egress {
@@ -61,21 +52,25 @@ resource "aws_security_group" "terrafirm_ssh" {
 
 # bread & butter - this tells TF the provision/create the actual instance
 resource "aws_instance" "spels" {
-  count                        = "${length(matchkeys(values(data.null_data_source.spel_instance_amis.inputs),keys(data.null_data_source.spel_instance_amis.inputs),split(",", var.tfi_lx_instances)))}"
-  ami                          = "${element(matchkeys(values(data.null_data_source.spel_instance_amis.inputs),keys(data.null_data_source.spel_instance_amis.inputs),split(",", var.tfi_lx_instances)), count.index)}"
-  instance_type                = "${var.tfi_lx_instance_type}"
-  iam_instance_profile         = "${var.tfi_instance_profile}"
-  key_name                     = "${aws_key_pair.auth.id}"
-  vpc_security_group_ids       = ["${aws_security_group.terrafirm_ssh.id}"]
-  user_data                    = "${data.template_file.lx_userdata.rendered}"
-  associate_public_ip_address  = "${var.tfi_assign_public_ip}"
-  subnet_id                    = "${var.tfi_subnet_id}"
-  
+  count                       = "${length(matchkeys(values(data.null_data_source.spel_instance_amis.inputs),keys(data.null_data_source.spel_instance_amis.inputs),split(",", var.tfi_lx_instances)))}"
+  ami                         = "${element(matchkeys(values(data.null_data_source.spel_instance_amis.inputs),keys(data.null_data_source.spel_instance_amis.inputs),split(",", var.tfi_lx_instances)), count.index)}"
+  instance_type               = "${var.tfi_lx_instance_type}"
+  iam_instance_profile        = "${var.tfi_instance_profile}"
+  key_name                    = "${aws_key_pair.auth.id}"
+  vpc_security_group_ids      = ["${aws_security_group.terrafirm_ssh.id}"]
+  user_data                   = "${data.template_file.lx_userdata.rendered}"
+  associate_public_ip_address = "${var.tfi_assign_public_ip}"
+  subnet_id                   = "${var.tfi_subnet_id}"
+
+  tags {
+    Name = "${var.tfi_instance_name_tag}"
+  }
+
   timeouts {
     create = "40m"
     delete = "40m"
   }
-  
+
   connection {
     #ssh connection to tier-2 instance
     user        = "${var.tfi_ssh_user}"
@@ -83,57 +78,60 @@ resource "aws_instance" "spels" {
     port        = 122
     timeout     = "30m"
   }
-  
+
   provisioner "file" {
     source      = "linux/watchmaker_test.sh"
     destination = "~/watchmaker_test.sh"
   }
-  
+
   provisioner "remote-exec" {
     inline = [
       "chmod +x ~/watchmaker_test.sh",
       "~/watchmaker_test.sh",
     ]
-    
+
     connection {
       script_path = "~/inline.sh"
     }
-  }  
+  }
 }
 
 # bread & butter - this tells TF the provision/create the actual instance
 resource "aws_instance" "windows" {
-  count                        = "${length(matchkeys(values(data.null_data_source.windows_instance_amis.inputs),keys(data.null_data_source.windows_instance_amis.inputs),split(",", var.tfi_win_instances)))}"
-  ami                          = "${element(matchkeys(values(data.null_data_source.windows_instance_amis.inputs),keys(data.null_data_source.windows_instance_amis.inputs),split(",", var.tfi_win_instances)), count.index)}"  
-  instance_type                = "${var.tfi_win_instance_type}"
-  key_name                     = "${aws_key_pair.auth.id}"
-  iam_instance_profile         = "${var.tfi_instance_profile}"
-  vpc_security_group_ids       = ["${aws_security_group.terrafirm_winrm.id}"]
-  user_data                    = "${data.template_file.win_userdata.rendered}"
-  associate_public_ip_address  = "${var.tfi_assign_public_ip}"
-  subnet_id                    = "${var.tfi_subnet_id}"
-  
-  timeouts {
-    create = "120m"
-    delete = "120m"
+  count                       = "${length(matchkeys(values(data.null_data_source.windows_instance_amis.inputs),keys(data.null_data_source.windows_instance_amis.inputs),split(",", var.tfi_win_instances)))}"
+  ami                         = "${element(matchkeys(values(data.null_data_source.windows_instance_amis.inputs),keys(data.null_data_source.windows_instance_amis.inputs),split(",", var.tfi_win_instances)), count.index)}"
+  instance_type               = "${var.tfi_win_instance_type}"
+  key_name                    = "${aws_key_pair.auth.id}"
+  iam_instance_profile        = "${var.tfi_instance_profile}"
+  vpc_security_group_ids      = ["${aws_security_group.terrafirm_winrm.id}"]
+  user_data                   = "${data.template_file.win_userdata.rendered}"
+  associate_public_ip_address = "${var.tfi_assign_public_ip}"
+  subnet_id                   = "${var.tfi_subnet_id}"
+
+  tags {
+    Name = "${var.tfi_instance_name_tag}"
   }
-  
+
+  timeouts {
+    create = "30m"
+    delete = "30m"
+  }
+
   connection {
     type     = "winrm"
     user     = "${var.tfi_rm_user}"
     password = "${var.tfi_rm_pass}"
-    timeout   = "30m"
+    timeout  = "30m"
   }
-  
+
   provisioner "file" {
     source      = "windows/watchmaker_test.ps1"
     destination = "C:\\scripts\\watchmaker_test.ps1"
   }
-  
+
   provisioner "remote-exec" {
     inline = [
       "powershell.exe -File C:\\scripts\\watchmaker_test.ps1",
     ]
-  }  
-  
+  }
 }

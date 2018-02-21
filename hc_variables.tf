@@ -22,11 +22,12 @@ variable "tfi_ami_name_filters" {
     "Windows_Server-2016-English-Full-SQL_2016_SP1_Enterprise-*",
     "Windows_Server-2016-English-Full-SQL_2017_Standard-*",
     "Windows_Server-2016-English-Full-SQL_2017_Enterprise-*",
-  ] 
+  ]
 }
 
 variable "tfi_other_filters" {
-  type  = "map"
+  type = "map"
+
   default = {
     virtualization_type = "hvm"
   }
