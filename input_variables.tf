@@ -26,4 +26,4 @@ variable "tfi_lx_userdata_log" {}
 variable "tfi_s3_bucket" {}
 variable "tfi_build_date" {}
 variable "tfi_build_id" {}
-
+variable "tfi_instance_name_tag" {}

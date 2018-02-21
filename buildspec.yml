@@ -79,6 +79,7 @@ phases:
       - export TF_VAR_tfi_build_date=$(date +'%Y%m%d')
       - export TF_VAR_tfi_build_id=$(date +'%H%M')"_"$(echo $CODEBUILD_BUILD_ID | cut -d'-' -f 5)
       - #export TF_VAR_tfi_build_id=$(echo $CODEBUILD_BUILD_ID | cut -d'-' -f 5)
+      - export TF_VAR_tfi_instance_name_tag="terrafirm-"$(echo $CODEBUILD_BUILD_ID | cut -d'-' -f 5)
       - #-------------------------------------------------------------------------------------------------
       - echo "SETUP - Validate subnet, find VPC.........................................................."
       - # If subnet id is valid, finds the associated VPC and assigns variables. Otherwise, blanks (defaults)

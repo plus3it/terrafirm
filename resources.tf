@@ -70,7 +70,10 @@ resource "aws_instance" "spels" {
   user_data                    = "${data.template_file.lx_userdata.rendered}"
   associate_public_ip_address  = "${var.tfi_assign_public_ip}"
   subnet_id                    = "${var.tfi_subnet_id}"
-  
+  tags {
+   Name = "${var.tfi_instance_name_tag}"
+  }
+    
   timeouts {
     create = "40m"
     delete = "40m"
@@ -112,7 +115,10 @@ resource "aws_instance" "windows" {
   user_data                    = "${data.template_file.win_userdata.rendered}"
   associate_public_ip_address  = "${var.tfi_assign_public_ip}"
   subnet_id                    = "${var.tfi_subnet_id}"
-  
+  tags {
+   Name = "${var.tfi_instance_name_tag}"
+  }
+
   timeouts {
     create = "120m"
     delete = "120m"
