@@ -1,3 +1,3 @@
 provider "aws" {
-  region     = "${var.tfi_region}"
+  region = "${var.tfi_region}"
 }
