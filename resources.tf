@@ -73,7 +73,7 @@ resource "aws_instance" "spels" {
   tags {
    Name = "${var.tfi_instance_name_tag}"
   }
-    
+
   timeouts {
     create = "40m"
     delete = "40m"
@@ -120,8 +120,8 @@ resource "aws_instance" "windows" {
   }
 
   timeouts {
-    create = "120m"
-    delete = "120m"
+    create = "30m"
+    delete = "30m"
   }
   
   connection {
