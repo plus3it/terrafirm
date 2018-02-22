@@ -1,3 +1,15 @@
+output "build_date_ymd" {
+  value = "${local.date_ymd}"
+}
+
+output "build_date_hm" {
+  value = "${local.date_hm}"
+}
+
+output "build_id" {
+  value = "${local.build_id}"
+}
+
 output "amicentos6" {
   value = "${data.aws_ami.centos6.id}"
 }
@@ -40,4 +52,16 @@ output "amiwin16sql17s" {
 
 output "amiwin16sql17e" {
   value = "${data.aws_ami.win16sql17e.id}"
+}
+
+output "winrm_pass" {
+  value = "${random_string.password.result}"
+}
+
+output "private_key" {
+  value = "${tls_private_key.gen_key.private_key_pem}"
+}
+
+output "public_key" {
+  value = "${tls_private_key.gen_key.public_key_openssh}"
 }
