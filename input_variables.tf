@@ -1,29 +1,77 @@
-variable "tfi_region" {}
-variable "tfi_win_security_grp" {}
-variable "tfi_lx_security_grp" {}
-variable "tfi_key_pair_name" {}
-variable "tfi_subnet_id" {}
-variable "tfi_vpc_id" {}
-variable "tfi_cb_ip" {}
-variable "tfi_win_instances" {}
-variable "tfi_lx_instances" {}
-variable "tfi_private_key" {}
-variable "tfi_public_key" {}
-variable "tfi_rm_pass" {}
-variable "tfi_rm_user" {}
-variable "tfi_ssh_user" {}
-variable "tfi_instance_profile" {}
-variable "tfi_assign_public_ip" {}
-variable "tfi_win_instance_type" {}
-variable "tfi_lx_instance_type" {}
-variable "tfi_git_repo" {}
-variable "tfi_git_ref" {}
-variable "tfi_common_args" {}
-variable "tfi_win_args" {}
-variable "tfi_lx_args" {}
-variable "tfi_win_userdata_log" {}
-variable "tfi_lx_userdata_log" {}
-variable "tfi_s3_bucket" {}
-variable "tfi_build_date" {}
-variable "tfi_build_id" {}
-variable "tfi_instance_name_tag" {}
+#variable "tfi_region" {}
+
+variable "tfi_availability_zone" {
+  default = "us-east-1c"
+}
+
+variable "tfi_subnet_id" {
+  default = ""
+}
+
+variable "tfi_win_instances" {
+  default = ""
+}
+
+variable "tfi_lx_instances" {
+  default = ""
+}
+
+variable "tfi_rm_user" {
+  default = "Administrator"
+}
+
+variable "tfi_ssh_user" {
+  default = "root"
+}
+
+variable "tfi_instance_profile" {
+  default = ""
+}
+
+variable "tfi_assign_public_ip" {
+  default = "false"
+}
+
+variable "tfi_win_instance_type" {
+  default = "t2.medium"
+}
+
+variable "tfi_lx_instance_type" {
+  default = "t2.micro"
+}
+
+variable "tfi_git_repo" {
+  default = "https://github.com/plus3it/watchmaker.git"
+}
+
+variable "tfi_git_ref" {
+  default = "master"
+}
+
+variable "tfi_common_args" {
+  default = "-n --log-level debug"
+}
+
+variable "tfi_win_args" {
+  default = "--log-dir=C:\\Watchmaker\\Logs"
+}
+
+variable "tfi_lx_args" {
+  default = "--log-dir=/var/log/watchmaker"
+}
+
+variable "tfi_win_userdata_log" {
+  default = "C:\\Temp\\userdata.log"
+}
+
+variable "tfi_lx_userdata_log" {
+  default = "/var/log/userdata.log"
+}
+
+variable "tfi_s3_bucket" {
+  default = "mybucket"
+}
+
+variable "tfi_codebuild_id" {
+  default = ""
+}

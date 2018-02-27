@@ -78,9 +78,9 @@ finally() {
   s3_keyfix=$(cat /etc/redhat-release | cut -c1-3)$(cat /etc/redhat-release | sed 's/[^0-9.]*\([0-9]\.[0-9]\).*/\1/')
 
   # move logs to s3
-  aws s3 cp ${tfi_lx_userdata_log} "s3://${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_id}/$${s3_keyfix}/userdata.log" || true
-  aws s3 cp /var/log "s3://${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_id}/$${s3_keyfix}/cloud/" --recursive --exclude "*" --include "cloud*log" || true
-  aws s3 cp /var/log/watchmaker "s3://${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_id}/$${s3_keyfix}/watchmaker/" --recursive || true
+  aws s3 cp ${tfi_lx_userdata_log} "s3://${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$${s3_keyfix}/userdata.log" || true
+  aws s3 cp /var/log "s3://${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$${s3_keyfix}/cloud/" --recursive --exclude "*" --include "cloud*log" || true
+  aws s3 cp /var/log/watchmaker "s3://${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$${s3_keyfix}/watchmaker/" --recursive || true
   
   exit "$${exit_code}"
 }
@@ -107,7 +107,44 @@ start=`date +%s`
 # declare an array to hold the status (number and message)
 userdata_status=(0 "Success")
 
-WATCHMAKER_INSTALL_GOES_HERE
+# ----------  begin of wam install  ----------
+GIT_REPO="${tfi_git_repo}"
+GIT_REF="${tfi_git_ref}"
+
+PIP_URL=https://bootstrap.pypa.io/get-pip.py
+PYPI_URL=https://pypi.org/simple
+
+# Install pip
+stage="install python/git" && curl "$PIP_URL" | python - --index-url="$PYPI_URL" wheel==0.29.0
+
+# Install git
+retry 5 yum -y install git
+
+# Upgrade pip and setuptools
+stage="upgrade pip/setuptools/boto3" && pip install --index-url="$PYPI_URL" --upgrade pip setuptools boto3
+
+# Clone watchmaker
+stage="git" && git clone "$GIT_REPO" --recursive
+cd watchmaker
+if [ -n "$GIT_REF" ] ; then
+  # decide whether to switch to pull request or a branch
+  num_re='^[0-9]+$'
+  if [[ "$GIT_REF" =~ $num_re ]] ; then
+    stage="git pr (Repo: $GIT_REPO, PR: $GIT_REF)"
+    git fetch origin pull/$GIT_REF/head:pr-$GIT_REF
+    git checkout pr-$GIT_REF
+  else
+    stage="git ref (Repo: $GIT_REPO, Ref: $GIT_REF)"
+    git checkout $GIT_REF
+  fi
+fi
+
+# Install watchmaker
+stage="install wam" && pip install --index-url "$PYPI_URL" --editable .
+
+# Run watchmaker
+stage="run wam" && watchmaker ${tfi_common_args} ${tfi_lx_args}
+# ----------  end of wam install  ----------
 
 # time it took to install
 end=`date +%s`

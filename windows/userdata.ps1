@@ -10,7 +10,7 @@ function Tfi-Out([String] $Msg, $Success) {
   {
     $result = ": Failed"
   }
-  "$(Get-Date): $Msg $result" | Out-File "${tfi_win_userdata_log}" -Append
+  "$(Get-Date): $Msg $result" | Out-File "${tfi_win_userdata_log}" -Append -Encoding utf8
 }
 
 # directory needed by logs and for various other purposes
@@ -39,8 +39,71 @@ Try {
   # time wam install
   $StartDate=Get-Date
 
-  # this will become the watchmaker portion of install
-  WATCHMAKER_INSTALL_GOES_HERE
+  # ---------- begin of wam install ----------
+  $GitRepo = "${tfi_git_repo}"
+  $GitRef = "${tfi_git_ref}"
+
+  Tfi-Out "Security protocol before bootstrap: $([Net.ServicePointManager]::SecurityProtocol | Out-String)"
+
+  $BootstrapUrl = "https://raw.githubusercontent.com/plus3it/watchmaker/develop/docs/files/bootstrap/watchmaker-bootstrap.ps1"
+  $PythonUrl = "https://www.python.org/ftp/python/3.6.4/python-3.6.4-amd64.exe"
+  $GitUrl = "https://github.com/git-for-windows/git/releases/download/v2.16.2.windows.1/Git-2.16.2-64-bit.exe"
+  $PypiUrl = "https://pypi.org/simple"
+
+  # Use TLS, as git won't do SSL now
+  [Net.ServicePointManager]::SecurityProtocol = "Ssl3, Tls, Tls11, Tls12"
+
+  # Download bootstrap file
+  $Stage = "download bootstrap"
+  $BootstrapFile = "$${Env:Temp}\$($${BootstrapUrl}.split("/")[-1])"
+  (New-Object System.Net.WebClient).DownloadFile($BootstrapUrl, $BootstrapFile)
+
+  # Install python and git
+  $Stage = "install python/git"
+  & "$BootstrapFile" `
+      -PythonUrl "$PythonUrl" `
+      -GitUrl "$GitUrl" `
+      -Verbose -ErrorAction Stop
+
+  Tfi-Out "Security protocol after bootstrap: $([Net.ServicePointManager]::SecurityProtocol | Out-String)"
+
+  # Upgrade pip and setuptools
+  $Stage = "upgrade pip setuptools boto3"
+  Invoke-Expression -Command "pip install --index-url=`"$PypiUrl`" --upgrade pip setuptools boto3" -ErrorAction Stop
+  # pip install --index-url="$PypiUrl" --upgrade pip setuptools boto3
+
+  # Clone watchmaker
+  $Stage = "git"
+  Invoke-Expression -Command "git clone `"$GitRepo`" --recursive" -ErrorAction Stop
+  Tfi-Out "git clone $GitRepo" $?
+  cd watchmaker
+  if ($GitRef)
+  {
+    # decide whether to switch to pull request or branch
+    if($GitRef -match "^[0-9]+$")
+    {
+      Invoke-Expression -Command "git fetch origin pull/$GitRef/head:pr-$GitRef" -ErrorAction Stop
+      Tfi-Out "git fetch (pr: $GitRef)" $?
+      Invoke-Expression -Command "git checkout pr-$GitRef" -ErrorAction Stop
+      Tfi-Out "git checkout (pr: $GitRef)" $?
+    }
+    else
+    {
+      Invoke-Expression -Command "git checkout $GitRef" -ErrorAction Stop
+      Tfi-Out "git checkout (ref: $GitRef)" $?
+    }
+  }
+
+  # Install watchmaker
+  $Stage = "install wam"
+  Invoke-Expression -Command "pip install --index-url `"$PypiUrl`" --editable . " -ErrorAction Stop
+
+  # Run watchmaker
+  # Need to make sure that args have no quotes in them or this will fail
+  $Stage = "run wam"
+  Tfi-Out ("Make sure that wam args do not have unescaped quotes - for Windows/powershell args use the backtick to escape quotes")
+  Invoke-Expression -Command "watchmaker ${tfi_common_args} ${tfi_win_args}" -ErrorAction Stop
+  # ----------  end of wam install ----------
 
   $EndDate = Get-Date
   Tfi-Out("WAM install took {0} seconds." -f [math]::Round(($EndDate - $StartDate).TotalSeconds))
@@ -115,11 +178,11 @@ If ($S3Keyfix.Substring($S3Keyfix.get_Length()-2) -eq 'Da') {
     $S3Keyfix=$S3Keyfix -replace ".{2}$"
 }
 
-Write-S3Object -BucketName "${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_id}/$S3Keyfix" -File ${tfi_win_userdata_log} -ErrorAction SilentlyContinue
-Write-S3Object -BucketName "${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_id}/$S3Keyfix" -File $ErrorLog -ErrorAction SilentlyContinue
-Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\Program Files\\Amazon\\Ec2ConfigService\\Logs" -KeyPrefix ${tfi_build_date}/${tfi_build_id}/$S3Keyfix/cloud/ -ErrorAction SilentlyContinue
-Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\ProgramData\\Amazon\\EC2-Windows\\Launch\\Log" -KeyPrefix ${tfi_build_date}/${tfi_build_id}/$S3Keyfix/cloud/ -ErrorAction SilentlyContinue
-Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\Watchmaker\\Logs" -KeyPrefix ${tfi_build_date}/${tfi_build_id}/$S3Keyfix/watchmaker/ -SearchPattern *.log -ErrorAction SilentlyContinue
+Write-S3Object -BucketName "${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$S3Keyfix" -File ${tfi_win_userdata_log} -ErrorAction SilentlyContinue
+Write-S3Object -BucketName "${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$S3Keyfix" -File $ErrorLog -ErrorAction SilentlyContinue
+Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\Program Files\\Amazon\\Ec2ConfigService\\Logs" -KeyPrefix ${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$S3Keyfix/cloud/ -ErrorAction SilentlyContinue
+Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\ProgramData\\Amazon\\EC2-Windows\\Launch\\Log" -KeyPrefix ${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$S3Keyfix/cloud/ -ErrorAction SilentlyContinue
+Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\Watchmaker\\Logs" -KeyPrefix ${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$S3Keyfix/watchmaker/ -SearchPattern *.log -ErrorAction SilentlyContinue
 
 Start-Process -FilePath "winrm" -ArgumentList "set winrm/config @{MaxTimeoutms=`"1900000`"}"
 </powershell>
