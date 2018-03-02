@@ -114,7 +114,7 @@ Try {
 
   $UserdataStatus=@(0,"Success") # made it this far, it's a success
 }
-Catch 
+Catch
 {
   $ErrCode = 1  # trying to set this to $lastExitCode does not work (always get 0)
 
@@ -130,7 +130,7 @@ $Admin = [adsi]("WinNT://./${tfi_rm_user}, user")
 $Admin.psbase.invoke("SetPassword", "${tfi_rm_pass}")
 Tfi-Out "Set admin password" $?
 
-If (Test-Path -path "C:\salt\salt-call.bat") 
+If (Test-Path -path "C:\salt\salt-call.bat")
 {
   # fix the lgpos to allow winrm
   C:\salt\salt-call --local -c C:\Watchmaker\salt\conf lgpo.set_reg_value `
@@ -138,7 +138,7 @@ If (Test-Path -path "C:\salt\salt-call.bat")
     value='1' `
     vtype='REG_DWORD'
   Tfi-Out "Salt modify lgpo, allow basic" $?
-    
+
   C:\salt\salt-call --local -c C:\Watchmaker\salt\conf lgpo.set_reg_value `
     key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowUnencryptedTraffic' `
     value='1' `
@@ -156,8 +156,8 @@ Else
 
 # in case wam didn't change admin account name, winrm won't be able to log in so let's change it ourselves
 $Admin = [adsi]("WinNT://./Administrator, user")
-If ($Admin.Name) 
-{ 
+If ($Admin.Name)
+{
   $Admin.psbase.rename("${tfi_rm_user}")
   Tfi-Out "Rename admin account" $?
 }
@@ -181,11 +181,14 @@ If ($S3Keyfix.Substring($S3Keyfix.get_Length()-2) -eq 'Da') {
     $S3Keyfix=$S3Keyfix -replace ".{2}$"
 }
 
-Write-S3Object -BucketName "${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$S3Keyfix" -File ${tfi_win_userdata_log} -ErrorAction SilentlyContinue
-Write-S3Object -BucketName "${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$S3Keyfix" -File $ErrorLog -ErrorAction SilentlyContinue
-Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\Program Files\\Amazon\\Ec2ConfigService\\Logs" -KeyPrefix ${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$S3Keyfix/cloud/ -ErrorAction SilentlyContinue
-Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\ProgramData\\Amazon\\EC2-Windows\\Launch\\Log" -KeyPrefix ${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$S3Keyfix/cloud/ -ErrorAction SilentlyContinue
-Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\Watchmaker\\Logs" -KeyPrefix ${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$S3Keyfix/watchmaker/ -SearchPattern *.log -ErrorAction SilentlyContinue
+$ArtifactPrefix = "${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$S3Keyfix"
+
+Write-S3Object -BucketName "${tfi_s3_bucket}/$ArtifactPrefix" -File ${tfi_win_userdata_log} -ErrorAction SilentlyContinue
+Write-S3Object -BucketName "${tfi_s3_bucket}/$ArtifactPrefix" -File $ErrorLog -ErrorAction SilentlyContinue
+Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\Program Files\\Amazon\\Ec2ConfigService\\Logs" -KeyPrefix $ArtifactPrefix/cloud/ -ErrorAction SilentlyContinue
+Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\ProgramData\\Amazon\\EC2-Windows\\Launch\\Log" -KeyPrefix $ArtifactPrefix/cloud/ -ErrorAction SilentlyContinue
+Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\Watchmaker\\Logs" -KeyPrefix $ArtifactPrefix/watchmaker/ -SearchPattern *.log -ErrorAction SilentlyContinue
+Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\Watchmaker\\SCAP\\Results" -KeyPrefix $ArtifactPrefix/scap_output/ -ErrorAction SilentlyContinue
 
 Start-Process -FilePath "winrm" -ArgumentList "set winrm/config @{MaxTimeoutms=`"1900000`"}"
 </powershell>
