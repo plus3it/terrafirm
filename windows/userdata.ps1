@@ -1,16 +1,81 @@
 <powershell>
 
-function Tfi-Out([String] $Msg, $Success) {
+$ErrorActionPreference = "Stop"
+
+function Tfi-Out
+{
+  # Writes messages to a Terrafirm log file. If a second parameter is included, it will display success/failure outcome.
+  Param
+  (
+    [String]$Msg,
+	  $Success = $null
+  )
+  
   # result is succeeded or failed or nothing if success is null
-  If($Success)
+  If( $Success -ne $null )  
   {
-    $result = ": Succeeded"
+    If ($Success)
+    {
+      $OutResult = ": Succeeded"
+    }
+    Else
+    {
+      $OutResult = ": Failed"
+    }
   }
-  ElseIf ($False -eq $Success) # order is important in case of null since coercing types
+  
+  "$(Get-Date): $Msg $OutResult" | Out-File "${tfi_win_userdata_log}" -Append -Encoding utf8
+}
+
+function Test-Command
+{
+  # Tests commands and handles errors that result. Can also re-try commands is -Tries is set > 1. 
+  param (
+    [Parameter(Mandatory=$true)][string]$Test,
+    [Parameter(Mandatory=$false)][int]$Tries = 1,
+    [Parameter(Mandatory=$false)][int]$SecondsDelay = 2
+  )
+  $TryCount = 0
+  $Completed = $false
+  $MsgFailed = "Command [{0}] failed" -f $Test
+  $MsgSucceeded = "Command [{0}] succeeded." -f $Test
+
+  While (-not $Completed)
   {
-    $result = ": Failed"
+    Try
+    {
+      $Result = @{}
+      # Invokes commands and in the same context captures the $? and $LastExitCode
+      Invoke-Expression -Command ($Test+';$Result = @{ Success = $?; ExitCode = $LastExitCode }')
+      If (($False -eq $Result.Success) -Or ((($Result.ExitCode) -ne $null) -And (0 -ne ($Result.ExitCode)) ))
+      {
+        Throw $MsgFailed
+      }
+      Else
+      {
+        Tfi-Out $MsgSucceeded
+        $Completed = $true
+      }
+    }
+    Catch
+    {
+      $TryCount++
+      If ($TryCount -ge $Tries)
+      {
+        $Completed = $true
+        Tfi-Out ("Command [{0}] failed the maximum number of {1} time(s)." -f $Test, $Tries)
+        Tfi-Out ("Error code (if available): {0}" -f ($Result.ExitCode))
+        $PSCmdlet.ThrowTerminatingError($PSItem)
+      }
+      Else
+      {
+        $Msg = $PSItem.ToString()
+        If ($Msg -ne $MsgFailed) { Tfi-Out $Msg }
+        Tfi-Out ("Command [{0}] failed. Retrying in {1} second(s)." -f $Test, $SecondsDelay)
+        Start-Sleep $SecondsDelay
+      }
+    }
   }
-  "$(Get-Date): $Msg $result" | Out-File "${tfi_win_userdata_log}" -Append -Encoding utf8
 }
 
 # directory needed by logs and for various other purposes
@@ -69,40 +134,34 @@ Try {
 
   # Upgrade pip and setuptools
   $Stage = "upgrade pip setuptools boto3"
-  Invoke-Expression -Command "pip install --index-url=`"$PypiUrl`" --upgrade pip setuptools boto3" -ErrorAction Stop
-  # pip install --index-url="$PypiUrl" --upgrade pip setuptools boto3
+  Test-Command "pip install --index-url=`"$PypiUrl`" --upgrade pip setuptools boto3" -Tries 2
 
   # Clone watchmaker
   $Stage = "git"
-  Invoke-Expression -Command "git clone `"$GitRepo`" --recursive" -ErrorAction Stop
-  Tfi-Out "git clone $GitRepo" $?
+  Test-Command "git clone `"$GitRepo`" --recursive" -Tries 2
   cd watchmaker
-  if ($GitRef)
+  If ($GitRef)
   {
     # decide whether to switch to pull request or branch
-    if($GitRef -match "^[0-9]+$")
+    If($GitRef -match "^[0-9]+$")
     {
-      Invoke-Expression -Command "git fetch origin pull/$GitRef/head:pr-$GitRef" -ErrorAction Stop
-      Tfi-Out "git fetch (pr: $GitRef)" $?
-      Invoke-Expression -Command "git checkout pr-$GitRef" -ErrorAction Stop
-      Tfi-Out "git checkout (pr: $GitRef)" $?
+      Test-Command "git fetch origin pull/$GitRef/head:pr-$GitRef" -Tries 2
+      Test-Command "git checkout pr-$GitRef"
     }
-    else
+    Else
     {
-      Invoke-Expression -Command "git checkout $GitRef" -ErrorAction Stop
-      Tfi-Out "git checkout (ref: $GitRef)" $?
+      Test-Command "git checkout $GitRef"
     }
   }
 
   # Install watchmaker
   $Stage = "install wam"
-  Invoke-Expression -Command "pip install --index-url `"$PypiUrl`" --editable . " -ErrorAction Stop
+  Test-Command "pip install --index-url `"$PypiUrl`" --editable ."
 
   # Run watchmaker
-  # Need to make sure that args have no quotes in them or this will fail
   $Stage = "run wam"
-  Tfi-Out ("Make sure that wam args do not have unescaped quotes - for Windows/powershell args use the backtick to escape quotes")
-  Invoke-Expression -Command "watchmaker ${tfi_common_args} ${tfi_win_args}" -ErrorAction Stop
+  #Invoke-Expression -Command "watchmaker ${tfi_common_args} ${tfi_win_args}" -ErrorAction Stop
+  Test-Command "watchmaker ${tfi_common_args} ${tfi_win_args}"
   # ----------  end of wam install ----------
 
   $EndDate = Get-Date
@@ -113,12 +172,12 @@ Try {
 }
 Catch
 {
-  $ErrCode = 1  # trying to set this to $lastExitCode does not work (always get 0)
-
+  $ErrorMessage = [String]$_.Exception + "Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
   Tfi-Out ("*** ERROR caught ($Stage) ***")
-
-  $ErrorMessage = $_.Exception.ItemName + " reported: " + $_.Exception.Message
   Tfi-Out $ErrorMessage
+
+  # setup userdata status for passing to the test script via a file
+  $ErrCode = 1  # trying to set this to $lastExitCode does not work (always get 0)
   $UserdataStatus=@($ErrCode,"Error at: " + $Stage + " [$ErrorMessage]")
 }
 
@@ -170,7 +229,7 @@ Tfi-Out "Open firewall" $?
 # if $Error variables has a queue of errors, this will output them to a file
 $ErrorLog = "C:\Temp\errors.log"
 Add-Content $ErrorLog -value "ERRORS --------------------"
-Add-Content $ErrorLog -value $Error|Format-List -Force
+Add-Content $ErrorLog -value $Error | Format-List *
 
 # upload logs to S3 bucket
 $S3Keyfix="Win" + (((Get-WmiObject -class Win32_OperatingSystem).Caption) -replace '.+(\d\d)\s(.{2}).+','$1$2')
