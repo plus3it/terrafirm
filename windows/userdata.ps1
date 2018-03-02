@@ -1,9 +1,9 @@
 <powershell>
-
-function Tfi-Out([String] $Msg, $Success) {
+function Tfi-Out([String] $Msg, $Success) 
+{
   if ( $Msg -eq "history" )
   {
-    $Msg = [String](Invoke-History 1)
+    $Msg = [String](Get-History -Count 1).CommandLine
   }
 
   $ThrowError = $False
@@ -18,12 +18,15 @@ function Tfi-Out([String] $Msg, $Success) {
     $ThrowError = $True
   }
   "$(Get-Date): $Msg $Result" | Out-File "${tfi_win_userdata_log}" -Append -Encoding utf8
-  return $ThrowError
+  If( $ThrowError) 
+  {
+    return $ThrowError
+  }
 }
 
 function Tfi-OutThrow([String] $Msg, $Success) {
-  If (Tfi-Out($Msg, $Success)) {
-    Throw $Msg
+  If ( Tfi-Out $Msg $Success ) {
+    Throw "TFI:" + $Msg
   }
 }
 
@@ -111,13 +114,13 @@ Try {
   # Install watchmaker
   $Stage = "install wam"
   pip install --index-url "$PypiUrl" --editable .
-  Tfi-OutThrow "history"  $?
+  Tfi-OutThrow "history" $?
 
   # Run watchmaker
   $Stage = "run wam"
   #Invoke-Expression -Command "watchmaker ${tfi_common_args} ${tfi_win_args}" -ErrorAction Stop
   watchmaker ${tfi_common_args} ${tfi_win_args}
-  Tfi-OutThrow "history"  $?
+  Tfi-OutThrow "history" $?
   # ----------  end of wam install ----------
 
   $EndDate = Get-Date
@@ -126,13 +129,20 @@ Try {
 
   $UserdataStatus=@(0,"Success") # made it this far, it's a success
 }
-Catch
+catch
 {
   $ErrCode = 1  # trying to set this to $lastExitCode does not work (always get 0)
-
   Tfi-Out ("*** ERROR caught ($Stage) ***")
-
-  $ErrorMessage = $_.Exception.ItemName + " reported: " + $_.Exception.Message
+  If ($em -match "TFI:") 
+  {
+    Tfi-Out "TFI Thrown Exception ****************************************"
+    $ErrorMessage = ($error[1] | Format-List * | Out-String)
+  }
+  Else
+  {
+    Tfi-Out "Other Exception *********************************************"
+    $ErrorMessage = [String]$_.Exception + "Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
+  }
   Tfi-Out $ErrorMessage
   $UserdataStatus=@($ErrCode,"Error at: " + $Stage + " [$ErrorMessage]")
 }
@@ -185,7 +195,7 @@ Tfi-Out "Open firewall" $?
 # if $Error variables has a queue of errors, this will output them to a file
 $ErrorLog = "C:\Temp\errors.log"
 Add-Content $ErrorLog -value "ERRORS --------------------"
-Add-Content $ErrorLog -value $Error|Format-List -Force
+Add-Content $ErrorLog -value $Error | Format-List *
 
 # upload logs to S3 bucket
 $S3Keyfix="Win" + (((Get-WmiObject -class Win32_OperatingSystem).Caption) -replace '.+(\d\d)\s(.{2}).+','$1$2')
