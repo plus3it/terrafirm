@@ -137,6 +137,7 @@ catch
   {
     Tfi-Out "TFI Thrown Exception ****************************************"
     $ErrorMessage = ($error[1] | Format-List * | Out-String)
+    Tfi-Out (Get-History | Out-String)
   }
   Else
   {
