@@ -105,7 +105,7 @@ Try {
   Tfi-Out ("Make sure that wam args do not have unescaped quotes - for Windows/powershell args use the backtick to escape quotes")
   #Invoke-Expression -Command "watchmaker ${tfi_common_args} ${tfi_win_args}" -ErrorAction Stop
   watchmaker ${tfi_common_args} ${tfi_win_args}
-  Tfi-Out "Running Watchmaker" $?
+  Tfi-Out "Running Watchmaker (watchmaker ${tfi_common_args} ${tfi_win_args})" $?
   # ----------  end of wam install ----------
 
   $EndDate = Get-Date
