@@ -1,20 +1,28 @@
 <powershell>
 
 function Tfi-Out([String] $Msg, $Success) {
+  if ( $Msg -eq "history" )
+  {
+    $Msg = [String](Invoke-History 1)
+  }
+
   $ThrowError = $False
   # result is succeeded or failed or nothing if success is null
   If($Success)
   {
-    $result = ": Succeeded"
+    $Result = ": Succeeded"
   }
   ElseIf ($False -eq $Success) # order is important in case of null since coercing types
   {
-    $result = ": Failed"
+    $Result = ": Failed"
     $ThrowError = $True
   }
-  "$(Get-Date): $Msg $result" | Out-File "${tfi_win_userdata_log}" -Append -Encoding utf8
-  if( $ThrowError )
-  {
+  "$(Get-Date): $Msg $Result" | Out-File "${tfi_win_userdata_log}" -Append -Encoding utf8
+  return $ThrowError
+}
+
+function Tfi-OutThrow([String] $Msg, $Success) {
+  If (Tfi-Out($Msg, $Success)) {
     Throw $Msg
   }
 }
@@ -76,40 +84,40 @@ Try {
   # Upgrade pip and setuptools
   $Stage = "upgrade pip setuptools boto3"
   pip install --index-url="$PypiUrl" --upgrade pip setuptools boto3
-  Tfi-Out (Invoke-History 1) $?
+  Tfi-OutThrow "history" $?
 
   # Clone watchmaker
   $Stage = "git"
   git clone "$GitRepo" --recursive
-  Tfi-Out (Invoke-History 1) $?
+  Tfi-OutThrow "history" $?
   cd watchmaker
   if ($GitRef)
   {
     # decide whether to switch to pull request or branch
     if($GitRef -match "^[0-9]+$")
     {
-      Invoke-Expression -Command "git fetch origin pull/$GitRef/head:pr-$GitRef" -ErrorAction Stop
-      Tfi-Out (Invoke-History 1) $?
-      Invoke-Expression -Command "git checkout pr-$GitRef" -ErrorAction Stop
-      Tfi-Out (Invoke-History 1) $?
+      git fetch origin pull/$GitRef/head:pr-$GitRef
+      Tfi-OutThrow "history" $?
+      git checkout pr-$GitRef
+      Tfi-OutThrow "history" $?
     }
     else
     {
-      Invoke-Expression -Command "git checkout $GitRef" -ErrorAction Stop
-      Tfi-Out (Invoke-History 1) $?
+      git checkout $GitRef
+      Tfi-OutThrow "history" $?
     }
   }
 
   # Install watchmaker
   $Stage = "install wam"
   pip install --index-url "$PypiUrl" --editable .
-  Tfi-Out (Invoke-History 1)  $?
+  Tfi-OutThrow "history"  $?
 
   # Run watchmaker
   $Stage = "run wam"
   #Invoke-Expression -Command "watchmaker ${tfi_common_args} ${tfi_win_args}" -ErrorAction Stop
   watchmaker ${tfi_common_args} ${tfi_win_args}
-  Tfi-Out (Invoke-History 1)  $?
+  Tfi-OutThrow "history"  $?
   # ----------  end of wam install ----------
 
   $EndDate = Get-Date
