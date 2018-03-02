@@ -1,6 +1,7 @@
 <powershell>
 
 function Tfi-Out([String] $Msg, $Success) {
+  $ThrowError = $False
   # result is succeeded or failed or nothing if success is null
   If($Success)
   {
@@ -9,8 +10,13 @@ function Tfi-Out([String] $Msg, $Success) {
   ElseIf ($False -eq $Success) # order is important in case of null since coercing types
   {
     $result = ": Failed"
+    $ThrowError = $True
   }
   "$(Get-Date): $Msg $result" | Out-File "${tfi_win_userdata_log}" -Append -Encoding utf8
+  if( $ThrowError )
+  {
+    Throw $Msg
+  }
 }
 
 # directory needed by logs and for various other purposes
@@ -69,13 +75,13 @@ Try {
 
   # Upgrade pip and setuptools
   $Stage = "upgrade pip setuptools boto3"
-  Invoke-Expression -Command "pip install --index-url=`"$PypiUrl`" --upgrade pip setuptools boto3" -ErrorAction Stop
-  # pip install --index-url="$PypiUrl" --upgrade pip setuptools boto3
+  pip install --index-url="$PypiUrl" --upgrade pip setuptools boto3
+  Tfi-Out (Invoke-History 1) $?
 
   # Clone watchmaker
   $Stage = "git"
-  Invoke-Expression -Command "git clone `"$GitRepo`" --recursive" -ErrorAction Stop
-  Tfi-Out "git clone $GitRepo" $?
+  git clone "$GitRepo" --recursive
+  Tfi-Out (Invoke-History 1) $?
   cd watchmaker
   if ($GitRef)
   {
@@ -83,29 +89,27 @@ Try {
     if($GitRef -match "^[0-9]+$")
     {
       Invoke-Expression -Command "git fetch origin pull/$GitRef/head:pr-$GitRef" -ErrorAction Stop
-      Tfi-Out "git fetch (pr: $GitRef)" $?
+      Tfi-Out (Invoke-History 1) $?
       Invoke-Expression -Command "git checkout pr-$GitRef" -ErrorAction Stop
-      Tfi-Out "git checkout (pr: $GitRef)" $?
+      Tfi-Out (Invoke-History 1) $?
     }
     else
     {
       Invoke-Expression -Command "git checkout $GitRef" -ErrorAction Stop
-      Tfi-Out "git checkout (ref: $GitRef)" $?
+      Tfi-Out (Invoke-History 1) $?
     }
   }
 
   # Install watchmaker
   $Stage = "install wam"
-  Invoke-Expression -Command "pip install --index-url `"$PypiUrl`" --editable . " -ErrorAction Stop
-  Tfi-Out "Installing Watchmaker" $?
+  pip install --index-url "$PypiUrl" --editable .
+  Tfi-Out (Invoke-History 1)  $?
 
   # Run watchmaker
-  # Need to make sure that args have no quotes in them or this will fail
   $Stage = "run wam"
-  Tfi-Out ("Make sure that wam args do not have unescaped quotes - for Windows/powershell args use the backtick to escape quotes")
   #Invoke-Expression -Command "watchmaker ${tfi_common_args} ${tfi_win_args}" -ErrorAction Stop
   watchmaker ${tfi_common_args} ${tfi_win_args}
-  Tfi-Out "Running Watchmaker (watchmaker ${tfi_common_args} ${tfi_win_args})" $?
+  Tfi-Out (Invoke-History 1)  $?
   # ----------  end of wam install ----------
 
   $EndDate = Get-Date
