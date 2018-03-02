@@ -49,10 +49,10 @@ finally() {
   echo "Finally: "
 
   # everything to happen whether install succeeds or fails
-  
+
   # write the status to a file for reading by test script
   printf "%s\n" "$${userdata_status[@]}" > /tmp/userdata_status
-  
+
   # allow ssh to be on non-standard port (SEL-enforced rule)
   setenforce 0
 
@@ -78,10 +78,12 @@ finally() {
   s3_keyfix=$(cat /etc/redhat-release | cut -c1-3)$(cat /etc/redhat-release | sed 's/[^0-9.]*\([0-9]\.[0-9]\).*/\1/')
 
   # move logs to s3
-  aws s3 cp ${tfi_lx_userdata_log} "s3://${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$${s3_keyfix}/userdata.log" || true
-  aws s3 cp /var/log "s3://${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$${s3_keyfix}/cloud/" --recursive --exclude "*" --include "cloud*log" || true
-  aws s3 cp /var/log/watchmaker "s3://${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$${s3_keyfix}/watchmaker/" --recursive || true
-  
+  artifact_location="s3://${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$${s3_keyfix}"
+  aws s3 cp ${tfi_lx_userdata_log} "$${artifaction_location}/userdata.log" || true
+  aws s3 cp /var/log "$${artifaction_location}/cloud/" --recursive --exclude "*" --include "cloud*log" || true
+  aws s3 cp /var/log/watchmaker "$${artifaction_location}/watchmaker/" --recursive || true
+  aws s3 cp /root/scap/output "$${artifaction_location}/scap_output/" --recursive || true
+
   exit "$${exit_code}"
 }
 
