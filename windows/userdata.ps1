@@ -131,8 +131,8 @@ Try {
 }
 catch
 {
-  $ErrCode = 1  # trying to set this to $lastExitCode does not work (always get 0)
-  Tfi-Out ("*** ERROR caught ($Stage) ***")
+  # check for two broad classes of exceptions, those thrown by tfi code and those naturally occurring
+  $em = [String]$_.Exception
   If ($em -match "TFI:") 
   {
     Tfi-Out "TFI Thrown Exception ****************************************"
@@ -143,7 +143,11 @@ catch
     Tfi-Out "Other Exception *********************************************"
     $ErrorMessage = [String]$_.Exception + "Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
   }
+  Tfi-Out ("*** ERROR caught ($Stage) ***")
   Tfi-Out $ErrorMessage
+
+  # setup userdata status for passing to the test script via a file
+  $ErrCode = 1  # trying to set this to $lastExitCode does not work (always get 0)
   $UserdataStatus=@($ErrCode,"Error at: " + $Stage + " [$ErrorMessage]")
 }
 
