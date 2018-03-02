@@ -97,14 +97,15 @@ Try {
   # Install watchmaker
   $Stage = "install wam"
   Invoke-Expression -Command "pip install --index-url `"$PypiUrl`" --editable . " -ErrorAction Stop
-  Tfi-Out "Watchmaker install" $?
+  Tfi-Out "Installing Watchmaker" $?
 
   # Run watchmaker
   # Need to make sure that args have no quotes in them or this will fail
   $Stage = "run wam"
   Tfi-Out ("Make sure that wam args do not have unescaped quotes - for Windows/powershell args use the backtick to escape quotes")
-  Invoke-Expression -Command "watchmaker ${tfi_common_args} ${tfi_win_args}" -ErrorAction Stop
-  Tfi-Out "Watchmaker ran" $?
+  #Invoke-Expression -Command "watchmaker ${tfi_common_args} ${tfi_win_args}" -ErrorAction Stop
+  watchmaker ${tfi_common_args} ${tfi_win_args}
+  Tfi-Out "Running Watchmaker" $?
   # ----------  end of wam install ----------
 
   $EndDate = Get-Date
