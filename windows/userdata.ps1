@@ -1,5 +1,5 @@
 <powershell>
-function Tfi-Out([String] $Msg, $Success) 
+function Tfi-Out([String] $Msg, $Success, $ec) 
 {
   $ThrowError = $False
   # result is succeeded or failed or nothing if success is null
@@ -12,7 +12,7 @@ function Tfi-Out([String] $Msg, $Success)
     $Result = ": Failed"
     $ThrowError = $True
   }
-  "$(Get-Date): $Msg $Result" | Out-File "${tfi_win_userdata_log}" -Append -Encoding utf8
+  "$(Get-Date): $Msg $Result $ec" | Out-File "${tfi_win_userdata_log}" -Append -Encoding utf8
   If( $ThrowError) 
   {
     return $ThrowError
@@ -82,12 +82,12 @@ Try {
   # Upgrade pip and setuptools
   $Stage = "upgrade pip setuptools boto3"
   pip install --index-url="$PypiUrl" --upgrade pip setuptools boto3
-  Tfi-OutThrow $Stage $?
+  Tfi-OutThrow $Stage $? $lastExitCode
 
   # Clone watchmaker
   $Stage = "git"
   git clone "$GitRepo" --recursive
-  Tfi-OutThrow $Stage $?
+  Tfi-OutThrow $Stage $? $lastExitCode
   cd watchmaker
   if ($GitRef)
   {
@@ -95,27 +95,27 @@ Try {
     if($GitRef -match "^[0-9]+$")
     {
       git fetch origin pull/$GitRef/head:pr-$GitRef
-      Tfi-OutThrow $Stage $?
+      Tfi-OutThrow $Stage $? $lastExitCode
       git checkout pr-$GitRef
-      Tfi-OutThrow $Stage $?
+      Tfi-OutThrow $Stage $? $lastExitCode
     }
     else
     {
       git checkout $GitRef
-      Tfi-OutThrow $Stage $?
+      Tfi-OutThrow $Stage $? $lastExitCode
     }
   }
 
   # Install watchmaker
   $Stage = "install wam"
   pip install --index-url "$PypiUrl" --editable .
-  Tfi-OutThrow $Stage $?
+  Tfi-OutThrow $Stage $? $lastExitCode
 
   # Run watchmaker
   $Stage = "run wam"
   #Invoke-Expression -Command "watchmaker ${tfi_common_args} ${tfi_win_args}" -ErrorAction Stop
   watchmaker ${tfi_common_args} ${tfi_win_args}
-  Tfi-OutThrow $Stage $?
+  Tfi-OutThrow $Stage $? $lastExitCode
   # ----------  end of wam install ----------
 
   $EndDate = Get-Date
