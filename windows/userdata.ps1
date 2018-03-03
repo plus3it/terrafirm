@@ -9,10 +9,10 @@ function Tfi-Out([String] $Msg, $Success, $ExitCode)
   }
   ElseIf ($False -eq $Success -Or 0 -ne $ExitCode) # order is important in case of null since coercing types
   {
-    $Result = ": Failed"
+    $Result = ": Failed (Exit Code: $ExitCode)"
     $ThrowError = $True
   }
-  "$(Get-Date): $Msg $Result (Exit Code: $ExitCode)" | Out-File "${tfi_win_userdata_log}" -Append -Encoding utf8
+  "$(Get-Date): $Msg $Result" | Out-File "${tfi_win_userdata_log}" -Append -Encoding utf8
   return $ThrowError
 }
 
