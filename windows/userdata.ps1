@@ -1,17 +1,28 @@
 <powershell>
-function Tfi-Out([String] $Msg, $Success, $ExitCode) 
+function Tfi-Out
 {
+  Param
+  (
+    [String]$Msg,
+	$Success = $null,
+	$ExitCode = $null
+  )
+  
   $ThrowError = $False
   # result is succeeded or failed or nothing if success is null
-  If($Success)
+  If( ($Success -ne $null) -Or ($ExitCode -ne $null)) 
   {
-    $Result = ": Succeeded"
+    If (($False -eq $Success) -Or ((0 -ne $ExitCode) -And ($ExitCode -ne $null)))
+    {
+      $Result = ": Failed (Exit Code: $ExitCode)"
+      $ThrowError = $True
+    }
+    ElseIf($Success -Or (0 -eq $ExitCode))
+    {
+      $Result = ": Succeeded"
+    }
   }
-  ElseIf ($False -eq $Success -Or 0 -ne $ExitCode) # order is important in case of null since coercing types
-  {
-    $Result = ": Failed (Exit Code: $ExitCode)"
-    $ThrowError = $True
-  }
+  
   "$(Get-Date): $Msg $Result" | Out-File "${tfi_win_userdata_log}" -Append -Encoding utf8
   return $ThrowError
 }
