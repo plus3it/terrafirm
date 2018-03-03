@@ -1,11 +1,6 @@
 <powershell>
 function Tfi-Out([String] $Msg, $Success) 
 {
-  if ( $Msg -eq "history" )
-  {
-    $Msg = [String](Get-History -Count 1).CommandLine
-  }
-
   $ThrowError = $False
   # result is succeeded or failed or nothing if success is null
   If($Success)
@@ -87,12 +82,12 @@ Try {
   # Upgrade pip and setuptools
   $Stage = "upgrade pip setuptools boto3"
   pip install --index-url="$PypiUrl" --upgrade pip setuptools boto3
-  Tfi-OutThrow "history" $?
+  Tfi-OutThrow $Stage $?
 
   # Clone watchmaker
   $Stage = "git"
   git clone "$GitRepo" --recursive
-  Tfi-OutThrow "history" $?
+  Tfi-OutThrow $Stage $?
   cd watchmaker
   if ($GitRef)
   {
@@ -100,27 +95,27 @@ Try {
     if($GitRef -match "^[0-9]+$")
     {
       git fetch origin pull/$GitRef/head:pr-$GitRef
-      Tfi-OutThrow "history" $?
+      Tfi-OutThrow $Stage $?
       git checkout pr-$GitRef
-      Tfi-OutThrow "history" $?
+      Tfi-OutThrow $Stage $?
     }
     else
     {
       git checkout $GitRef
-      Tfi-OutThrow "history" $?
+      Tfi-OutThrow $Stage $?
     }
   }
 
   # Install watchmaker
   $Stage = "install wam"
   pip install --index-url "$PypiUrl" --editable .
-  Tfi-OutThrow "history" $?
+  Tfi-OutThrow $Stage $?
 
   # Run watchmaker
   $Stage = "run wam"
   #Invoke-Expression -Command "watchmaker ${tfi_common_args} ${tfi_win_args}" -ErrorAction Stop
   watchmaker ${tfi_common_args} ${tfi_win_args}
-  Tfi-OutThrow "history" $?
+  Tfi-OutThrow $Stage $?
   # ----------  end of wam install ----------
 
   $EndDate = Get-Date
@@ -136,10 +131,6 @@ catch
   If ($em -match "TFI:") 
   {
     Tfi-Out "TFI Thrown Exception ****************************************"
-    Tfi-Out ($error | Format-List * -Force | Out-String)
-    Tfi-Out "Error[0]:" + ($error[0] | Format-List * -Force | Out-String)
-    Tfi-Out "Error[1]:" + ($error[1] | Format-List * -Force | Out-String)
-    Tfi-Out "Error[2]:" + ($error[2] | Format-List * -Force | Out-String)
     $ErrorMessage = "TFI Thrown Exception - Check the logs"
   }
   Else
