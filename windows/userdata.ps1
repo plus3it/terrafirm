@@ -136,6 +136,7 @@ catch
   If ($em -match "TFI:") 
   {
     Tfi-Out "TFI Thrown Exception ****************************************"
+    Tfi-Out ($error | Format-List * -Force | Out-String)
     $ErrorMessage = ($error[1] | Format-List * | Out-String)
     Tfi-Out (Get-History | Out-String)
   }
