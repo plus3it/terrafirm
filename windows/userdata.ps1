@@ -21,7 +21,7 @@ function Tfi-Out([String] $Msg, $Success, $ExitCode)
 
 function Tfi-OutThrow([String] $Msg, $Success, $ExitCode) {
   If ( Tfi-Out $Msg $Success $ExitCode ) {
-    Throw "TFI:" + $Msg
+    Throw "TFI: (Exit code:$ExitCode) " + $Msg
   }
 }
 
