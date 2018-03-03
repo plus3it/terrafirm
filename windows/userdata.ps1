@@ -13,10 +13,7 @@ function Tfi-Out([String] $Msg, $Success, $ExitCode)
     $ThrowError = $True
   }
   "$(Get-Date): $Msg $Result (Exit Code: $ExitCode)" | Out-File "${tfi_win_userdata_log}" -Append -Encoding utf8
-  If( $ThrowError) 
-  {
-    return $ThrowError
-  }
+  return $ThrowError
 }
 
 function Tfi-OutThrow([String] $Msg, $Success, $ExitCode) {
