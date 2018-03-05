@@ -34,18 +34,14 @@ function Test-Command
   $Completed = $false
   $MsgFailed = "Command [{0}] failed" -f $Test
   $MsgSucceeded = "Command [{0}] succeeded." -f $Test
-  $UnlikelyError = "gxy"
 
   While (-not $Completed)
   {
     Try
     {
       $Result = @{}
-      $Result.ExitCode = $UnlikelyError
       Invoke-Expression -Command $Test
-      $Result = @{ Success = $?; ExitCode = $lastExitCode } #all one command so (hopefully) both refer to command test
-      $Result | Format-List * | Out-String
-      If (($Result.ExitCode) -eq $UnlikelyError) { $Result.ExitCode = 0 }
+      $Result = @{ Success = $?; ExitCode = $lastExitCode } #all one command so both refer to command test
       If (($False -eq $Result.Success) -Or ((($Result.ExitCode) -ne $null) -And (0 -ne ($Result.ExitCode)) ))
       {
         Throw $MsgFailed
