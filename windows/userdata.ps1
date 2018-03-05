@@ -226,11 +226,6 @@ Tfi-Out "Write userdata status file" $?
 netsh advfirewall firewall set rule name="WinRM in" new action=allow
 Tfi-Out "Open firewall" $?
 
-# if $Error variables has a queue of errors, this will output them to a file
-$ErrorLog = "C:\Temp\errors.log"
-Add-Content $ErrorLog -value "ERRORS --------------------"
-Add-Content $ErrorLog -value $Error | Format-List *
-
 # upload logs to S3 bucket
 $S3Keyfix="Win" + (((Get-WmiObject -class Win32_OperatingSystem).Caption) -replace '.+(\d\d)\s(.{2}).+','$1$2')
 If ($S3Keyfix.Substring($S3Keyfix.get_Length()-2) -eq 'Da') {
@@ -238,13 +233,20 @@ If ($S3Keyfix.Substring($S3Keyfix.get_Length()-2) -eq 'Da') {
 }
 
 $ArtifactPrefix = "${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$S3Keyfix"
+Tfi-Out "Writing logs to $ArtifactPrefix"
 
-Write-S3Object -BucketName "${tfi_s3_bucket}/$ArtifactPrefix" -File ${tfi_win_userdata_log} -ErrorAction SilentlyContinue
-Write-S3Object -BucketName "${tfi_s3_bucket}/$ArtifactPrefix" -File $ErrorLog -ErrorAction SilentlyContinue
-Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\Program Files\\Amazon\\Ec2ConfigService\\Logs" -KeyPrefix $ArtifactPrefix/cloud/ -ErrorAction SilentlyContinue
-Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\ProgramData\\Amazon\\EC2-Windows\\Launch\\Log" -KeyPrefix $ArtifactPrefix/cloud/ -ErrorAction SilentlyContinue
-Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\Watchmaker\\Logs" -KeyPrefix $ArtifactPrefix/watchmaker/ -SearchPattern *.log -ErrorAction SilentlyContinue
-Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "C:\\Watchmaker\\SCAP\\Results" -KeyPrefix $ArtifactPrefix/scap_output/ -ErrorAction SilentlyContinue
+$ErrorActionPreference = "Continue"
+
+Test-Command "Write-S3Object -BucketName `"${tfi_s3_bucket}/$ArtifactPrefix`" -File `"${tfi_win_userdata_log}`""
+Test-Command "Write-S3Object -BucketName `"${tfi_s3_bucket}`" -Folder `"C:\\Watchmaker\\Logs`" -KeyPrefix `"$ArtifactPrefix/watchmaker/`" -SearchPattern `"*log`""
+Test-Command "Write-S3Object -BucketName `"${tfi_s3_bucket}`" -Folder `"C:\\Watchmaker\\SCAP\\Results`" -KeyPrefix `"$ArtifactPrefix/scap_output/results`" -Recurse"
+Test-Command "Write-S3Object -BucketName `"${tfi_s3_bucket}`" -Folder `"C:\\Watchmaker\\SCAP\\Logs`" -KeyPrefix `"$ArtifactPrefix/scap_output/logs`" -Recurse"
+Test-Command "Write-S3Object -BucketName `"${tfi_s3_bucket}`" -Folder `"C:\\ProgramData\\Amazon\\EC2-Windows\\Launch\\Log`" -KeyPrefix `"$ArtifactPrefix/cloud/`""
+Test-Command "Write-S3Object -BucketName `"${tfi_s3_bucket}`" -Folder `"C:\\Program Files\\Amazon\\Ec2ConfigService\\Logs`" -KeyPrefix `"$ArtifactPrefix/cloud/`""
 
 Start-Process -FilePath "winrm" -ArgumentList "set winrm/config @{MaxTimeoutms=`"1900000`"}"
+Tfi-Out "Set winrm timeout" $?
+
 </powershell>
+<script>
+</script>
