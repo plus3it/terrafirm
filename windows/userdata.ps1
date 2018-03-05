@@ -4,6 +4,7 @@ $ErrorActionPreference = "Stop"
 
 function Tfi-Out
 {
+  # Writes messages to a Terrafirm log file. If a second parameter is included, it will display success/failure outcome.
   Param
   (
     [String]$Msg,
@@ -28,6 +29,7 @@ function Tfi-Out
 
 function Test-Command
 {
+  # Tests commands and handles errors that result. Can also re-try commands is -Tries is set > 1. 
   param (
     [Parameter(Mandatory=$true)][string]$Test,
     [Parameter(Mandatory=$false)][int]$Tries = 1,
@@ -43,6 +45,7 @@ function Test-Command
     Try
     {
       $Result = @{}
+      # Invokes commands and in the same context captures the $? and $LastExitCode
       Invoke-Expression -Command ($Test+';$Result = @{ Success = $?; ExitCode = $LastExitCode }')
       If (($False -eq $Result.Success) -Or ((($Result.ExitCode) -ne $null) -And (0 -ne ($Result.ExitCode)) ))
       {
