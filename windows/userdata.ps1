@@ -27,7 +27,6 @@ function Test-Command
 {
   param (
     [Parameter(Mandatory=$true)][string]$Test,
-    #[Parameter(Mandatory=$false)][string]$Args = "",
     [Parameter(Mandatory=$false)][int]$Tries = 1,
     [Parameter(Mandatory=$false)][int]$SecondsDelay = 2
   )
@@ -48,7 +47,7 @@ function Test-Command
       }
       Else
       {
-        Tfi-Out $MsgSucceeded $True
+        Tfi-Out $MsgSucceeded
         $Completed = $true
       }
     }
@@ -60,7 +59,7 @@ function Test-Command
         $Completed = $true
         Tfi-Out ($PSItem | Select -Property * | Out-String)
         Tfi-Out ("Command [{0}] failed the maximum number of {1} time(s)." -f $Test, $Tries)
-        Tfi-Out ("Error code (if available): {1}" -f $Result.ExitCode)
+        Tfi-Out ("Error code (if available): {0}" -f $Result.ExitCode)
         $PSCmdlet.ThrowTerminatingError($PSItem)
       }
       Else
