@@ -138,14 +138,14 @@ Try {
 
   # Clone watchmaker
   $Stage = "git"
-  Test-Command "git clone `"$GitRepo`" --recursive"
+  Test-Command "git clone `"$GitRepo`" --recursive" -Tries 2
   cd watchmaker
   If ($GitRef)
   {
     # decide whether to switch to pull request or branch
     If($GitRef -match "^[0-9]+$")
     {
-      Test-Command "git fetch origin pull/$GitRef/head:pr-$GitRef"
+      Test-Command "git fetch origin pull/$GitRef/head:pr-$GitRef" -Tries 2
       Test-Command "git checkout pr-$GitRef"
     }
     Else
