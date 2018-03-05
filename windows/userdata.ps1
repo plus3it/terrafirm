@@ -4,63 +4,51 @@ function Tfi-Out
   Param
   (
     [String]$Msg,
-	  $Success = $null,
-	  $ExitCode = $null
+	  $Success = $null
   )
   
-  $ThrowError = $False
   # result is succeeded or failed or nothing if success is null
-  If( ($Success -ne $null) -Or ($ExitCode -ne $null)) 
+  If( $Success -ne $null )  
   {
-    If (($False -eq $Success) -Or ((0 -ne $ExitCode) -And ($ExitCode -ne $null)))
-    {
-      $Result = ": Failed (Exit Code: $ExitCode)"
-      $ThrowError = $True
-    }
-    ElseIf($Success -Or (0 -eq $ExitCode))
+    If ($Success)
     {
       $Result = ": Succeeded"
+    }
+    Else
+    {
+      $Result = ": Failed"
     }
   }
   
   "$(Get-Date): $Msg $Result" | Out-File "${tfi_win_userdata_log}" -Append -Encoding utf8
-  return $ThrowError
 }
 
-function Tfi-OutThrow([String] $Msg, $Success, $ExitCode) {
-  If ( Tfi-Out $Msg $Success $ExitCode ) {
-    Throw "TFI: (Exit code:$ExitCode) " + $Msg
-  }
-}
-
-function Retry-TestCommand
+function Test-Command
 {
   param (
     [Parameter(Mandatory=$true)][string]$Test,
-    [Parameter(Mandatory=$false)][hashtable]$Args = @{},
-    [Parameter(Mandatory=$false)][string]$TestProperty,
+    [Parameter(Mandatory=$false)][string]$Args = "",
     [Parameter(Mandatory=$false)][int]$Tries = 1,
-    [Parameter(Mandatory=$false)][int]$SecondsDelay = 2,
-    [Parameter(Mandatory=$false)][switch]$ExpectNull
+    [Parameter(Mandatory=$false)][int]$SecondsDelay = 2
   )
   $TryCount = 0
   $Completed = $false
-  $MsgFailed = "Command [{0}] failed" -f $Test
-  $MsgSucceeded = "Command [{0}] succeeded." -f $Test
+  $MsgFailed = "Command [{0} {1}] failed" -f $Test, $Args
+  $MsgSucceeded = "Command [{0} {1}] succeeded." -f $Test, $Args
 
   While (-not $Completed)
   {
     Try
     {
-      $Result = & $Test @Args
-      $TestResult = If ($TestProperty) { $Result.$TestProperty } Else { $Result }
-      If (-not $TestResult -and -not $ExpectNull)
+      & $Test $Args
+      $Result = @{ Success = $?; ExitCode = $lastExitCode } #all one command so (hopefully) both refer to command test
+      If (($False -eq $Result.Success) -Or ((0 -ne $Result.ExitCode) -And ($Result.ExitCode -ne $null)))
       {
         Throw $MsgFailed
       }
       Else
       {
-        Tfi-Out $MsgSucceeded $TestResult
+        Tfi-Out $MsgSucceeded $True
         $Completed = $true
       }
     }
@@ -71,14 +59,14 @@ function Retry-TestCommand
       {
         $Completed = $true
         Tfi-Out ($PSItem | Select -Property * | Out-String)
-        Tfi-Out ("Command [{0}] failed the maximum number of {1} time(s)." -f $Test, $Tries)
+        Tfi-Out ("Command [{0} {1}] failed the maximum number of {2} time(s)." -f $Test, $Args, $Tries)
         $PSCmdlet.ThrowTerminatingError($PSItem)
       }
       Else
       {
         $Msg = $PSItem.ToString()
         If ($Msg -ne $MsgFailed) { Tfi-Out $Msg }
-        Tfi-Out ("Command [{0}] failed. Retrying in {1} second(s)." -f $Test, $SecondsDelay)
+        Tfi-Out ("Command [{0} {1}] failed. Retrying in {1} second(s)." -f $Test, $Args, $SecondsDelay)
         Start-Sleep $SecondsDelay
       }
     }
@@ -141,41 +129,34 @@ Try {
 
   # Upgrade pip and setuptools
   $Stage = "upgrade pip setuptools boto3"
-  Tfi-OutThrow $Stage $? $lastExitCode
-  Retry-TestCommand -Test "pip" -Args "install --index-url=`"$PypiUrl`" --upgrade pip setuptools boto3"
+  Test-Command "pip" "install --index-url=`"$PypiUrl`" --upgrade pip setuptools boto3"
 
   # Clone watchmaker
   $Stage = "git"
-  git clone "$GitRepo" --recursive
-  Tfi-OutThrow $Stage $? $lastExitCode
+  Test-Command "git" "clone `"$GitRepo`" --recursive"
   cd watchmaker
   if ($GitRef)
   {
     # decide whether to switch to pull request or branch
     if($GitRef -match "^[0-9]+$")
     {
-      git fetch origin pull/$GitRef/head:pr-$GitRef
-      Tfi-OutThrow $Stage $? $lastExitCode
-      git checkout pr-$GitRef
-      Tfi-OutThrow $Stage $? $lastExitCode
+      Test-Command "git" "fetch origin pull/$GitRef/head:pr-$GitRef"
+      Test-Command "git" "checkout pr-$GitRef"
     }
     else
     {
-      git checkout $GitRef
-      Tfi-OutThrow $Stage $? $lastExitCode
+      Test-Command "git" "checkout $GitRef"
     }
   }
 
   # Install watchmaker
   $Stage = "install wam"
-  pip install --index-url "$PypiUrl" --editable .
-  Tfi-OutThrow $Stage $? $lastExitCode
+  Test-Command "pip" "install --index-url `"$PypiUrl`" --editable ."
 
   # Run watchmaker
   $Stage = "run wam"
   #Invoke-Expression -Command "watchmaker ${tfi_common_args} ${tfi_win_args}" -ErrorAction Stop
-  watchmaker ${tfi_common_args} ${tfi_win_args}
-  Tfi-OutThrow $Stage $? $lastExitCode
+  Test-Command "watchmaker" "${tfi_common_args} ${tfi_win_args}"
   # ----------  end of wam install ----------
 
   $EndDate = Get-Date
@@ -186,18 +167,7 @@ Try {
 }
 Catch
 {
-  # check for two broad classes of exceptions, those thrown by tfi code and those naturally occurring
-  $em = [String]$_.Exception
-  If ($em -match "TFI:") 
-  {
-    Tfi-Out "TFI Thrown Exception ****************************************"
-    $ErrorMessage = "TFI Thrown Exception - Check the logs"
-  }
-  Else
-  {
-    Tfi-Out "Other Exception *********************************************"
-    $ErrorMessage = [String]$_.Exception + "Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
-  }
+  $ErrorMessage = [String]$_.Exception + "Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
   Tfi-Out ("*** ERROR caught ($Stage) ***")
   Tfi-Out $ErrorMessage
 
