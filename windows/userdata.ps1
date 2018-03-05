@@ -12,15 +12,15 @@ function Tfi-Out
   {
     If ($Success)
     {
-      $Result = ": Succeeded"
+      $OutResult = ": Succeeded"
     }
     Else
     {
-      $Result = ": Failed"
+      $OutResult = ": Failed"
     }
   }
   
-  "$(Get-Date): $Msg $Result" | Out-File "${tfi_win_userdata_log}" -Append -Encoding utf8
+  "$(Get-Date): $Msg $OutResult" | Out-File "${tfi_win_userdata_log}" -Append -Encoding utf8
 }
 
 function Test-Command
@@ -34,14 +34,19 @@ function Test-Command
   $Completed = $false
   $MsgFailed = "Command [{0}] failed" -f $Test
   $MsgSucceeded = "Command [{0}] succeeded." -f $Test
+  $UnlikelyError = "gxy"
 
   While (-not $Completed)
   {
     Try
     {
-      & $Test
+      $Result = @{}
+      $Result.ExitCode = $UnlikelyError
+      Invoke-Expression -Command $Test
       $Result = @{ Success = $?; ExitCode = $lastExitCode } #all one command so (hopefully) both refer to command test
-      If (($False -eq $Result.Success) -Or ((0 -ne $Result.ExitCode) -And ($Result.ExitCode -ne $null)))
+      $Result | Format-List * | Out-String
+      If (($Result.ExitCode) -eq $UnlikelyError) { $Result.ExitCode = 0 }
+      If (($False -eq $Result.Success) -Or ((($Result.ExitCode) -ne $null) -And (0 -ne ($Result.ExitCode)) ))
       {
         Throw $MsgFailed
       }
@@ -59,7 +64,7 @@ function Test-Command
         $Completed = $true
         Tfi-Out ($PSItem | Select -Property * | Out-String)
         Tfi-Out ("Command [{0}] failed the maximum number of {1} time(s)." -f $Test, $Tries)
-        Tfi-Out ("Error code (if available): {0}" -f $Result.ExitCode)
+        Tfi-Out ("Error code (if available): {0}" -f ($Result.ExitCode))
         $PSCmdlet.ThrowTerminatingError($PSItem)
       }
       Else
@@ -133,30 +138,30 @@ Try {
 
   # Clone watchmaker
   $Stage = "git"
-  Test-Command "git" "clone `"$GitRepo`" --recursive"
+  Test-Command "git clone `"$GitRepo`" --recursive"
   cd watchmaker
   if ($GitRef)
   {
     # decide whether to switch to pull request or branch
     if($GitRef -match "^[0-9]+$")
     {
-      Test-Command "git" "fetch origin pull/$GitRef/head:pr-$GitRef"
-      Test-Command "git" "checkout pr-$GitRef"
+      Test-Command "git fetch origin pull/$GitRef/head:pr-$GitRef"
+      Test-Command "git checkout pr-$GitRef"
     }
     else
     {
-      Test-Command "git" "checkout $GitRef"
+      Test-Command "git checkout $GitRef"
     }
   }
 
   # Install watchmaker
   $Stage = "install wam"
-  Test-Command "pip" "install --index-url `"$PypiUrl`" --editable ."
+  Test-Command "pip install --index-url `"$PypiUrl`" --editable ."
 
   # Run watchmaker
   $Stage = "run wam"
   #Invoke-Expression -Command "watchmaker ${tfi_common_args} ${tfi_win_args}" -ErrorAction Stop
-  Test-Command "watchmaker" "${tfi_common_args} ${tfi_win_args}"
+  Test-Command "watchmaker ${tfi_common_args} ${tfi_win_args}"
   # ----------  end of wam install ----------
 
   $EndDate = Get-Date
