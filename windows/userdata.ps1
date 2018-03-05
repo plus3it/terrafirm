@@ -1,4 +1,7 @@
 <powershell>
+
+$ErrorActionPreference = "Stop"
+
 function Tfi-Out
 {
   Param
@@ -41,7 +44,7 @@ function Test-Command
     {
       $Result = @{}
       Invoke-Expression -Command $Test
-      $Result = @{ Success = $?; ExitCode = $lastExitCode } #all one command so both refer to command test
+      $Result = @{ Success = $?; ExitCode = $LastExitCode } #all one command so both refer to command test
       If (($False -eq $Result.Success) -Or ((($Result.ExitCode) -ne $null) -And (0 -ne ($Result.ExitCode)) ))
       {
         Throw $MsgFailed
