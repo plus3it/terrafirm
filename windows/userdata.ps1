@@ -27,20 +27,20 @@ function Test-Command
 {
   param (
     [Parameter(Mandatory=$true)][string]$Test,
-    [Parameter(Mandatory=$false)][string]$Args = "",
+    #[Parameter(Mandatory=$false)][string]$Args = "",
     [Parameter(Mandatory=$false)][int]$Tries = 1,
     [Parameter(Mandatory=$false)][int]$SecondsDelay = 2
   )
   $TryCount = 0
   $Completed = $false
-  $MsgFailed = "Command [{0} {1}] failed" -f $Test, $Args
-  $MsgSucceeded = "Command [{0} {1}] succeeded." -f $Test, $Args
+  $MsgFailed = "Command [{0}] failed" -f $Test
+  $MsgSucceeded = "Command [{0}] succeeded." -f $Test
 
   While (-not $Completed)
   {
     Try
     {
-      & $Test $Args
+      & $Test
       $Result = @{ Success = $?; ExitCode = $lastExitCode } #all one command so (hopefully) both refer to command test
       If (($False -eq $Result.Success) -Or ((0 -ne $Result.ExitCode) -And ($Result.ExitCode -ne $null)))
       {
@@ -59,14 +59,15 @@ function Test-Command
       {
         $Completed = $true
         Tfi-Out ($PSItem | Select -Property * | Out-String)
-        Tfi-Out ("Command [{0} {1}] failed the maximum number of {2} time(s)." -f $Test, $Args, $Tries)
+        Tfi-Out ("Command [{0}] failed the maximum number of {1} time(s)." -f $Test, $Tries)
+        Tfi-Out ("Error code (if available): {1}" -f $Result.ExitCode)
         $PSCmdlet.ThrowTerminatingError($PSItem)
       }
       Else
       {
         $Msg = $PSItem.ToString()
         If ($Msg -ne $MsgFailed) { Tfi-Out $Msg }
-        Tfi-Out ("Command [{0} {1}] failed. Retrying in {1} second(s)." -f $Test, $Args, $SecondsDelay)
+        Tfi-Out ("Command [{0}] failed. Retrying in {1} second(s)." -f $Test, $SecondsDelay)
         Start-Sleep $SecondsDelay
       }
     }
@@ -129,7 +130,7 @@ Try {
 
   # Upgrade pip and setuptools
   $Stage = "upgrade pip setuptools boto3"
-  Test-Command "pip" "install --index-url=`"$PypiUrl`" --upgrade pip setuptools boto3"
+  Test-Command "pip install --index-url=`"$PypiUrl`" --upgrade pip setuptools boto3" -Tries 2
 
   # Clone watchmaker
   $Stage = "git"
