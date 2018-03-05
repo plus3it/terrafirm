@@ -33,6 +33,58 @@ function Tfi-OutThrow([String] $Msg, $Success, $ExitCode) {
   }
 }
 
+function Retry-TestCommand
+{
+  param (
+    [Parameter(Mandatory=$true)][string]$Test,
+    [Parameter(Mandatory=$false)][hashtable]$Args = @{},
+    [Parameter(Mandatory=$false)][string]$TestProperty,
+    [Parameter(Mandatory=$false)][int]$Tries = 1,
+    [Parameter(Mandatory=$false)][int]$SecondsDelay = 2,
+    [Parameter(Mandatory=$false)][switch]$ExpectNull
+  )
+  $TryCount = 0
+  $Completed = $false
+  $MsgFailed = "Command [{0}] failed" -f $Test
+  $MsgSucceeded = "Command [{0}] succeeded." -f $Test
+
+  While (-not $Completed)
+  {
+    Try
+    {
+      $Result = & $Test @Args
+      $TestResult = If ($TestProperty) { $Result.$TestProperty } Else { $Result }
+      If (-not $TestResult -and -not $ExpectNull)
+      {
+        Throw $MsgFailed
+      }
+      Else
+      {
+        Tfi-Out $MsgSucceeded $TestResult
+        $Completed = $true
+      }
+    }
+    Catch
+    {
+      $TryCount++
+      If ($TryCount -ge $Tries)
+      {
+        $Completed = $true
+        Tfi-Out ($PSItem | Select -Property * | Out-String)
+        Tfi-Out ("Command [{0}] failed the maximum number of {1} time(s)." -f $Test, $Tries)
+        $PSCmdlet.ThrowTerminatingError($PSItem)
+      }
+      Else
+      {
+        $Msg = $PSItem.ToString()
+        If ($Msg -ne $MsgFailed) { Tfi-Out $Msg }
+        Tfi-Out ("Command [{0}] failed. Retrying in {1} second(s)." -f $Test, $SecondsDelay)
+        Start-Sleep $SecondsDelay
+      }
+    }
+  }
+}
+
 # directory needed by logs and for various other purposes
 Invoke-Expression -Command "mkdir C:\Temp" -ErrorAction SilentlyContinue
 
@@ -89,8 +141,8 @@ Try {
 
   # Upgrade pip and setuptools
   $Stage = "upgrade pip setuptools boto3"
-  pip install --index-url="$PypiUrl" --upgrade pip setuptools boto3
   Tfi-OutThrow $Stage $? $lastExitCode
+  Retry-TestCommand -Test "pip" -Args "install --index-url=`"$PypiUrl`" --upgrade pip setuptools boto3"
 
   # Clone watchmaker
   $Stage = "git"
@@ -132,7 +184,7 @@ Try {
 
   $UserdataStatus=@(0,"Success") # made it this far, it's a success
 }
-catch
+Catch
 {
   # check for two broad classes of exceptions, those thrown by tfi code and those naturally occurring
   $em = [String]$_.Exception
