@@ -60,7 +60,6 @@ function Test-Command
       If ($TryCount -ge $Tries)
       {
         $Completed = $true
-        Tfi-Out ($PSItem | Select -Property * | Out-String)
         Tfi-Out ("Command [{0}] failed the maximum number of {1} time(s)." -f $Test, $Tries)
         Tfi-Out ("Error code (if available): {0}" -f ($Result.ExitCode))
         $PSCmdlet.ThrowTerminatingError($PSItem)
@@ -138,15 +137,15 @@ Try {
   $Stage = "git"
   Test-Command "git clone `"$GitRepo`" --recursive"
   cd watchmaker
-  if ($GitRef)
+  If ($GitRef)
   {
     # decide whether to switch to pull request or branch
-    if($GitRef -match "^[0-9]+$")
+    If($GitRef -match "^[0-9]+$")
     {
       Test-Command "git fetch origin pull/$GitRef/head:pr-$GitRef"
       Test-Command "git checkout pr-$GitRef"
     }
-    else
+    Else
     {
       Test-Command "git checkout $GitRef"
     }
