@@ -43,8 +43,7 @@ function Test-Command
     Try
     {
       $Result = @{}
-      Invoke-Expression -Command $Test
-      $Result = @{ Success = $?; ExitCode = $LastExitCode } #all one command so both refer to command test
+      Invoke-Expression -Command ($Test+';$Result = @{ Success = $?; ExitCode = $LastExitCode }')
       If (($False -eq $Result.Success) -Or ((($Result.ExitCode) -ne $null) -And (0 -ne ($Result.ExitCode)) ))
       {
         Throw $MsgFailed
