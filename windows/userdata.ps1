@@ -210,6 +210,9 @@ Else
   Tfi-Out "Open winrm/auth/basic without salt" $?
 }
 
+Start-Process -FilePath "winrm" -ArgumentList "set winrm/config @{MaxTimeoutms=`"1900000`"}"
+Tfi-Out "Set winrm timeout" $?
+
 # in case wam didn't change admin account name, winrm won't be able to log in so let's change it ourselves
 $Admin = [adsi]("WinNT://./Administrator, user")
 If ($Admin.Name)
@@ -239,14 +242,9 @@ $ErrorActionPreference = "Continue"
 
 Test-Command "Write-S3Object -BucketName `"${tfi_s3_bucket}/$ArtifactPrefix`" -File `"${tfi_win_userdata_log}`""
 Test-Command "Write-S3Object -BucketName `"${tfi_s3_bucket}`" -Folder `"C:\\Watchmaker\\Logs`" -KeyPrefix `"$ArtifactPrefix/watchmaker/`" -SearchPattern `"*log`""
-Test-Command "Write-S3Object -BucketName `"${tfi_s3_bucket}`" -Folder `"C:\\Watchmaker\\SCAP\\Results`" -KeyPrefix `"$ArtifactPrefix/scap_output/results`" -Recurse"
-Test-Command "Write-S3Object -BucketName `"${tfi_s3_bucket}`" -Folder `"C:\\Watchmaker\\SCAP\\Logs`" -KeyPrefix `"$ArtifactPrefix/scap_output/logs`" -Recurse"
+Test-Command "Write-S3Object -BucketName `"${tfi_s3_bucket}`" -Folder `"C:\\Watchmaker\\SCAP\\Results`" -KeyPrefix `"$ArtifactPrefix/scap_output/`" -Recurse"
+Test-Command "Write-S3Object -BucketName `"${tfi_s3_bucket}`" -Folder `"C:\\Watchmaker\\SCAP\\Logs`" -KeyPrefix `"$ArtifactPrefix/scap_logs/`" -Recurse"
 Test-Command "Write-S3Object -BucketName `"${tfi_s3_bucket}`" -Folder `"C:\\ProgramData\\Amazon\\EC2-Windows\\Launch\\Log`" -KeyPrefix `"$ArtifactPrefix/cloud/`""
 Test-Command "Write-S3Object -BucketName `"${tfi_s3_bucket}`" -Folder `"C:\\Program Files\\Amazon\\Ec2ConfigService\\Logs`" -KeyPrefix `"$ArtifactPrefix/cloud/`""
 
-Start-Process -FilePath "winrm" -ArgumentList "set winrm/config @{MaxTimeoutms=`"1900000`"}"
-Tfi-Out "Set winrm timeout" $?
-
 </powershell>
-<script>
-</script>
