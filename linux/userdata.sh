@@ -79,10 +79,10 @@ finally() {
 
   # move logs to s3
   artifact_location="s3://${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$${s3_keyfix}"
-  aws s3 cp ${tfi_lx_userdata_log} "$${artifaction_location}/userdata.log" || true
-  aws s3 cp /var/log "$${artifaction_location}/cloud/" --recursive --exclude "*" --include "cloud*log" || true
-  aws s3 cp /var/log/watchmaker "$${artifaction_location}/watchmaker/" --recursive || true
-  aws s3 cp /root/scap/output "$${artifaction_location}/scap_output/" --recursive || true
+  aws s3 cp ${tfi_lx_userdata_log} "$${artifact_location}/userdata.log" || true
+  aws s3 cp /var/log "$${artifact_location}/cloud/" --recursive --exclude "*" --include "cloud*log" || true
+  aws s3 cp /var/log/watchmaker "$${artifact_location}/watchmaker/" --recursive || true
+  aws s3 cp /root/scap/output "$${artifact_location}/scap_output/" --recursive || true
 
   exit "$${exit_code}"
 }
