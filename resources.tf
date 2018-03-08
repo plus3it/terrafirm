@@ -57,7 +57,7 @@ resource "aws_security_group" "ssh_sg" {
     Name = "${local.resource_name}"
   }
 
-  # Non-standard port SSH access 
+  # Non-standard port SSH access
   ingress {
     from_port   = 122
     to_port     = 122
@@ -91,8 +91,7 @@ resource "aws_instance" "spels" {
   }
 
   timeouts {
-    create = "30m"
-    delete = "30m"
+    create = "40m"
   }
 
   connection {
@@ -100,7 +99,7 @@ resource "aws_instance" "spels" {
     user        = "${var.tfi_ssh_user}"
     private_key = "${tls_private_key.gen_key.private_key_pem}"
     port        = 122
-    timeout     = "20m"
+    timeout     = "30m"
   }
 
   provisioner "file" {
@@ -137,15 +136,14 @@ resource "aws_instance" "windows" {
   }
 
   timeouts {
-    create = "30m"
-    delete = "30m"
+    create = "40m"
   }
 
   connection {
     type     = "winrm"
     user     = "${var.tfi_rm_user}"
     password = "${random_string.password.result}"
-    timeout  = "20m"
+    timeout  = "30m"
   }
 
   provisioner "file" {
