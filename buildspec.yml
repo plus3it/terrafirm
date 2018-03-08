@@ -19,11 +19,11 @@ phases:
       - ./terraform apply -no-color -input=false tfplan                         # apply terraform
   post_build:
     commands:
-      - ARTIFACT_LOCATION="s3://${TF_VAR_tfi_s3_bucket}/$(./terraform output build_date_ymd)/$(./terraform output build_date_hm)_$(./terraform output build_id)"
-      - echo "ARTIFACT_LOCATION=${ARTIFACT_LOCATION}"
+      - ARTIFACT_PATH="${TF_VAR_tfi_s3_bucket}/$(./terraform output build_date_ymd)/$(./terraform output build_date_hm)_$(./terraform output build_id)"
+      - echo "ARTIFACT_LOCATION=https://s3.console.aws.amazon.com/s3/buckets/${ARTIFACT_PATH}"
       - ./terraform output                                                      # save/display output information to file
-      - ./terraform output | aws s3 cp - "${ARTIFACT_LOCATION}/terraform_output.log" || true
-      - test -r $TF_LOG_PATH && aws s3 cp $TF_LOG_PATH "${ARTIFACT_LOCATION}/terraform.log" || true
+      - ./terraform output | aws s3 cp - "s3://${ARTIFACT_PATH}/terraform_output.log" || true
+      - test -r $TF_LOG_PATH && aws s3 cp $TF_LOG_PATH "s3://${ARTIFACT_PATH}/terraform.log" || true
       - |
         if [ "${TFI_DESTROY_AFTER_TEST}" = "true" ]; then                       # destroy resources
           ./terraform destroy -input=false -force
