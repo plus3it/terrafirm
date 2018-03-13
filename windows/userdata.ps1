@@ -118,6 +118,10 @@ Try {
   # Use TLS, as git won't do SSL now
   [Net.ServicePointManager]::SecurityProtocol = "Ssl3, Tls, Tls11, Tls12"
 
+  # install 7-zip for use with artifacts - download fails after wam install, fyi
+  (New-Object System.Net.WebClient).DownloadFile("https://www.7-zip.org/a/7z1801-x64.exe", "C:\Temp\7z-install.exe")
+  Invoke-Expression -Command "C:\Temp\7z-install.exe /S /D='C:\Program Files\7-Zip'" -ErrorAction Continue
+  
   # Download bootstrap file
   $Stage = "download bootstrap"
   $BootstrapFile = "$${Env:Temp}\$($${BootstrapUrl}.split("/")[-1])"
@@ -229,22 +233,32 @@ Tfi-Out "Write userdata status file" $?
 netsh advfirewall firewall set rule name="WinRM in" new action=allow
 Tfi-Out "Open firewall" $?
 
-# upload logs to S3 bucket
-$S3Keyfix="Win" + (((Get-WmiObject -class Win32_OperatingSystem).Caption) -replace '.+(\d\d)\s(.{2}).+','$1$2')
+$ErrorActionPreference = "Continue"
+
+# create a directory with all the build artifacts
+$ArtifactDir = "C:\Temp\build-artifacts"
+Invoke-Expression -Command "mkdir $ArtifactDir" -ErrorAction SilentlyContinue
+Invoke-Expression -Command "mkdir $ArtifactDir\watchmaker" -ErrorAction SilentlyContinue # need to create dir if globbing to it
+Copy-Item "C:\Watchmaker\Logs\*log" -Destination "$ArtifactDir\watchmaker" -Recurse
+Copy-Item "C:\Watchmaker\SCAP\Results" -Destination "$ArtifactDir\scap_output" -Recurse
+Copy-Item "C:\Watchmaker\SCAP\Logs" -Destination "$ArtifactDir\scap_logs" -Recurse
+Copy-Item "C:\ProgramData\Amazon\EC2-Windows\Launch\Log" -Destination "$ArtifactDir\cloud" -Recurse
+Copy-Item "C:\Program Files\Amazon\Ec2ConfigService\Logs" -Destination "$ArtifactDir\cloud" -Recurse
+
+# copy artifacts to s3
+$S3Keyfix="Win" + (((Get-WmiObject -class Win32_OperatingSystem).Caption) -replace '.+(\d\d)\s(.{2}).+','$1$2') # create S3 bucket name based on OS
 If ($S3Keyfix.Substring($S3Keyfix.get_Length()-2) -eq 'Da') {
     $S3Keyfix=$S3Keyfix -replace ".{2}$"
 }
+$ArtifactLocation = "${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$S3Keyfix"
+Tfi-Out "Writing logs to $ArtifactLocation"
+Copy-Item "${tfi_win_userdata_log}" -Destination "$ArtifactDir"
+Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "$ArtifactDir" -KeyPrefix "$ArtifactLocation/" -Recurse
 
-$ArtifactPrefix = "${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$S3Keyfix"
-Tfi-Out "Writing logs to $ArtifactPrefix"
-
-$ErrorActionPreference = "Continue"
-
-Test-Command "Write-S3Object -BucketName `"${tfi_s3_bucket}/$ArtifactPrefix`" -File `"${tfi_win_userdata_log}`""
-Test-Command "Write-S3Object -BucketName `"${tfi_s3_bucket}`" -Folder `"C:\\Watchmaker\\Logs`" -KeyPrefix `"$ArtifactPrefix/watchmaker/`" -SearchPattern `"*log`""
-Test-Command "Write-S3Object -BucketName `"${tfi_s3_bucket}`" -Folder `"C:\\Watchmaker\\SCAP\\Results`" -KeyPrefix `"$ArtifactPrefix/scap_output/`" -Recurse"
-Test-Command "Write-S3Object -BucketName `"${tfi_s3_bucket}`" -Folder `"C:\\Watchmaker\\SCAP\\Logs`" -KeyPrefix `"$ArtifactPrefix/scap_logs/`" -Recurse"
-Test-Command "Write-S3Object -BucketName `"${tfi_s3_bucket}`" -Folder `"C:\\ProgramData\\Amazon\\EC2-Windows\\Launch\\Log`" -KeyPrefix `"$ArtifactPrefix/cloud/`""
-Test-Command "Write-S3Object -BucketName `"${tfi_s3_bucket}`" -Folder `"C:\\Program Files\\Amazon\\Ec2ConfigService\\Logs`" -KeyPrefix `"$ArtifactPrefix/cloud/`""
+# creates compressed archive to upload to s3
+$ZipFile = "C:\Temp\${tfi_build_date}-${tfi_build_id}-$S3Keyfix.zip"
+cd 'C:\Program Files\7-Zip'
+Test-Command ".\7z a -y -tzip '$ZipFile' -r '$ArtifactDir\*'"
+Write-S3Object -BucketName "${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}" -File "$ZipFile"
 
 </powershell>

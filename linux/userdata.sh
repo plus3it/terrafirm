@@ -74,15 +74,27 @@ finally() {
   cat /etc/ssh/sshd_config
   service sshd restart
 
-  # get OS version as key prefix
-  s3_keyfix=$(cat /etc/redhat-release | cut -c1-3)$(cat /etc/redhat-release | sed 's/[^0-9.]*\([0-9]\.[0-9]\).*/\1/')
+  # create a directory with all the build artifacts
+  artifact_base="/tmp/terrafirm"
+  artifact_dir="$${artifact_base}/build-artifacts"
+  mkdir -p "$${artifact_dir}/scap_output"
+  mkdir -p "$${artifact_dir}/cloud"
+  cp -R /var/log/watchmaker/ "$${artifact_dir}"
+  cp -R /root/scap/output/* "$${artifact_dir}/scap_output/"
+  cp -R /var/log/cloud*log "$${artifact_dir}/cloud/"
 
   # move logs to s3
+  s3_keyfix=$(cat /etc/redhat-release | cut -c1-3)$(cat /etc/redhat-release | sed 's/[^0-9.]*\([0-9]\.[0-9]\).*/\1/') # get OS version as key prefix
   artifact_location="s3://${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$${s3_keyfix}"
-  aws s3 cp ${tfi_lx_userdata_log} "$${artifact_location}/userdata.log" || true
-  aws s3 cp /var/log "$${artifact_location}/cloud/" --recursive --exclude "*" --include "cloud*log" || true
-  aws s3 cp /var/log/watchmaker "$${artifact_location}/watchmaker/" --recursive || true
-  aws s3 cp /root/scap/output "$${artifact_location}/scap_output/" --recursive || true
+  echo "Writing logs to $${artifact_location}"
+  cp "${tfi_lx_userdata_log}" "$${artifact_dir}"
+  aws s3 cp "$${artifact_dir}" "$${artifact_location}" --recursive || true
+
+  # creates compressed archive to upload to s3
+  zip_file="$${artifact_base}/${tfi_build_date}-${tfi_build_id}-$${s3_keyfix}.tgz"
+  cd "$${artifact_dir}"
+  tar -cvzf "$${zip_file}" .
+  aws s3 cp "$${zip_file}" "s3://${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/" || true
 
   exit "$${exit_code}"
 }
