@@ -3,12 +3,15 @@ version: 0.2
 
 env:
   variables:
-    TFI_TF_ZIP: https://releases.hashicorp.com/terraform/0.11.3/terraform_0.11.3_linux_amd64.zip
+    TFI_JQ_INSTALL: https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
 
 phases:
   install:
     commands:
-      - curl -L "${TFI_TF_ZIP}" -o tf.zip && unzip tf.zip                       # install Terraform
+      - curl -L "${TFI_JQ_INSTALL}" -o jq && chmod +x jq                        # install jq
+      - terraform_version=$(curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform | ./jq -r -M '.current_version')
+      - terraform_url="${TFI_TERRAFORM_URL:-https://releases.hashicorp.com/terraform/${terraform_version}/terraform_${terraform_version}_linux_amd64.zip}"
+      - curl -L "${terraform_url}" -o tf.zip && unzip tf.zip                    # install terraform
   pre_build:
     commands:
       - export TF_VAR_tfi_codebuild_id="${CODEBUILD_BUILD_ID}"
