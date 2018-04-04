@@ -10,9 +10,9 @@ function Tfi-Out
     [String]$Msg,
 	  $Success = $null
   )
-  
+
   # result is succeeded or failed or nothing if success is null
-  If( $Success -ne $null )  
+  If( $Success -ne $null )
   {
     If ($Success)
     {
@@ -23,13 +23,13 @@ function Tfi-Out
       $OutResult = ": Failed"
     }
   }
-  
+
   "$(Get-Date): $Msg $OutResult" | Out-File "${tfi_win_userdata_log}" -Append -Encoding utf8
 }
 
 function Test-Command
 {
-  # Tests commands and handles errors that result. Can also re-try commands is -Tries is set > 1. 
+  # Tests commands and handles errors that result. Can also re-try commands is -Tries is set > 1.
   param (
     [Parameter(Mandatory=$true)][string]$Test,
     [Parameter(Mandatory=$false)][int]$Tries = 1,
@@ -121,7 +121,7 @@ Try {
   # install 7-zip for use with artifacts - download fails after wam install, fyi
   (New-Object System.Net.WebClient).DownloadFile("https://www.7-zip.org/a/7z1801-x64.exe", "C:\Temp\7z-install.exe")
   Invoke-Expression -Command "C:\Temp\7z-install.exe /S /D='C:\Program Files\7-Zip'" -ErrorAction Continue
-  
+
   # Download bootstrap file
   $Stage = "download bootstrap"
   $BootstrapFile = "$${Env:Temp}\$($${BootstrapUrl}.split("/")[-1])"
@@ -157,6 +157,10 @@ Try {
       Test-Command "git checkout $GitRef"
     }
   }
+
+  # Update submodule refs
+  $Stage = "update submodules"
+  Test-Command "git submodule update"
 
   # Install watchmaker
   $Stage = "install wam"

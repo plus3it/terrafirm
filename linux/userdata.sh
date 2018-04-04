@@ -153,6 +153,9 @@ if [ -n "$GIT_REF" ] ; then
   fi
 fi
 
+# Update submodule refs
+stage="update submodules" && git submodule update
+
 # Install watchmaker
 stage="install wam" && pip install --index-url "$PYPI_URL" --editable .
 
