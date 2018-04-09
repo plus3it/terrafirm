@@ -65,8 +65,8 @@ finally() {
   else
     echo "Configuring iptables..."
     iptables -A INPUT -p tcp --dport 122 -j ACCEPT #open port 122
-    iptables save
-    iptables restart
+    service iptables save
+    service iptables restart
   fi
 
   sed -i -e '5iPort 122' /etc/ssh/sshd_config
