@@ -1,0 +1,9 @@
+# Terraform files
+.terraform
+terraform.tfstate.d
+*.tfstate
+*.tfstate.backup
+*.tfvars
+
+# User env
+.env
