@@ -125,17 +125,17 @@ userdata_status=(0 "Success")
 GIT_REPO="${tfi_git_repo}"
 GIT_REF="${tfi_git_ref}"
 
-PIP_URL=https://bootstrap.pypa.io/get-pip.py
+PIP_URL=https://bootstrap.pypa.io/2.6/get-pip.py
 PYPI_URL=https://pypi.org/simple
 
 # Install pip
-stage="install python/git" && curl "$PIP_URL" | python - --index-url="$PYPI_URL" wheel==0.29.0
+stage="install python/git" && curl "$PIP_URL" | python - --index-url="$PYPI_URL" 'wheel<0.30.0;python_version<"2.7"' 'wheel;python_version>="2.7"'
 
 # Install git
 retry 5 yum -y install git
 
 # Upgrade pip and setuptools
-stage="upgrade pip/setuptools/boto3" && pip install --index-url="$PYPI_URL" --upgrade pip setuptools boto3
+stage="upgrade pip/setuptools/boto3" && pip install --index-url="$PYPI_URL" --upgrade 'pip<10' 'setuptools<37;python_version<"2.7"' 'setuptools;python_version>="2.7"' boto3
 
 # Clone watchmaker
 stage="git" && git clone "$GIT_REPO" --recursive
