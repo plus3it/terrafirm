@@ -125,7 +125,7 @@ userdata_status=(0 "Success")
 GIT_REPO="${tfi_git_repo}"
 GIT_REF="${tfi_git_ref}"
 
-PIP_URL=https://bootstrap.pypa.io/get-pip.py
+PIP_URL=https://bootstrap.pypa.io/2.6/get-pip.py
 PYPI_URL=https://pypi.org/simple
 
 # Install pip
