@@ -138,7 +138,7 @@ Try {
 
   # Upgrade pip and setuptools
   $Stage = "upgrade pip setuptools boto3"
-  Test-Command "python -m pip install --index-url=`"$PypiUrl`" --upgrade pip<10 setuptools boto3" -Tries 2
+  Test-Command "python -m pip install --index-url=`"$PypiUrl`" --upgrade pip setuptools boto3" -Tries 2
 
   # Clone watchmaker
   $Stage = "git"
