@@ -193,6 +193,14 @@ Catch
   $UserdataStatus=@($ErrCode,"Error at: " + $Stage + " [$ErrorMessage]")
 }
 
+# in case wam didn't change admin account name, winrm won't be able to log in so let's change it ourselves
+$Admin = [adsi]("WinNT://./Administrator, user")
+If ($Admin.Name)
+{
+  $Admin.psbase.rename("${tfi_rm_user}")
+  Tfi-Out "Rename admin account" $?
+}
+
 # Set Administrator password - should always go after wm install because username not yet changed
 $Admin = [adsi]("WinNT://./${tfi_rm_user}, user")
 $Admin.psbase.invoke("SetPassword", "${tfi_rm_pass}")
@@ -224,14 +232,6 @@ Else
 
 Start-Process -FilePath "winrm" -ArgumentList "set winrm/config @{MaxTimeoutms=`"1900000`"}"
 Tfi-Out "Set winrm timeout" $?
-
-# in case wam didn't change admin account name, winrm won't be able to log in so let's change it ourselves
-$Admin = [adsi]("WinNT://./Administrator, user")
-If ($Admin.Name)
-{
-  $Admin.psbase.rename("${tfi_rm_user}")
-  Tfi-Out "Rename admin account" $?
-}
 
 # write the status to a file for reading by test script
 $UserdataStatus | Out-File C:\Temp\userdata_status
