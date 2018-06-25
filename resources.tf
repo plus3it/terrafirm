@@ -114,6 +114,7 @@ resource "aws_instance" "spels" {
     ]
 
     connection {
+      # this is where terraform puts the above inline script
       script_path = "~/inline.sh"
     }
   }
