@@ -111,15 +111,15 @@ Try {
   Tfi-Out "Security protocol before bootstrap: $([Net.ServicePointManager]::SecurityProtocol | Out-String)"
 
   $BootstrapUrl = "https://raw.githubusercontent.com/plus3it/watchmaker/develop/docs/files/bootstrap/watchmaker-bootstrap.ps1"
-  $PythonUrl = "https://www.python.org/ftp/python/3.6.4/python-3.6.4-amd64.exe"
-  $GitUrl = "https://github.com/git-for-windows/git/releases/download/v2.16.2.windows.1/Git-2.16.2-64-bit.exe"
+  $PythonUrl = "https://www.python.org/ftp/python/3.6.5/python-3.6.5-amd64.exe"
+  $GitUrl = "https://github.com/git-for-windows/git/releases/download/v2.18.0.windows.1/Git-2.18.0-64-bit.exe"
   $PypiUrl = "https://pypi.org/simple"
 
   # Use TLS, as git won't do SSL now
   [Net.ServicePointManager]::SecurityProtocol = "Ssl3, Tls, Tls11, Tls12"
 
   # install 7-zip for use with artifacts - download fails after wam install, fyi
-  (New-Object System.Net.WebClient).DownloadFile("https://www.7-zip.org/a/7z1801-x64.exe", "C:\Temp\7z-install.exe")
+  (New-Object System.Net.WebClient).DownloadFile("https://www.7-zip.org/a/7z1805-x64.exe", "C:\Temp\7z-install.exe")
   Invoke-Expression -Command "C:\Temp\7z-install.exe /S /D='C:\Program Files\7-Zip'" -ErrorAction Continue
 
   # Download bootstrap file
