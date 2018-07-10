@@ -18,6 +18,7 @@ data "http" "ip" {
 
 # Template for initial configuration bash script
 data "template_file" "win_userdata" {
+  count    = "${length(matchkeys(values(local.win_amis),keys(local.win_amis),split(",", var.tfi_win_instances)))}"
   template = "${file("windows/userdata.ps1")}"
 
   vars {
@@ -32,11 +33,13 @@ data "template_file" "win_userdata" {
     tfi_build_date       = "${local.date_ymd}"
     tfi_build_hour       = "${local.date_hm}"
     tfi_build_id         = "${local.build_id}"
+    tfi_ami_key          = "${element(matchkeys(keys(local.win_amis),keys(local.win_amis),split(",", var.tfi_win_instances)), count.index)}"
   }
 }
 
 # Template for initial configuration bash script
 data "template_file" "lx_userdata" {
+  count    = "${local.lx_count_all}"
   template = "${file("linux/userdata.sh")}"
 
   vars {
@@ -50,6 +53,24 @@ data "template_file" "lx_userdata" {
     tfi_build_date      = "${local.date_ymd}"
     tfi_build_hour      = "${local.date_hm}"
     tfi_build_id        = "${local.build_id}"
+    tfi_ami_key         = "${element(local.lx_key_requests_all, count.index)}"
+  }
+}
+
+data "template_file" "lx_builder_userdata" {
+  template = "${file("linux/builder_userdata.sh")}"
+
+  vars {
+    tfi_git_repo        = "${var.tfi_git_repo}"
+    tfi_git_ref         = "${var.tfi_git_ref}"
+    tfi_lx_userdata_log = "${var.tfi_lx_userdata_log}"
+    tfi_s3_bucket       = "${var.tfi_s3_bucket}"
+    tfi_build_date      = "${local.date_ymd}"
+    tfi_build_hour      = "${local.date_hm}"
+    tfi_build_id        = "${local.build_id}"
+    tfi_ami_key         = "lx_builder"
+    tfi_docker_slug     = "${var.tfi_docker_slug}"
+    tfi_aws_region      = "${var.tfi_aws_region}"
   }
 }
 
@@ -234,4 +255,20 @@ data "aws_ami" "win16sql17e" {
   }
 
   owners = "${var.tfi_windows_ami_owners}"
+}
+
+data "aws_ami" "trusty" {
+  most_recent = true
+
+  filter {
+    name   = "virtualization-type"
+    values = ["${var.tfi_other_filters["virtualization_type"]}"]
+  }
+
+  filter {
+    name   = "name"
+    values = ["${element(var.tfi_ami_name_filters, 11)}"]
+  }
+
+  owners = "${var.tfi_linux_ami_owners}"
 }

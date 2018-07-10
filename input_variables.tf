@@ -75,3 +75,11 @@ variable "tfi_s3_bucket" {
 variable "tfi_codebuild_id" {
   default = ""
 }
+
+variable "tfi_docker_slug" {
+  default = ""
+}
+
+variable "tfi_aws_region" {
+  default = "us-east-1"
+}

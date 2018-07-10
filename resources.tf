@@ -74,15 +74,65 @@ resource "aws_security_group" "ssh_sg" {
   }
 }
 
-# bread & butter - this tells TF to provision/create the actual instance
-resource "aws_instance" "spels" {
-  count                       = "${length(matchkeys(values(local.lx_amis),keys(local.lx_amis),split(",", var.tfi_lx_instances)))}"
-  ami                         = "${element(matchkeys(values(local.lx_amis),keys(local.lx_amis),split(",", var.tfi_lx_instances)), count.index)}"
+resource "aws_instance" "lx_builder_pkg" {
+  count                       = "${local.lx_count_pkg}"
+  ami                         = "${data.aws_ami.trusty.id}"
   instance_type               = "${var.tfi_lx_instance_type}"
   iam_instance_profile        = "${var.tfi_instance_profile}"
   key_name                    = "${aws_key_pair.auth.id}"
   vpc_security_group_ids      = ["${aws_security_group.ssh_sg.id}"]
-  user_data                   = "${data.template_file.lx_userdata.rendered}"
+  user_data                   = "${data.template_file.lx_builder_userdata.rendered}"
+  associate_public_ip_address = "${var.tfi_assign_public_ip}"
+  subnet_id                   = "${var.tfi_subnet_id}"
+
+  tags {
+    Name = "${local.resource_name}-builder"
+  }
+
+  timeouts {
+    create = "50m"
+  }
+
+  connection {
+    #ssh connection to tier-2 instance
+    user        = "ubuntu"
+    private_key = "${tls_private_key.gen_key.private_key_pem}"
+    port        = 122
+    timeout     = "40m"
+  }
+
+  provisioner "file" {
+    content     = "${element(local.lx_key_requests_all, count.index)}"
+    destination = "~/ami-key"
+  }
+
+  provisioner "file" {
+    source      = "linux/builder_test.sh"
+    destination = "~/builder_test.sh"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "chmod +x ~/builder_test.sh",
+      "~/builder_test.sh",
+    ]
+
+    connection {
+      # this is where terraform puts the above inline script
+      script_path = "~/inline.sh"
+    }
+  }
+}
+
+# bread & butter - this tells TF to provision/create the actual instance
+resource "aws_instance" "lx" {
+  count                       = "${local.lx_count_all}"
+  ami                         = "${element(local.lx_ami_requests_all, count.index)}"
+  instance_type               = "${var.tfi_lx_instance_type}"
+  iam_instance_profile        = "${var.tfi_instance_profile}"
+  key_name                    = "${aws_key_pair.auth.id}"
+  vpc_security_group_ids      = ["${aws_security_group.ssh_sg.id}"]
+  user_data                   = "${element(data.template_file.lx_userdata.*.rendered, count.index)}"
   associate_public_ip_address = "${var.tfi_assign_public_ip}"
   subnet_id                   = "${var.tfi_subnet_id}"
 
@@ -91,7 +141,7 @@ resource "aws_instance" "spels" {
   }
 
   timeouts {
-    create = "40m"
+    create = "50m"
   }
 
   connection {
@@ -99,7 +149,12 @@ resource "aws_instance" "spels" {
     user        = "${var.tfi_ssh_user}"
     private_key = "${tls_private_key.gen_key.private_key_pem}"
     port        = 122
-    timeout     = "30m"
+    timeout     = "40m"
+  }
+
+  provisioner "file" {
+    content     = "${element(local.lx_key_requests_all, count.index)}"
+    destination = "~/ami-key"
   }
 
   provisioner "file" {
@@ -121,14 +176,14 @@ resource "aws_instance" "spels" {
 }
 
 # bread & butter - this tells TF to provision/create the actual instance
-resource "aws_instance" "windows" {
+resource "aws_instance" "win" {
   count                       = "${length(matchkeys(values(local.win_amis),keys(local.win_amis),split(",", var.tfi_win_instances)))}"
   ami                         = "${element(matchkeys(values(local.win_amis),keys(local.win_amis),split(",", var.tfi_win_instances)), count.index)}"
   instance_type               = "${var.tfi_win_instance_type}"
   key_name                    = "${aws_key_pair.auth.id}"
   iam_instance_profile        = "${var.tfi_instance_profile}"
   vpc_security_group_ids      = ["${aws_security_group.winrm_sg.id}"]
-  user_data                   = "${data.template_file.win_userdata.rendered}"
+  user_data                   = "${element(data.template_file.win_userdata.*.rendered, count.index)}"
   associate_public_ip_address = "${var.tfi_assign_public_ip}"
   subnet_id                   = "${var.tfi_subnet_id}"
 
@@ -145,6 +200,11 @@ resource "aws_instance" "windows" {
     user     = "${var.tfi_rm_user}"
     password = "${random_string.password.result}"
     timeout  = "30m"
+  }
+
+  provisioner "file" {
+    content     = "${element(matchkeys(keys(local.win_amis),keys(local.win_amis),split(",", var.tfi_win_instances)), count.index)}"
+    destination = "C:\\scripts\\ami-key"
   }
 
   provisioner "file" {

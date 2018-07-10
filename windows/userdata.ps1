@@ -86,6 +86,9 @@ $Admin = [adsi]("WinNT://./Administrator, user")
 $Admin.psbase.invoke("SetPassword", "${tfi_rm_pass}")
 Tfi-Out "Set admin password" $?
 
+$AMIKey="${tfi_ami_key}"
+Tfi-Out "AMI KEY: ----------------------------- $AMIKey ---------------------"
+
 # initial winrm setup
 Start-Process -FilePath "winrm" -ArgumentList "quickconfig -q"
 Tfi-Out "WinRM quickconfig" $?
@@ -104,77 +107,87 @@ Try {
   # time wam install
   $StartDate=Get-Date
 
-  # ---------- begin of wam install ----------
-  $GitRepo = "${tfi_git_repo}"
-  $GitRef = "${tfi_git_ref}"
-
-  Tfi-Out "Security protocol before bootstrap: $([Net.ServicePointManager]::SecurityProtocol | Out-String)"
-
-  $BootstrapUrl = "https://raw.githubusercontent.com/plus3it/watchmaker/develop/docs/files/bootstrap/watchmaker-bootstrap.ps1"
-  $PythonUrl = "https://www.python.org/ftp/python/3.6.5/python-3.6.5-amd64.exe"
-  $GitUrl = "https://github.com/git-for-windows/git/releases/download/v2.18.0.windows.1/Git-2.18.0-64-bit.exe"
-  $PypiUrl = "https://pypi.org/simple"
-
-  # Use TLS, as git won't do SSL now
-  [Net.ServicePointManager]::SecurityProtocol = "Ssl3, Tls, Tls11, Tls12"
-
-  # install 7-zip for use with artifacts - download fails after wam install, fyi
-  (New-Object System.Net.WebClient).DownloadFile("https://www.7-zip.org/a/7z1805-x64.exe", "C:\Temp\7z-install.exe")
-  Invoke-Expression -Command "C:\Temp\7z-install.exe /S /D='C:\Program Files\7-Zip'" -ErrorAction Continue
-
-  # Download bootstrap file
-  $Stage = "download bootstrap"
-  $BootstrapFile = "$${Env:Temp}\$($${BootstrapUrl}.split("/")[-1])"
-  (New-Object System.Net.WebClient).DownloadFile($BootstrapUrl, $BootstrapFile)
-
-  # Install python and git
-  $Stage = "install python/git"
-  & "$BootstrapFile" `
-      -PythonUrl "$PythonUrl" `
-      -GitUrl "$GitUrl" `
-      -Verbose -ErrorAction Stop
-
-  Tfi-Out "Security protocol after bootstrap: $([Net.ServicePointManager]::SecurityProtocol | Out-String)"
-
-  # Upgrade pip and setuptools
-  $Stage = "upgrade pip setuptools boto3"
-  Test-Command "python -m pip install --index-url=`"$PypiUrl`" --upgrade pip setuptools" -Tries 2
-
-  # Install boto3
-  $Stage = "install boto3"
-  Test-Command "pip install --index-url=`"$PypiUrl`" --upgrade boto3" -Tries 2
-
-  # Clone watchmaker
-  $Stage = "git"
-  Test-Command "git clone `"$GitRepo`" --recursive" -Tries 2
-  cd watchmaker
-  If ($GitRef)
+  If ($AMIKey.EndsWith("pkg"))
   {
-    # decide whether to switch to pull request or branch
-    If($GitRef -match "^[0-9]+$")
-    {
-      Test-Command "git fetch origin pull/$GitRef/head:pr-$GitRef" -Tries 2
-      Test-Command "git checkout pr-$GitRef"
-    }
-    Else
-    {
-      Test-Command "git checkout $GitRef"
-    }
+    Invoke-Expression -Command "mkdir C:\scripts" -ErrorAction SilentlyContinue
+    $url = "https://s3.amazonaws.com/watchmaker-dev/releases/latest/watchmaker-latest-standalone-windows-amd64.exe"
+    (New-Object System.Net.WebClient).DownloadFile($url, "C:\scripts\watchmaker.exe")
+    Test-Command "C:\scripts\watchmaker.exe ${tfi_common_args} ${tfi_win_args}"
   }
+  Else
+  {
+    # ---------- begin of wam install ----------
+    $GitRepo = "${tfi_git_repo}"
+    $GitRef = "${tfi_git_ref}"
 
-  # Update submodule refs
-  $Stage = "update submodules"
-  Test-Command "git submodule update"
+    Tfi-Out "Security protocol before bootstrap: $([Net.ServicePointManager]::SecurityProtocol | Out-String)"
 
-  # Install watchmaker
-  $Stage = "install wam"
-  Test-Command "pip install --index-url `"$PypiUrl`" --editable ."
+    $BootstrapUrl = "https://raw.githubusercontent.com/plus3it/watchmaker/develop/docs/files/bootstrap/watchmaker-bootstrap.ps1"
+    $PythonUrl = "https://www.python.org/ftp/python/3.6.5/python-3.6.5-amd64.exe"
+    $GitUrl = "https://github.com/git-for-windows/git/releases/download/v2.18.0.windows.1/Git-2.18.0-64-bit.exe"
+    $PypiUrl = "https://pypi.org/simple"
 
-  # Run watchmaker
-  $Stage = "run wam"
-  #Invoke-Expression -Command "watchmaker ${tfi_common_args} ${tfi_win_args}" -ErrorAction Stop
-  Test-Command "watchmaker ${tfi_common_args} ${tfi_win_args}"
-  # ----------  end of wam install ----------
+    # Use TLS, as git won't do SSL now
+    [Net.ServicePointManager]::SecurityProtocol = "Ssl3, Tls, Tls11, Tls12"
+
+    # install 7-zip for use with artifacts - download fails after wam install, fyi
+    (New-Object System.Net.WebClient).DownloadFile("https://www.7-zip.org/a/7z1805-x64.exe", "C:\Temp\7z-install.exe")
+    Invoke-Expression -Command "C:\Temp\7z-install.exe /S /D='C:\Program Files\7-Zip'" -ErrorAction Continue
+
+    # Download bootstrap file
+    $Stage = "download bootstrap"
+    $BootstrapFile = "$${Env:Temp}\$($${BootstrapUrl}.split("/")[-1])"
+    (New-Object System.Net.WebClient).DownloadFile($BootstrapUrl, $BootstrapFile)
+
+    # Install python and git
+    $Stage = "install python/git"
+    & "$BootstrapFile" `
+        -PythonUrl "$PythonUrl" `
+        -GitUrl "$GitUrl" `
+        -Verbose -ErrorAction Stop
+
+    Tfi-Out "Security protocol after bootstrap: $([Net.ServicePointManager]::SecurityProtocol | Out-String)"
+
+    # Upgrade pip and setuptools
+    $Stage = "upgrade pip setuptools boto3"
+    Test-Command "python -m pip install --index-url=`"$PypiUrl`" --upgrade pip setuptools" -Tries 2
+
+    # Install boto3
+    $Stage = "install boto3"
+    Test-Command "pip install --index-url=`"$PypiUrl`" --upgrade boto3" -Tries 2
+
+    # Clone watchmaker
+    $Stage = "git"
+    Test-Command "git clone `"$GitRepo`" --recursive" -Tries 2
+    cd watchmaker
+    If ($GitRef)
+    {
+      # decide whether to switch to pull request or branch
+      If($GitRef -match "^[0-9]+$")
+      {
+        Test-Command "git fetch origin pull/$GitRef/head:pr-$GitRef" -Tries 2
+        Test-Command "git checkout pr-$GitRef"
+      }
+      Else
+      {
+        Test-Command "git checkout $GitRef"
+      }
+    }
+
+    # Update submodule refs
+    $Stage = "update submodules"
+    Test-Command "git submodule update"
+
+    # Install watchmaker
+    $Stage = "install wam"
+    Test-Command "pip install --index-url `"$PypiUrl`" --editable ."
+
+    # Run watchmaker
+    $Stage = "run wam"
+    #Invoke-Expression -Command "watchmaker ${tfi_common_args} ${tfi_win_args}" -ErrorAction Stop
+    Test-Command "watchmaker ${tfi_common_args} ${tfi_win_args}"
+    # ----------  end of wam install ----------
+  }
 
   $EndDate = Get-Date
   Tfi-Out("WAM install took {0} seconds." -f [math]::Round(($EndDate - $StartDate).TotalSeconds))

@@ -1,7 +1,7 @@
-
+$AMIKey = [IO.File]::ReadAllText("C:\scripts\ami-key")
 
 Write-Host ("*****************************************************************************")
-Write-Host ("Running Watchmaker test script: WINDOWS")
+Write-Host ("Running Watchmaker test script: $AMIKey")
 Write-Host ("*****************************************************************************")
 Write-Host ((Get-WmiObject -class Win32_OperatingSystem).Caption)
 
@@ -29,7 +29,16 @@ If ($UserdataStatus[0] -eq 0)
         # NOTE: if tests don't have an error action of "Stop," by default or explicitly set, won't be caught
         # NOTE: default erroraction in powershell is "Continue"
         # ------------------------------------------------------------ WAM TESTS BEGIN
-        Invoke-Expression -Command "watchmaker --version"  -ErrorAction Stop
+        If ( $AMIKey.EndsWith("pkg") )
+        {
+            Write-Host ("Testing standalone executable package...")
+            Invoke-Expression -Command "C:\scripts\watchmaker.exe --version"  -ErrorAction Stop
+        }
+        Else
+        {
+            Write-Host ("Testing install from source...")
+            Invoke-Expression -Command "watchmaker --version"  -ErrorAction Stop
+        }
 
         # ------------------------------------------------------------ WAM TESTS END
         

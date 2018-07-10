@@ -1,33 +1,27 @@
 ---
 version: 0.2
 
-env:
-  variables:
-    TFI_JQ_INSTALL: https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64
-
 phases:
   install:
     commands:
-      - curl -L "${TFI_JQ_INSTALL}" -o jq && chmod +x jq                        # install jq
-      - terraform_version=$(curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform | ./jq -r -M '.current_version')
-      - terraform_url="${TFI_TERRAFORM_URL:-https://releases.hashicorp.com/terraform/${terraform_version}/terraform_${terraform_version}_linux_amd64.zip}"
-      - curl -L "${terraform_url}" -o tf.zip && unzip tf.zip                    # install terraform
+      - git clone https://github.com/plus3it/terraform-bootstrap.git && chmod +x terraform-bootstrap/install.sh
+      - terraform-bootstrap/install.sh
   pre_build:
     commands:
       - export TF_VAR_tfi_codebuild_id="${CODEBUILD_BUILD_ID}"
-      - ./terraform init -no-color -input=false                                 # init terraform
-      - ./terraform plan -no-color -out=tfplan -input=false                     # plan terraform
+      - terraform init -no-color -input=false                                 # init terraform
+      - terraform plan -no-color -out=tfplan -input=false                     # plan terraform
   build:
     commands:
-      - ./terraform apply -no-color -input=false tfplan                         # apply terraform
+      - terraform apply -no-color -input=false tfplan                         # apply terraform
   post_build:
     commands:
-      - ARTIFACT_PATH="${TF_VAR_tfi_s3_bucket}/$(./terraform output build_date_ymd)/$(./terraform output build_date_hm)_$(./terraform output build_id)"
+      - ARTIFACT_PATH="${TF_VAR_tfi_s3_bucket}/$(terraform output build_date_ymd)/$(terraform output build_date_hm)_$(terraform output build_id)"
       - echo "ARTIFACT_LOCATION=https://s3.console.aws.amazon.com/s3/buckets/${ARTIFACT_PATH}/"
-      - ./terraform output -no-color | aws s3 cp - "s3://${ARTIFACT_PATH}/terraform_output.log" || true
+      - terraform output -no-color | aws s3 cp - "s3://${ARTIFACT_PATH}/terraform_output.log" || true
       - test -r $TF_LOG_PATH && aws s3 cp $TF_LOG_PATH "s3://${ARTIFACT_PATH}/terraform.log" || true
       - test -r terraform.tfstate && aws s3 cp terraform.tfstate "s3://${ARTIFACT_PATH}/terraform.tfstate" || true
       - |
-        if [ "${TFI_DESTROY_AFTER_TEST}" = "true" ]; then                       # destroy resources
-          ./terraform destroy -no-color -input=false -force
+        if [ "${TF_DESTROY_AFTER_TEST}" = "true" ]; then                       # destroy resources
+          terraform destroy -no-color -input=false -force
         fi
