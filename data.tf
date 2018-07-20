@@ -16,9 +16,8 @@ data "http" "ip" {
   url = "http://ipv4.icanhazip.com"
 }
 
-# Template for initial configuration bash script
-data "template_file" "win_userdata" {
-  count    = "${length(matchkeys(values(local.win_amis),keys(local.win_amis),split(",", var.tfi_win_instances)))}"
+# userdata for initial configuration powershell script
+data "template_file" "win_userdata_specific" {
   template = "${file("windows/userdata.ps1")}"
 
   vars {
@@ -28,16 +27,57 @@ data "template_file" "win_userdata" {
     tfi_win_args         = "${var.tfi_win_args}"
     tfi_rm_pass          = "${random_string.password.result}"
     tfi_rm_user          = "${var.tfi_rm_user}"
+    tfi_s3_bucket        = "${var.tfi_s3_bucket}"
+    tfi_build_date       = "${local.date_ymd}"
+    tfi_build_hour       = "${local.date_hm}"
+    tfi_build_id         = "${local.build_id}"
+  }
+}
+
+data "template_file" "win_userdata_common" {
+  count    = "${local.win_count_all}"  
+  template = "${file("windows/userdata_common.ps1")}"
+
+  vars {
     tfi_win_userdata_log = "${var.tfi_win_userdata_log}"
     tfi_s3_bucket        = "${var.tfi_s3_bucket}"
     tfi_build_date       = "${local.date_ymd}"
     tfi_build_hour       = "${local.date_hm}"
     tfi_build_id         = "${local.build_id}"
-    tfi_ami_key          = "${element(matchkeys(keys(local.win_amis),keys(local.win_amis),split(",", var.tfi_win_instances)), count.index)}"
+    tfi_ami_key          = "${element(local.win_key_requests_all, count.index)}"
+  }  
+}
+
+# userdata for the builder
+data "template_file" "win_userdata_builder_specific" {
+  template = "${file("windows/builder_userdata.ps1")}"
+
+  vars {
+    tfi_git_repo         = "${var.tfi_git_repo}"
+    tfi_git_ref          = "${var.tfi_git_ref}"
+    tfi_rm_pass          = "${random_string.password.result}"
+    tfi_rm_user          = "${var.tfi_rm_user}"
+    tfi_s3_bucket        = "${var.tfi_s3_bucket}"
+    tfi_build_date       = "${local.date_ymd}"
+    tfi_build_hour       = "${local.date_hm}"
+    tfi_build_id         = "${local.build_id}"
   }
 }
 
-# Template for initial configuration bash script
+data "template_file" "win_userdata_builder_common" {
+  template = "${file("windows/userdata_common.ps1")}"
+
+  vars {
+    tfi_win_userdata_log = "${var.tfi_win_userdata_log}"
+    tfi_s3_bucket        = "${var.tfi_s3_bucket}"
+    tfi_build_date       = "${local.date_ymd}"
+    tfi_build_hour       = "${local.date_hm}"
+    tfi_build_id         = "${local.build_id}"
+    tfi_ami_key          = "${local.win_builder_ami_key}"
+  }  
+}
+
+# userdata for initial configuration bash script
 data "template_file" "lx_userdata" {
   count    = "${local.lx_count_all}"
   template = "${file("linux/userdata.sh")}"
@@ -57,6 +97,7 @@ data "template_file" "lx_userdata" {
   }
 }
 
+# userdate for the builder
 data "template_file" "lx_builder_userdata" {
   template = "${file("linux/builder_userdata.sh")}"
 
@@ -68,7 +109,7 @@ data "template_file" "lx_builder_userdata" {
     tfi_build_date      = "${local.date_ymd}"
     tfi_build_hour      = "${local.date_hm}"
     tfi_build_id        = "${local.build_id}"
-    tfi_ami_key         = "lx_builder"
+    tfi_ami_key         = "${local.lx_builder_ami_key}"
     tfi_docker_slug     = "${var.tfi_docker_slug}"
     tfi_aws_region      = "${var.tfi_aws_region}"
   }
@@ -143,7 +184,7 @@ data "aws_ami" "rhel7" {
 }
 
 #used just to find the ami id matching criteria, which is then used in provisioning resource
-data "aws_ami" "windows2008" {
+data "aws_ami" "win08" {
   most_recent = true
 
   filter {
@@ -160,7 +201,7 @@ data "aws_ami" "windows2008" {
 }
 
 #used just to find the ami id matching criteria, which is then used in provisioning resource
-data "aws_ami" "windows2012" {
+data "aws_ami" "win12" {
   most_recent = true
 
   filter {
@@ -177,7 +218,7 @@ data "aws_ami" "windows2012" {
 }
 
 #used just to find the ami id matching criteria, which is then used in provisioning resource
-data "aws_ami" "windows2016" {
+data "aws_ami" "win16" {
   most_recent = true
 
   filter {
@@ -193,7 +234,7 @@ data "aws_ami" "windows2016" {
   owners = "${var.tfi_windows_ami_owners}"
 }
 
-data "aws_ami" "win16sql16s" {
+data "aws_ami" "lx_builder" {
   most_recent = true
 
   filter {
@@ -204,70 +245,6 @@ data "aws_ami" "win16sql16s" {
   filter {
     name   = "name"
     values = ["${element(var.tfi_ami_name_filters, 7)}"]
-  }
-
-  owners = "${var.tfi_windows_ami_owners}"
-}
-
-data "aws_ami" "win16sql16e" {
-  most_recent = true
-
-  filter {
-    name   = "virtualization-type"
-    values = ["${var.tfi_other_filters["virtualization_type"]}"]
-  }
-
-  filter {
-    name   = "name"
-    values = ["${element(var.tfi_ami_name_filters, 8)}"]
-  }
-
-  owners = "${var.tfi_windows_ami_owners}"
-}
-
-data "aws_ami" "win16sql17s" {
-  most_recent = true
-
-  filter {
-    name   = "virtualization-type"
-    values = ["${var.tfi_other_filters["virtualization_type"]}"]
-  }
-
-  filter {
-    name   = "name"
-    values = ["${element(var.tfi_ami_name_filters, 9)}"]
-  }
-
-  owners = "${var.tfi_windows_ami_owners}"
-}
-
-data "aws_ami" "win16sql17e" {
-  most_recent = true
-
-  filter {
-    name   = "virtualization-type"
-    values = ["${var.tfi_other_filters["virtualization_type"]}"]
-  }
-
-  filter {
-    name   = "name"
-    values = ["${element(var.tfi_ami_name_filters, 10)}"]
-  }
-
-  owners = "${var.tfi_windows_ami_owners}"
-}
-
-data "aws_ami" "trusty" {
-  most_recent = true
-
-  filter {
-    name   = "virtualization-type"
-    values = ["${var.tfi_other_filters["virtualization_type"]}"]
-  }
-
-  filter {
-    name   = "name"
-    values = ["${element(var.tfi_ami_name_filters, 11)}"]
   }
 
   owners = "${var.tfi_linux_ami_owners}"

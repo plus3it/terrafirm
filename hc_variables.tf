@@ -18,10 +18,6 @@ variable "tfi_ami_name_filters" {
     "Windows_Server-2008-R2_SP1-English-64Bit-Base*",
     "Windows_Server-2012-R2_RTM-English-64Bit-Base*",
     "Windows_Server-2016-English-Full-Base*",
-    "Windows_Server-2016-English-Full-SQL_2016_SP1_Standard-*",
-    "Windows_Server-2016-English-Full-SQL_2016_SP1_Enterprise-*",
-    "Windows_Server-2016-English-Full-SQL_2017_Standard-*",
-    "Windows_Server-2016-English-Full-SQL_2017_Enterprise-*",
     "ubuntu/images/hvm-ssd/ubuntu-trusty-14.04-amd64-server*",
   ]
 }

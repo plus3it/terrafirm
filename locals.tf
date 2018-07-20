@@ -8,29 +8,66 @@ locals {
   resource_name = "${local.name_prefix}-${local.build_id}"
 }
 
-# place to put the ami id strings
+# windows goodness
 locals {
-  #lx_amis = {  #  "centos6"    = "${data.aws_ami.centos6.id}"  #  "centos7"    = "${data.aws_ami.centos7.id}"  #  "rhel6"      = "${data.aws_ami.rhel6.id}"  #  "rhel7"      = "${data.aws_ami.rhel7.id}"  #  "centos6pkg" = "${data.aws_ami.centos6.id}"  #  "centos7pkg" = "${data.aws_ami.centos7.id}"  #  "rhel6pkg"   = "${data.aws_ami.rhel6.id}"  #  "rhel7pkg"   = "${data.aws_ami.rhel7.id}"  #}
 
+  # the one place where win ami key strings (aka "ami keys") are defined
+  win_ami_keys_all = "${split(",","win08,win12,win16,win08pkg,win12pkg,win16pkg")}"
+
+  # the build from source test ami key strings tied to ami ids
   win_amis = {
-    "win08"       = "${data.aws_ami.windows2008.id}"
-    "win12"       = "${data.aws_ami.windows2012.id}"
-    "win16"       = "${data.aws_ami.windows2016.id}"
-    "win16sql16s" = "${data.aws_ami.win16sql16s.id}"
-    "win16sql16e" = "${data.aws_ami.win16sql16e.id}"
-    "win16sql17s" = "${data.aws_ami.win16sql17s.id}"
-    "win16sql17e" = "${data.aws_ami.win16sql17e.id}"
-    "win08pkg"    = "${data.aws_ami.windows2008.id}"
-    "win12pkg"    = "${data.aws_ami.windows2012.id}"
-    "win16pkg"    = "${data.aws_ami.windows2016.id}"
+    "${local.win_ami_keys_all[0]}" = "${data.aws_ami.win08.id}"
+    "${local.win_ami_keys_all[1]}" = "${data.aws_ami.win12.id}"
+    "${local.win_ami_keys_all[2]}" = "${data.aws_ami.win16.id}"
   }
+
+  # the standalone test amis (which mirror build from source)
+  win_amis_pkg = {
+    "${local.win_ami_keys_all[3]}" = "${lookup(local.win_amis,local.win_ami_keys_all[0])}"
+    "${local.win_ami_keys_all[4]}" = "${lookup(local.win_amis,local.win_ami_keys_all[1])}"
+    "${local.win_ami_keys_all[5]}" = "${lookup(local.win_amis,local.win_ami_keys_all[2])}"
+  }
+
+  # all the amis available (key string to ami id)
+  win_amis_all = "${merge(local.win_amis, local.win_amis_pkg)}"
+
+  # what has actually been requested, ami key strings tied to ami ids
+  win_ami_requests_all = "${matchkeys(
+    values(local.win_amis_all),
+    keys(local.win_amis_all),
+    split(",", var.tfi_win_instances)
+  )}"
+
+  # just the ami key strings, tied to themselves for easily getting key with same mechanism as ami id
+  win_key_requests_all = "${matchkeys(
+    keys(local.win_amis_all),
+    keys(local.win_amis_all),
+    split(",", var.tfi_win_instances)
+  )}"
+  
+  # which standalone package tests have actually been requested
+  win_ami_requests_pkg = "${matchkeys(
+    values(local.win_amis_pkg),
+    keys(local.win_amis_pkg),
+    split(",", var.tfi_win_instances)
+  )}"
+
+  # count of all win tests requested
+  win_count_all = "${length(local.win_ami_requests_all)}"
+
+  # only one builder is needed even if there are multiple package test instances
+  win_count_builder = "${length(local.win_ami_requests_pkg) == 0 ? 0 : 1}"
+
+  win_builder_ami_key = "win-builder"
+
 }
 
 # linux goodness
 locals {
-  #the one place where linux ami key strings are defined
+  # the one place where lx ami key strings (aka "ami keys") are defined
   lx_ami_keys_all = "${split(",","centos6,centos7,rhel6,rhel7,centos6pkg,centos7pkg,rhel6pkg,rhel7pkg")}"
 
+  # the build from source test ami key strings tied to ami ids
   lx_amis = {
     "${local.lx_ami_keys_all[0]}" = "${data.aws_ami.centos6.id}"
     "${local.lx_ami_keys_all[1]}" = "${data.aws_ami.centos7.id}"
@@ -38,6 +75,7 @@ locals {
     "${local.lx_ami_keys_all[3]}" = "${data.aws_ami.rhel7.id}"
   }
 
+  # the standalone test amis (which mirror build from source)
   lx_amis_pkg = {
     "${local.lx_ami_keys_all[4]}" = "${lookup(local.lx_amis,local.lx_ami_keys_all[0])}"
     "${local.lx_ami_keys_all[5]}" = "${lookup(local.lx_amis,local.lx_ami_keys_all[1])}"
@@ -45,30 +83,36 @@ locals {
     "${local.lx_ami_keys_all[7]}" = "${lookup(local.lx_amis,local.lx_ami_keys_all[3])}"
   }
 
+  # all the amis available (key string to ami id)
   lx_amis_all = "${merge(local.lx_amis, local.lx_amis_pkg)}"
 
+  # what has actually been requested, ami key strings tied to ami ids
   lx_ami_requests_all = "${matchkeys(
     values(local.lx_amis_all),
     keys(local.lx_amis_all),
     split(",", var.tfi_lx_instances)
   )}"
 
+  # just the ami key strings, tied to themselves for easily getting key with same mechanism as ami id
   lx_key_requests_all = "${matchkeys(
     keys(local.lx_amis_all),
     keys(local.lx_amis_all),
     split(",", var.tfi_lx_instances)
   )}"
 
+  # which standalone package tests have actually been requested
   lx_ami_requests_pkg = "${matchkeys(
     values(local.lx_amis_pkg),
     keys(local.lx_amis_pkg),
     split(",", var.tfi_lx_instances)
   )}"
 
+  # count of all lx tests requested
   lx_count_all = "${length(local.lx_ami_requests_all)}"
 
   # only one builder is needed even if there are multiple package test instances
-  lx_count_pkg = "${length(local.lx_ami_requests_pkg) == 0 ? 0 : 1}"
+  lx_count_builder = "${length(local.lx_ami_requests_pkg) == 0 ? 0 : 1}"
 
-  lx_ami_builder_pkg = "${lookup(local.lx_amis,local.lx_ami_keys_all[1])}"
+  lx_builder_ami_key = "lx-builder"
+
 }
