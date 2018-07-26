@@ -21,31 +21,39 @@ data "template_file" "win_userdata_specific" {
   template = "${file("windows/userdata.ps1")}"
 
   vars {
-    tfi_git_repo         = "${var.tfi_git_repo}"
-    tfi_git_ref          = "${var.tfi_git_ref}"
-    tfi_common_args      = "${var.tfi_common_args}"
-    tfi_win_args         = "${var.tfi_win_args}"
-    tfi_rm_pass          = "${random_string.password.result}"
-    tfi_rm_user          = "${var.tfi_rm_user}"
-    tfi_s3_bucket        = "${var.tfi_s3_bucket}"
-    tfi_build_date       = "${local.date_ymd}"
-    tfi_build_hour       = "${local.date_hm}"
-    tfi_build_id         = "${local.build_id}"
+    tfi_common_args  = "${var.tfi_common_args}"
+    tfi_win_args     = "${var.tfi_win_args}"
+    tfi_rm_user      = "${var.tfi_rm_user}"
+    tfi_s3_bucket    = "${var.tfi_s3_bucket}"
+    tfi_build_date   = "${local.date_ymd}"
+    tfi_build_hour   = "${local.date_hm}"
+    tfi_build_id     = "${local.build_id}"
+    tfi_download_dir = "${local.win_download_dir}"
   }
 }
 
 data "template_file" "win_userdata_common" {
-  count    = "${local.win_count_all}"  
+  count    = "${local.win_count_all_requests}"
   template = "${file("windows/userdata_common.ps1")}"
 
   vars {
-    tfi_win_userdata_log = "${var.tfi_win_userdata_log}"
-    tfi_s3_bucket        = "${var.tfi_s3_bucket}"
-    tfi_build_date       = "${local.date_ymd}"
-    tfi_build_hour       = "${local.date_hm}"
-    tfi_build_id         = "${local.build_id}"
-    tfi_ami_key          = "${element(local.win_key_requests_all, count.index)}"
-  }  
+    tfi_rm_pass              = "${random_string.password.result}"
+    tfi_git_repo             = "${var.tfi_git_repo}"
+    tfi_git_ref              = "${var.tfi_git_ref}"
+    tfi_win_userdata_log     = "${var.tfi_win_userdata_log}"
+    tfi_s3_bucket            = "${var.tfi_s3_bucket}"
+    tfi_build_date           = "${local.date_ymd}"
+    tfi_build_hour           = "${local.date_hm}"
+    tfi_build_id             = "${local.build_id}"
+    tfi_ami_key              = "${element(local.win_keys_all_requests, count.index)}"
+    tfi_win_temp_dir         = "${local.win_temp_dir}"
+    tfi_userdata_status_file = "${local.win_userdata_status_file}"
+    tfi_pypi_url             = "${local.pypi_url}"
+    tfi_win_bootstrap_url    = "${local.win_bootstrap_url}"
+    tfi_win_python_url       = "${local.win_python_url}"
+    tfi_win_git_url          = "${local.win_git_url}"
+    tfi_win_7zip_url         = "${local.win_7zip_url}"
+  }
 }
 
 # userdata for the builder
@@ -53,14 +61,11 @@ data "template_file" "win_userdata_builder_specific" {
   template = "${file("windows/builder_userdata.ps1")}"
 
   vars {
-    tfi_git_repo         = "${var.tfi_git_repo}"
-    tfi_git_ref          = "${var.tfi_git_ref}"
-    tfi_rm_pass          = "${random_string.password.result}"
-    tfi_rm_user          = "${var.tfi_rm_user}"
-    tfi_s3_bucket        = "${var.tfi_s3_bucket}"
-    tfi_build_date       = "${local.date_ymd}"
-    tfi_build_hour       = "${local.date_hm}"
-    tfi_build_id         = "${local.build_id}"
+    tfi_rm_user    = "${var.tfi_rm_user}"
+    tfi_s3_bucket  = "${var.tfi_s3_bucket}"
+    tfi_build_date = "${local.date_ymd}"
+    tfi_build_hour = "${local.date_hm}"
+    tfi_build_id   = "${local.build_id}"
   }
 }
 
@@ -68,50 +73,136 @@ data "template_file" "win_userdata_builder_common" {
   template = "${file("windows/userdata_common.ps1")}"
 
   vars {
-    tfi_win_userdata_log = "${var.tfi_win_userdata_log}"
-    tfi_s3_bucket        = "${var.tfi_s3_bucket}"
-    tfi_build_date       = "${local.date_ymd}"
-    tfi_build_hour       = "${local.date_hm}"
-    tfi_build_id         = "${local.build_id}"
-    tfi_ami_key          = "${local.win_builder_ami_key}"
-  }  
+    tfi_rm_pass              = "${random_string.password.result}"
+    tfi_git_repo             = "${var.tfi_git_repo}"
+    tfi_git_ref              = "${var.tfi_git_ref}"
+    tfi_win_userdata_log     = "${var.tfi_win_userdata_log}"
+    tfi_s3_bucket            = "${var.tfi_s3_bucket}"
+    tfi_build_date           = "${local.date_ymd}"
+    tfi_build_hour           = "${local.date_hm}"
+    tfi_build_id             = "${local.build_id}"
+    tfi_ami_key              = "${local.win_builder_ami_key}"
+    tfi_win_temp_dir         = "${local.win_temp_dir}"
+    tfi_userdata_status_file = "${local.win_userdata_status_file}"
+    tfi_pypi_url             = "${local.pypi_url}"
+    tfi_win_bootstrap_url    = "${local.win_bootstrap_url}"
+    tfi_win_python_url       = "${local.win_python_url}"
+    tfi_win_git_url          = "${local.win_git_url}"
+    tfi_win_7zip_url         = "${local.win_7zip_url}"
+  }
+}
+
+data "template_file" "win_test" {
+  count    = "${local.win_count_all_requests}"
+  template = "${file("windows/watchmaker_test.ps1")}"
+
+  vars {
+    tfi_ami_key              = "${element(local.win_keys_all_requests, count.index)}"
+    tfi_download_dir         = "${local.win_download_dir}"
+    tfi_userdata_status_file = "${local.win_userdata_status_file}"
+  }
+}
+
+data "template_file" "win_build_test" {
+  template = "${file("windows/builder_test.ps1")}"
+
+  vars {
+    tfi_ami_key              = "${local.win_builder_ami_key}"
+    tfi_userdata_status_file = "${local.win_userdata_status_file}"
+  }
 }
 
 # userdata for initial configuration bash script
-data "template_file" "lx_userdata" {
-  count    = "${local.lx_count_all}"
+data "template_file" "lx_userdata_specific" {
   template = "${file("linux/userdata.sh")}"
 
   vars {
-    tfi_git_repo        = "${var.tfi_git_repo}"
-    tfi_git_ref         = "${var.tfi_git_ref}"
-    tfi_common_args     = "${var.tfi_common_args}"
-    tfi_lx_args         = "${var.tfi_lx_args}"
-    tfi_ssh_user        = "${var.tfi_ssh_user}"
-    tfi_lx_userdata_log = "${var.tfi_lx_userdata_log}"
-    tfi_s3_bucket       = "${var.tfi_s3_bucket}"
-    tfi_build_date      = "${local.date_ymd}"
-    tfi_build_hour      = "${local.date_hm}"
-    tfi_build_id        = "${local.build_id}"
-    tfi_ami_key         = "${element(local.lx_key_requests_all, count.index)}"
+    tfi_common_args = "${var.tfi_common_args}"
+    tfi_lx_args     = "${var.tfi_lx_args}"
+    tfi_s3_bucket   = "${var.tfi_s3_bucket}"
+    tfi_build_date  = "${local.date_ymd}"
+    tfi_build_hour  = "${local.date_hm}"
+    tfi_build_id    = "${local.build_id}"
   }
 }
 
 # userdate for the builder
-data "template_file" "lx_builder_userdata" {
+data "template_file" "lx_userdata_common" {
+  count    = "${local.lx_count_all_requests}"
+  template = "${file("linux/userdata_common.sh")}"
+
+  vars {
+    tfi_git_repo             = "${var.tfi_git_repo}"
+    tfi_git_ref              = "${var.tfi_git_ref}"
+    tfi_lx_userdata_log      = "${var.tfi_lx_userdata_log}"
+    tfi_s3_bucket            = "${var.tfi_s3_bucket}"
+    tfi_build_date           = "${local.date_ymd}"
+    tfi_build_hour           = "${local.date_hm}"
+    tfi_build_id             = "${local.build_id}"
+    tfi_ami_key              = "${element(local.lx_keys_all_requests, count.index)}"
+    tfi_aws_region           = "${var.tfi_aws_region}"
+    tfi_ssh_port             = "${local.ssh_port}"
+    tfi_userdata_status_file = "${local.win_userdata_status_file}"
+    tfi_pypi_url             = "${local.pypi_url}"
+    tfi_pip_bootstrap_url    = "${local.pip_bootstrap_url}"
+    tfi_lx_temp_dir          = "${local.lx_temp_dir}"
+    tfi_userdata_status_file = "${local.lx_userdata_status_file}"
+  }
+}
+
+# userdata for initial configuration bash script
+data "template_file" "lx_userdata_builder_specific" {
   template = "${file("linux/builder_userdata.sh")}"
 
   vars {
-    tfi_git_repo        = "${var.tfi_git_repo}"
-    tfi_git_ref         = "${var.tfi_git_ref}"
-    tfi_lx_userdata_log = "${var.tfi_lx_userdata_log}"
-    tfi_s3_bucket       = "${var.tfi_s3_bucket}"
-    tfi_build_date      = "${local.date_ymd}"
-    tfi_build_hour      = "${local.date_hm}"
-    tfi_build_id        = "${local.build_id}"
-    tfi_ami_key         = "${local.lx_builder_ami_key}"
-    tfi_docker_slug     = "${var.tfi_docker_slug}"
-    tfi_aws_region      = "${var.tfi_aws_region}"
+    tfi_s3_bucket   = "${var.tfi_s3_bucket}"
+    tfi_build_date  = "${local.date_ymd}"
+    tfi_build_hour  = "${local.date_hm}"
+    tfi_build_id    = "${local.build_id}"
+    tfi_docker_slug = "${var.tfi_docker_slug}"
+    tfi_aws_region  = "${var.tfi_aws_region}"
+  }
+}
+
+# userdate for the builder
+data "template_file" "lx_userdata_builder_common" {
+  template = "${file("linux/userdata_common.sh")}"
+
+  vars {
+    tfi_git_repo             = "${var.tfi_git_repo}"
+    tfi_git_ref              = "${var.tfi_git_ref}"
+    tfi_lx_userdata_log      = "${var.tfi_lx_userdata_log}"
+    tfi_s3_bucket            = "${var.tfi_s3_bucket}"
+    tfi_build_date           = "${local.date_ymd}"
+    tfi_build_hour           = "${local.date_hm}"
+    tfi_build_id             = "${local.build_id}"
+    tfi_ami_key              = "${local.lx_builder_ami_key}"
+    tfi_aws_region           = "${var.tfi_aws_region}"
+    tfi_ssh_port             = "${local.ssh_port}"
+    tfi_userdata_status_file = "${local.win_userdata_status_file}"
+    tfi_pypi_url             = "${local.pypi_url}"
+    tfi_pip_bootstrap_url    = "${local.pip_bootstrap_url}"
+    tfi_lx_temp_dir          = "${local.lx_temp_dir}"
+    tfi_userdata_status_file = "${local.lx_userdata_status_file}"
+  }
+}
+
+data "template_file" "lx_test" {
+  count    = "${local.lx_count_all_requests}"
+  template = "${file("linux/watchmaker_test.sh")}"
+
+  vars {
+    tfi_ami_key              = "${element(local.lx_keys_all_requests, count.index)}"
+    tfi_userdata_status_file = "${local.lx_userdata_status_file}"
+  }
+}
+
+data "template_file" "lx_build_test" {
+  template = "${file("linux/builder_test.sh")}"
+
+  vars {
+    tfi_ami_key              = "${local.lx_builder_ami_key}"
+    tfi_userdata_status_file = "${local.lx_userdata_status_file}"
   }
 }
 

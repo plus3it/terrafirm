@@ -1,11 +1,11 @@
-$AMIKey = [IO.File]::ReadAllText("C:\scripts\ami-key")
+$AMIKey = "${tfi_ami_key}"
 
 Write-Host ("*****************************************************************************")
 Write-Host ("Running Windows standalone package builder test script: $AMIKey")
 Write-Host ("*****************************************************************************")
 Write-Host ((Get-WmiObject -class Win32_OperatingSystem).Caption)
 
-$UdPath = "C:\Temp\userdata_status"
+$UdPath = "${tfi_userdata_status_file}"
 
 If (Test-Path -Path $UdPath)
 {   # file exists, read into variable

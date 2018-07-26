@@ -10,19 +10,21 @@ If(-not (Test-Path "$UserdataLogFile"))
 }
 
 # directory needed by logs and for various other purposes
-$TempDir = "C:\Temp"
+$TempDir = "${tfi_win_temp_dir}"
 If(-not (Test-Path "$TempDir"))
 {
   New-Item "$TempDir" -ItemType "directory" -Force
 }
 
-$AMIKey="${tfi_ami_key}"
+$AMIKey = "${tfi_ami_key}"
+
+$PypiUrl = "${tfi_pypi_url}"
 
 function Write-Tfi
 ## Writes messages to a Terrafirm log file. If a second parameter is included,
 ## it will display success/failure outcome.
 {
-  
+
   Param
   (
     [String]$Msg,
@@ -49,7 +51,7 @@ function Test-Command
 ## Tests commands and handles errors that result. Can also re-try commands if
 ## -Tries is set > 1.
 {
-  # 
+  #
   Param (
     [Parameter(Mandatory=$true)][string]$Test,
     [Parameter(Mandatory=$false)][int]$Tries = 1,
@@ -108,6 +110,8 @@ function Publish-Artifacts
 
   # create a directory with all the build artifacts
   $ArtifactDir = "$TempDir\build-artifacts"
+  Invoke-Expression -Command "mkdir $ArtifactDir" -ErrorAction SilentlyContinue
+  Invoke-Expression -Command "mkdir $ArtifactDir\watchmaker" -ErrorAction SilentlyContinue # need to create dir if globbing to it
   Copy-Item "C:\Watchmaker\Logs\*log" -Destination "$ArtifactDir\watchmaker" -Recurse -Force
   Copy-Item "C:\Watchmaker\SCAP\Results" -Destination "$ArtifactDir\scap_output" -Recurse -Force
   Copy-Item "C:\Watchmaker\SCAP\Logs" -Destination "$ArtifactDir\scap_logs" -Recurse -Force
@@ -149,7 +153,6 @@ function Test-DisplayResult
   }
 }
 
-
 function Debug-2S3
 ## With as few dependencies as possible, immediately upload the debug and log
 ## files to S3. Calling this multiple times will simply overwrite the
@@ -176,7 +179,7 @@ function Write-UserdataStatus
   )
 
   # write the status to a file for reading by test script
-  $UserdataStatus | Out-File "$TempDir\userdata_status"
+  $UserdataStatus | Out-File "${tfi_userdata_status_file}"
   Write-Tfi "Write userdata status file" $?
 }
 
@@ -252,7 +255,11 @@ function Invoke-CmdScript
 ## https://www.safaribooksonline.com/library/view/windows-powershell-cookbook/9780596528492/ch01s09.html
 {
 
-  param([string] $script, [string] $parameters)
+  Param
+  (
+    [string] $script,
+    [string] $parameters
+  )
 
   $tempFile = [IO.Path]::GetTempFileName()
 
@@ -272,6 +279,108 @@ function Invoke-CmdScript
   Remove-Item $tempFile
 }
 
+function Install-PythonGit
+## Use the Watchmaker bootstrap to install Python and Git.
+{
+
+  $BootstrapUrl = "${tfi_win_bootstrap_url}"
+  $PythonUrl = "${tfi_win_python_url}"
+  $GitUrl = "${tfi_win_git_url}"
+
+  # Download bootstrap file
+  $Stage = "download bootstrap"
+  $BootstrapFile = "$${Env:Temp}\$($${BootstrapUrl}.split("/")[-1])"
+  (New-Object System.Net.WebClient).DownloadFile($BootstrapUrl, $BootstrapFile)
+
+  # Install python and git
+  $Stage = "install python/git"
+  & "$BootstrapFile" `
+      -PythonUrl "$PythonUrl" `
+      -GitUrl "$GitUrl" `
+      -Verbose -ErrorAction Stop
+  Test-DisplayResult "Install Python/Git" $?
+}
+
+function Install-Watchmaker
+{
+  Param
+  (
+    [Parameter(Mandatory=$false)][bool]$UseVenv=$false
+  )
+
+  $GitRepo = "${tfi_git_repo}"
+  $GitRef = "${tfi_git_ref}"
+
+  # Upgrade pip and setuptools
+  $Stage = "upgrade pip setuptools boto3"
+  Test-Command "python -m pip install --index-url=`"$PypiUrl`" --upgrade pip setuptools" -Tries 2
+  #Test-Command "python -m ensurepip --index-url=`"$PypiUrl`"" -Tries 2
+  #Test-Command "python -m pip install -U pip --index-url=`"$PypiUrl`"" -Tries 2
+
+  Test-Command "pip install --index-url=`"$PypiUrl`" --upgrade boto3"
+
+  If($UseVenv)
+  {
+    $Stage = "install virtualenv wheel"
+    Test-Command "pip install virtualenv wheel"
+
+    # ----- build the standalone binary
+    # use a virtual env
+    $Stage = "virtualenv"
+    $VirtualEnvDir = "C:\venv"
+    mkdir $VirtualEnvDir
+    Test-DisplayResult "Create virtualenv directory" $?
+
+    Test-Command "virtualenv $VirtualEnvDir"
+    Invoke-CmdScript "$VirtualEnvDir\Scripts\activate.bat"
+    Test-DisplayResult "Activate virtualenv" $?
+  }
+
+  # Install boto3
+  $Stage = "install boto3"
+  Test-Command "pip install --index-url=`"$PypiUrl`" --upgrade boto3" -Tries 2
+
+  # Clone watchmaker
+  $Stage = "git"
+  Test-Command "git clone `"$GitRepo`" --recursive" -Tries 2
+  cd watchmaker
+  If ($GitRef)
+  {
+    # decide whether to switch to pull request or branch
+    If($GitRef -match "^[0-9]+$")
+    {
+      Test-Command "git fetch origin pull/$GitRef/head:pr-$GitRef" -Tries 2
+      Test-Command "git checkout pr-$GitRef"
+    }
+    Else
+    {
+      Test-Command "git checkout $GitRef"
+    }
+  }
+
+  # Update submodule refs
+  $Stage = "update submodules"
+  Test-Command "git submodule update"
+
+  # Install watchmaker
+  $Stage = "install wam"
+  Test-Command "pip install --index-url `"$PypiUrl`" --editable ."
+}
+
 $ErrorActionPreference = "Stop"
 
 Write-Tfi "AMI KEY: ----------------------------- $AMIKey ---------------------"
+
+Set-Password -User "Administrator" -Pass "${tfi_rm_pass}"
+
+Close-Firewall
+
+# declare an array to hold the status (number and message)
+$UserdataStatus=@(1,"Error: Build not completed (should never see this error)")
+
+# Use TLS, as git won't do SSL now
+[Net.ServicePointManager]::SecurityProtocol = "Ssl3, Tls, Tls11, Tls12"
+
+# install 7-zip for use with artifacts - download fails after wam install, fyi
+(New-Object System.Net.WebClient).DownloadFile("${tfi_win_7zip_url}", "$TempDir\7z-install.exe")
+Invoke-Expression -Command "$TempDir\7z-install.exe /S /D='C:\Program Files\7-Zip'" -ErrorAction Continue
