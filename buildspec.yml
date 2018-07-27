@@ -13,7 +13,7 @@ phases:
       - terraform plan -no-color -out=tfplan -input=false                     # plan terraform
   build:
     commands:
-      - terraform apply -no-color -input=false tfplan                         # apply terraform
+      - terraform apply -no-color -parallelism=16 -input=false tfplan                         # apply terraform
   post_build:
     commands:
       - ARTIFACT_PATH="${TF_VAR_tfi_s3_bucket}/$(terraform output build_date_ymd)/$(terraform output build_date_hm)_$(terraform output build_id)"

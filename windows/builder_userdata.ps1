@@ -10,61 +10,6 @@ Try {
 
   Install-Watchmaker -UseVenv $true
 
-  <#$GitRepo = "$${tfi_git_repo}"
-  $GitRef = "$${tfi_git_ref}"
-
-  # Upgrade pip and setuptools
-  $Stage = "upgrade pip setuptools"
-  python -m ensurepip
-  python -m pip install -U pip
-  #Test-Command "python -m pip install --index-url=`"$PypiUrl`" --upgrade pip setuptools" -Tries 2
-  Test-DisplayResult "Upgrade pip" $?
-
-  $Stage = "install virtualenv wheel"
-  pip install virtualenv wheel
-  Test-DisplayResult "Install virtualenv, wheel" $?
-
-  # ----- build the standalone binary
-  # use a virtual env
-  $Stage = "virtualenv"
-  $VirtualEnvDir = "C:\venv"
-  mkdir $VirtualEnvDir
-  Test-DisplayResult "Create virtualenv directory" $?
-
-  virtualenv $VirtualEnvDir
-  Invoke-CmdScript "$VirtualEnvDir\Scripts\activate.bat"
-  Test-DisplayResult "Activate virtualenv" $?
-
-  python --version
-  Test-DisplayResult "Check Python version" $?
-
-  # Clone watchmaker
-  $Stage = "git"
-  Test-Command "git clone `"$GitRepo`" --recursive" -Tries 2
-  cd watchmaker
-  If ($GitRef)
-  {
-    # decide whether to switch to pull request or branch
-    If($GitRef -match "^[0-9]+$")
-    {
-      Test-Command "git fetch origin pull/$GitRef/head:pr-$GitRef" -Tries 2
-      Test-Command "git checkout pr-$GitRef"
-    }
-    Else
-    {
-      Test-Command "git checkout $GitRef"
-    }
-  }
-
-  # Update submodule refs
-  $Stage = "update submodules"
-  Test-Command "git submodule update"
-
-  # Install watchmaker
-  $Stage = "install wam"
-  pip install --index-url "$PypiUrl" --editable .
-  Test-DisplayResult "Install watchmaker" $? #>
-
   # Install prereqs
   $Stage = "install boto3"
   

@@ -28,6 +28,8 @@ locals {
 
 # windows goodness
 locals {
+  win_builder_instance_type = "t2.large"
+
   # the one place where win ami key strings (aka "ami keys") are defined
   win_amis_all_keys = "${split(",","win08,win12,win16,win08pkg,win12pkg,win16pkg")}"
 
@@ -81,6 +83,8 @@ locals {
 # linux goodness
 locals {
   ssh_port = 122
+
+  lx_builder_instance_type = "t2.xlarge"
 
   # the one place where lx ami key strings (aka "ami keys") are defined
   lx_amis_all_keys = "${split(",","centos6,centos7,rhel6,rhel7,centos6pkg,centos7pkg,rhel6pkg,rhel7pkg")}"
