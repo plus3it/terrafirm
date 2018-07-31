@@ -1,24 +1,26 @@
+
 # functions, vars in common between builder and normal userdata
 
 # global vars
+$BuildSlug = "${tfi_build_slug}"
+$ErrorSignalFile = "${tfi_error_signal_file}"
+$RMUser = "${tfi_rm_user}"
+$PypiUrl = "${tfi_pypi_url}"
 
 # log file
-$UserdataLogFile = "${tfi_win_userdata_log}"
+$UserdataLogFile = "${tfi_userdata_log}"
 If(-not (Test-Path "$UserdataLogFile"))
 {
   New-Item "$UserdataLogFile" -ItemType "file" -Force
 }
 
 # directory needed by logs and for various other purposes
-$TempDir = "${tfi_win_temp_dir}"
+$TempDir = "${tfi_temp_dir}"
 If(-not (Test-Path "$TempDir"))
 {
   New-Item "$TempDir" -ItemType "directory" -Force
 }
-
-$AMIKey = "${tfi_ami_key}"
-
-$PypiUrl = "${tfi_pypi_url}"
+cd $TempDir
 
 function Write-Tfi
 ## Writes messages to a Terrafirm log file. If a second parameter is included,
@@ -55,10 +57,7 @@ function Test-Command
   Param (
     [Parameter(Mandatory=$true)][string]$Test,
     [Parameter(Mandatory=$false)][int]$Tries = 1,
-    [Parameter(Mandatory=$false)][int]$SecondsDelay = 2,
-    [Parameter(Mandatory=$false)][bool]$SignalS3 = $false,
-    [Parameter(Mandatory=$false)][string]$S3Bucket,
-    [Parameter(Mandatory=$false)][string]$S3Directory
+    [Parameter(Mandatory=$false)][int]$SecondsDelay = 2
   )
   $TryCount = 0
   $Completed = $false
@@ -88,14 +87,14 @@ function Test-Command
       If ($TryCount -ge $Tries)
       {
         $Completed = $true
+        $ErrorMessage = [String]$_.Exception + "Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
+        Write-Tfi $ErrorMessage
         Write-Tfi ("Command [{0}] failed the maximum number of {1} time(s)." -f $Test, $Tries)
         Write-Tfi ("Error code (if available): {0}" -f ($Result.ExitCode))
-        $PSCmdlet.ThrowTerminatingError($PSItem)
+        Throw ("Command [{0}] failed" -f $Test)
       }
       Else
       {
-        $Msg = $PSItem.ToString()
-        If ($Msg -ne $MsgFailed) { Write-Tfi $Msg }
         Write-Tfi ("Command [{0}] failed. Retrying in {1} second(s)." -f $Test, $SecondsDelay)
         Start-Sleep $SecondsDelay
       }
@@ -122,16 +121,16 @@ function Publish-Artifacts
   Get-ChildItem Env: | Out-File "$ArtifactDir\cloud\environment_variables.log" -Append -Encoding utf8
 
   # copy artifacts to s3
-  $ArtifactLocation = "${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$AMIKey"
-  Write-Tfi "Writing logs to $ArtifactLocation"
+  Write-Tfi "Writing logs to $BuildSlug/$AMIKey"
   Copy-Item $UserdataLogFile -Destination "$ArtifactDir" -Force
-  Write-S3Object -BucketName "${tfi_s3_bucket}" -Folder "$ArtifactDir" -KeyPrefix "$ArtifactLocation/" -Recurse
+  Write-S3Object -BucketName "$BuildSlug" -KeyPrefix "$AMIKey" -Folder "$ArtifactDir" -Recurse
 
   # creates compressed archive to upload to s3
-  $ZipFile = "$TempDir\${tfi_build_date}-${tfi_build_id}-$AMIKey.zip"
+  $BuildSlugZipName = "$BuildSlug" -replace '/','-'
+  $ZipFile = "$TempDir\$BuildSlugZipName-$AMIKey.zip"
   cd 'C:\Program Files\7-Zip'
-  Test-Command ".\7z a -y -tzip '$ZipFile' -r '$ArtifactDir\*'"
-  Write-S3Object -BucketName "${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}" -File "$ZipFile"
+  Test-Command ".\7z a -y -tzip $ZipFile -r $ArtifactDir\*"
+  Write-S3Object -BucketName "$BuildSlug" -File $ZipFile
 }
 
 function Test-DisplayResult
@@ -165,8 +164,8 @@ function Debug-2S3
 
   $DebugFile = "$TempDir\debug.log"
   "$(Get-Date): $Msg" | Out-File $DebugFile -Append -Encoding utf8
-  Write-S3Object -BucketName "${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$AMIKey" -File "$DebugFile"
-  Write-S3Object -BucketName "${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$AMIKey" -File "$UserdataLogFile"
+  Write-S3Object -BucketName "$BuildSlug/$AMIKey" -File $DebugFile
+  Write-S3Object -BucketName "$BuildSlug/$AMIKey" -File $UserdataLogFile
 }
 
 function Write-UserdataStatus
@@ -242,8 +241,16 @@ function Set-Password
   )
   # Set Administrator password, for logging in before wam changes Administrator account name
   $Admin = [adsi]("WinNT://./$User, user")
-  $Admin.psbase.invoke("SetPassword", $Pass)
-  Write-Tfi "Set $User password" $?
+  If ($Admin.Name)
+  {
+    $Admin.psbase.invoke("SetPassword", $Pass)
+    Write-Tfi "Set $User password" $?
+  }
+  Else
+  {
+    Write-Tfi "Unable to set password because user ($User) was not found."
+  }
+  
 }
 
 function Invoke-CmdScript
@@ -283,9 +290,9 @@ function Install-PythonGit
 ## Use the Watchmaker bootstrap to install Python and Git.
 {
 
-  $BootstrapUrl = "${tfi_win_bootstrap_url}"
-  $PythonUrl = "${tfi_win_python_url}"
-  $GitUrl = "${tfi_win_git_url}"
+  $BootstrapUrl = "${tfi_bootstrap_url}"
+  $PythonUrl = "${tfi_python_url}"
+  $GitUrl = "${tfi_git_url}"
 
   # Download bootstrap file
   $Stage = "download bootstrap"
@@ -317,7 +324,7 @@ function Install-Watchmaker
   #Test-Command "python -m ensurepip --index-url=`"$PypiUrl`"" -Tries 2
   #Test-Command "python -m pip install -U pip --index-url=`"$PypiUrl`"" -Tries 2
 
-  Test-Command "pip install --index-url=`"$PypiUrl`" --upgrade boto3"
+  Test-Command "pip install --index-url=`"$PypiUrl`" --upgrade boto3" -Tries 2
 
   If($UseVenv)
   {
@@ -335,10 +342,6 @@ function Install-Watchmaker
     Invoke-CmdScript "$VirtualEnvDir\Scripts\activate.bat"
     Test-DisplayResult "Activate virtualenv" $?
   }
-
-  # Install boto3
-  $Stage = "install boto3"
-  Test-Command "pip install --index-url=`"$PypiUrl`" --upgrade boto3" -Tries 2
 
   # Clone watchmaker
   $Stage = "git"
@@ -382,5 +385,5 @@ $UserdataStatus=@(1,"Error: Build not completed (should never see this error)")
 [Net.ServicePointManager]::SecurityProtocol = "Ssl3, Tls, Tls11, Tls12"
 
 # install 7-zip for use with artifacts - download fails after wam install, fyi
-(New-Object System.Net.WebClient).DownloadFile("${tfi_win_7zip_url}", "$TempDir\7z-install.exe")
+(New-Object System.Net.WebClient).DownloadFile("${tfi_7zip_url}", "$TempDir\7z-install.exe")
 Invoke-Expression -Command "$TempDir\7z-install.exe /S /D='C:\Program Files\7-Zip'" -ErrorAction Continue

@@ -4,8 +4,8 @@ trap 'catch $? $${LINENO}' ERR
 if [[ "$ami_key" == *pkg ]]; then
   # if it ends with 'pkg', test standalone
 
-  standalone_location="s3://${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/release/latest/watchmaker-latest-standalone-linux-x86_64"
-  error_location="s3://${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/release/error.log"
+  standalone_location="s3://$build_slug/${tfi_executable}"
+  error_location="s3://$build_slug/$error_signal_file"
   sleep_time=20
   nonexistent_code="nonexistent"
   no_error_code="0"
@@ -64,6 +64,7 @@ else
   # Run watchmaker
   stage="Run Watchmaker" && watchmaker ${tfi_common_args} ${tfi_lx_args}
   write-tfi "$stage" $?
+
   # ----------  end of wam install  ----------
 fi
 

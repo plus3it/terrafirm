@@ -1,18 +1,14 @@
 signal_error() {
-  error_signal_file="error.log"
-  echo "For more information on the error, see the lx_builder/userdata.log file." > $error_signal_file
-  echo "$0: line $2: exiting with status $${exit_code}" >> $error_signal_file
+  echo "For more information on the error, see the lx_builder/userdata.log file." > $temp_dir/error.log
+  echo "$0: line $2: exiting with status $${exit_code}" >> $temp_dir/error.log
 
-  artifact_dest="s3://${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/release/"
-  write-tfi "Signaling error at $${artifact_dest}"
-  aws s3 cp $error_signal_file "$${artifact_dest}" --region "${tfi_aws_region}"
+  artifact_dest="s3://$build_slug/$error_signal_file"
+  write-tfi "Signaling error at $artifact_dest"
+  aws s3 cp $temp_dir/error.log "$artifact_dest" $region_flag || true
   write-tfi "Upload error signal" $?
 
   catch $@
 }
-
-# setup error trap to go to signal_error function
-trap 'signal_error $? $${LINENO}' ERR
 
 # to resolve the issue with "sudo: unable to resolve host"
 # https://forums.aws.amazon.com/message.jspa?messageID=495274
@@ -26,11 +22,6 @@ else
   echo "127.0.1.1 $host_ip" >> /etc/hosts
 fi
 write-tfi "Fix host resolution" $?
-
-# start the firewall
-ufw enable
-ufw allow ssh
-write-tfi "Allow ssh" $?
 
 apt-get -y update
 apt-get -y upgrade
@@ -47,6 +38,14 @@ apt-get -y install \
   python3 \
   git
 write-tfi "Install packages" $?
+
+# setup error trap to go to signal_error function
+trap 'signal_error $? $${LINENO}' ERR
+
+# start the firewall
+ufw enable
+ufw allow ssh
+write-tfi "Allow ssh" $?
 
 # virtualenv
 basedir=/opt/wam
@@ -73,8 +72,8 @@ if [ -n "$GB_ENV_STAGING_DIR" ] ; then
   rm -rf $GB_ENV_STAGING_DIR/0*
   write-tfi "Remove versioned standalone (keeping 'latest')" $?
 
-  artifact_dest="s3://${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/release/"
-  aws s3 cp $GB_ENV_STAGING_DIR "$${artifact_dest}" --recursive --region "${tfi_aws_region}"
+  artifact_dest="s3://$build_slug/${tfi_release_prefix}/"
+  aws s3 cp $GB_ENV_STAGING_DIR "$${artifact_dest}" --recursive $region_flag
   write-tfi "Copy standalones to $${artifact_dest}" $?
 
 fi

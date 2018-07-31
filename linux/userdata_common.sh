@@ -1,8 +1,15 @@
-#!/bin/bash
 
-exec &> ${tfi_lx_userdata_log}
+exec &> ${tfi_userdata_log}
 
-ami_key=${tfi_ami_key}
+build_slug="${tfi_build_slug}"
+error_signal_file="${tfi_error_signal_file}"
+temp_dir="${tfi_temp_dir}"
+
+# strangely necessary on ubuntu
+if [ ! -f /etc/redhat-release ]; then
+  region_flag="--region ${tfi_aws_region}"
+fi
+
 echo "AMI KEY: ------------------------------- $ami_key ---------------------"
 
 write-tfi() {
@@ -18,6 +25,18 @@ write-tfi() {
   fi
 
   echo "$(date +%F_%T): $msg $out_result"
+}
+
+debug-2s3() {
+  ## With as few dependencies as possible, immediately upload the debug and log
+  ## files to S3. Calling this multiple times will simply overwrite the
+  ## previously uploaded logs.
+  local msg=$1
+
+  debug_file="$temp_dir/debug.log"
+  echo "$msg" >> $debug_file
+  aws s3 cp $debug_file "s3://$build_slug/$ami_key/" $region_flag || true
+  aws s3 cp ${tfi_userdata_log} "s3://$build_slug/$ami_key/" $region_flag || true
 }
 
 retry() {
@@ -101,7 +120,7 @@ publish-artifacts() {
   # stage, zip, upload artifacts to s3
 
   # create a directory with all the build artifacts
-  artifact_base="${tfi_lx_temp_dir}/terrafirm"
+  artifact_base="$temp_dir/terrafirm"
   artifact_dir="$${artifact_base}/build-artifacts"
   mkdir -p "$${artifact_dir}/scap_output"
   mkdir -p "$${artifact_dir}/cloud/scripts"
@@ -110,23 +129,18 @@ publish-artifacts() {
   cp -R /var/log/cloud*log "$${artifact_dir}/cloud/" || true
   cp -R /var/lib/cloud/instance/scripts/* "$${artifact_dir}/cloud/scripts/" || true
 
-  # strangely necessary on ubuntu
-  if [ ! -f /etc/redhat-release ]; then
-    region_flag="--region ${tfi_aws_region}"
-  fi
-
   # move logs to s3
-  artifact_dest="s3://${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/$ami_key"
-  cp "${tfi_lx_userdata_log}" "$${artifact_dir}"
+  artifact_dest="s3://$build_slug/$ami_key"
+  cp "${tfi_userdata_log}" "$${artifact_dir}"
   aws s3 cp "$${artifact_dir}" "$${artifact_dest}" --recursive $region_flag || true
-  write-tfi "Uploaded logs to $${artifact_dest}"
+  write-tfi "Uploaded logs to $${artifact_dest}" $?
 
   # creates compressed archive to upload to s3
-  zip_file="$${artifact_base}/${tfi_build_date}-${tfi_build_id}-$ami_key.tgz"
+  zip_file="$${artifact_base}/$${build_slug//\//-}-$ami_key.tgz"
   cd "$${artifact_dir}"
   tar -cvzf "$${zip_file}" .
-  aws s3 cp "$${zip_file}" "s3://${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/" $region_flag || true
-  write-tfi "Uploaded artifact zip to S3"
+  aws s3 cp "$${zip_file}" "s3://$build_slug/" $region_flag || true
+  write-tfi "Uploaded artifact zip to S3" $?
 }
 
 finally() {

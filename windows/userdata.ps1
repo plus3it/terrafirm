@@ -1,3 +1,4 @@
+
 Try {
 
   Write-Tfi "Start install"
@@ -10,10 +11,11 @@ Try {
 
     # if it ends with 'pkg', test standalone
     $SleepTime=20
-    $StandaloneKey = "${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/release/latest/watchmaker-latest-standalone-windows-amd64.exe"
-    $ErrorKey = "${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/release/error.log"
+    $Standalone = "${tfi_executable}"
+    $ErrorKey = $ErrorSignalFile
 
-    Write-Tfi "Looking for standalone executable at ${tfi_s3_bucket}/$StandaloneKey"
+    Write-Tfi "Looking for standalone executable at $BuildSlug/$Standalone"
+    Write-Tfi "Looking for error signal at $BuildSlug/$ErrorKey"
 
     #block until executable exists, an error, or timeout
     While($true)
@@ -25,7 +27,7 @@ Try {
       # see if the standalone is ready yet
       Try
       {
-        Get-S3ObjectMetadata -BucketName "${tfi_s3_bucket}" -Key "$StandaloneKey"
+        Get-S3ObjectMetadata -BucketName "$BuildSlug" -Key "$Standalone"
       }
       Catch
       {
@@ -35,7 +37,7 @@ Try {
       # see if the builder encountered an error
       Try
       {
-        Get-S3ObjectMetadata -BucketName "${tfi_s3_bucket}" -Key "$ErrorKey"
+        Get-S3ObjectMetadata -BucketName "$BuildSlug" -Key "$ErrorKey"
       }
       Catch
       {
@@ -45,10 +47,10 @@ Try {
       If($SignaledError)
       {
         # error signaled by the builder
-        Write-Tfi "Error signaled by the builder"
-        Write-Tfi "Error file found at ${tfi_s3_bucket}/$ErrorKey"
-        $PSCmdlet.ThrowTerminatingError($PSItem)
-        break
+        $ErrorMsg = "Error signaled by the builder (Error file found at $BuildSlug/$ErrorKey)"
+        Write-Tfi $ErrorMsg
+        Throw $ErrorMsg
+        Break
       }
       Else
       {
@@ -68,7 +70,7 @@ Try {
 
     #Invoke-Expression -Command "mkdir C:\scripts" -ErrorAction SilentlyContinue
     $DownloadDir = "${tfi_download_dir}"
-    Read-S3Object -BucketName "${tfi_s3_bucket}" -Key "$StandaloneKey" -File "$DownloadDir\watchmaker.exe"
+    Read-S3Object -BucketName "$BuildSlug" -Key $Standalone -File "$DownloadDir\watchmaker.exe"
     Test-Command "$DownloadDir\watchmaker.exe ${tfi_common_args} ${tfi_win_args}"
   }
   Else {
@@ -76,7 +78,6 @@ Try {
     Write-Tfi "Installing Watchmaker from source...................................."
 
     Install-PythonGit
-
     Install-Watchmaker
 
     # Run watchmaker
@@ -88,7 +89,6 @@ Try {
   $EndDate = Get-Date
   Write-Tfi ("WAM install took {0} seconds." -f [math]::Round(($EndDate - $StartDate).TotalSeconds))
   Write-Tfi "End install"
-
   $UserdataStatus=@(0,"Success") # made it this far, it's a success
 }
 Catch
@@ -104,7 +104,7 @@ Catch
 }
 
 # in case wam didn't change admin account name, winrm won't be able to log in so make sure
-Rename-User -From "Administrator" -To "${tfi_rm_user}"
+Rename-User -From "Administrator" -To "$RMUser"
 
 # Open-WinRM won't work if lgpo is blocking, but we'll have salt in that case
 Open-WinRM

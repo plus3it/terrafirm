@@ -4,6 +4,7 @@ terraform.tfstate.d
 *.tfstate
 *.tfstate.backup
 *.tfvars
+tfplan*
 
 # User env
 .env

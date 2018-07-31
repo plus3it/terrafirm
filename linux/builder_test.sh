@@ -1,4 +1,3 @@
-#!/bin/bash
 
 finally() {
   local exit_code="$${1:-0}"
@@ -32,7 +31,7 @@ trap 'catch $? $${LINENO}' ERR
 # everything below this is the TRY
 
 echo "*****************************************************************************"
-echo "Running Linux standalone package builder test script: ${tfi_ami_key}"
+echo "Running Linux standalone package builder test script: $ami_key"
 echo "*****************************************************************************"
 lsb_release -a # this works on Ubuntu
 

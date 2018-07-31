@@ -1,5 +1,3 @@
-#variable "tfi_region" {}
-
 variable "tfi_availability_zone" {
   default = "us-east-1c"
 }
@@ -8,12 +6,9 @@ variable "tfi_subnet_id" {
   default = ""
 }
 
-variable "tfi_win_instances" {
-  default = ""
-}
-
-variable "tfi_lx_instances" {
-  default = ""
+variable "tfi_instances" {
+  default = []
+  type    = "list"
 }
 
 variable "tfi_rm_user" {

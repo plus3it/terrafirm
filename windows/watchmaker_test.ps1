@@ -1,4 +1,3 @@
-$AMIKey = "${tfi_ami_key}"
 
 Write-Host ("*****************************************************************************")
 Write-Host ("Running Watchmaker test script: $AMIKey")
@@ -19,11 +18,11 @@ Else
 
 $TestStatus=@(0,"Not run")
 
-If ($UserdataStatus[0] -eq 0) 
+If ($UserdataStatus[0] -eq 0)
 {   # userdata was successful so now TRY the watchmaker tests
 
-    Try 
-    {   
+    Try
+    {
         # userdata was successful so now try the watchmaker tests
         # put the tests between the dashed comments
         # NOTE: if tests don't have an error action of "Stop," by default or explicitly set, won't be caught
@@ -42,7 +41,7 @@ If ($UserdataStatus[0] -eq 0)
         }
 
         # ------------------------------------------------------------ WAM TESTS END
-        
+
         # if we made it here through all the tests, consider it a success
         $TestStatus=@(0,"Success")
     }
@@ -64,5 +63,3 @@ Else
     Write-Host ("Test Status    : ($TestStatus[0]) $TestStatus[1]")
     exit 1
 }
-
-

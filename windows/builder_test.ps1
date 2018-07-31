@@ -1,4 +1,3 @@
-$AMIKey = "${tfi_ami_key}"
 
 Write-Host ("*****************************************************************************")
 Write-Host ("Running Windows standalone package builder test script: $AMIKey")

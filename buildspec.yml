@@ -9,6 +9,7 @@ phases:
   pre_build:
     commands:
       - export TF_VAR_tfi_codebuild_id="${CODEBUILD_BUILD_ID}"
+      - export TF_VAR_tfi_aws_region="${AWS_REGION}"
       - terraform init -no-color -input=false                                 # init terraform
       - terraform plan -no-color -out=tfplan -input=false                     # plan terraform
   build:
@@ -16,7 +17,7 @@ phases:
       - terraform apply -no-color -parallelism=16 -input=false tfplan                         # apply terraform
   post_build:
     commands:
-      - ARTIFACT_PATH="${TF_VAR_tfi_s3_bucket}/$(terraform output build_date_ymd)/$(terraform output build_date_hm)_$(terraform output build_id)"
+      - ARTIFACT_PATH="$(terraform output build_slug)"
       - echo "ARTIFACT_LOCATION=https://s3.console.aws.amazon.com/s3/buckets/${ARTIFACT_PATH}/"
       - terraform output -no-color | aws s3 cp - "s3://${ARTIFACT_PATH}/terraform_output.log" || true
       - test -r $TF_LOG_PATH && aws s3 cp $TF_LOG_PATH "s3://${ARTIFACT_PATH}/terraform.log" || true

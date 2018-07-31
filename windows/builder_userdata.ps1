@@ -1,3 +1,4 @@
+
 Try {
 
   Write-Tfi "Start build"
@@ -26,7 +27,7 @@ Try {
   If ($env:GB_ENV_STAGING_DIR)
   {
     Remove-Item ".\$env:GB_ENV_STAGING_DIR\0*" -Recurse
-    Write-S3Object -BucketName "${tfi_s3_bucket}" -KeyPrefix "${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/release" -Folder ".\$env:GB_ENV_STAGING_DIR" -Recurse
+    Write-S3Object -BucketName "$BuildSlug" -KeyPrefix "${tfi_release_prefix}" -Folder ".\$env:GB_ENV_STAGING_DIR" -Recurse
     Test-DisplayResult "Copy standalone to $ArtifactDest" $?
   }
 
@@ -45,10 +46,13 @@ Catch
   Debug-2S3 $ErrorMessage
 
   # signal any instances waiting to test this standalone that the build failed
-  $SignalFile = "error.log"
+  If(-not (Test-Path "$ErrorSignalFile"))
+  {
+    New-Item "$ErrorSignalFile" -ItemType "file" -Force
+  }
   $Msg = "$ErrorMessage (For more information on the error, see the win_builder/userdata.log file.)"
-  "$(Get-Date): $Msg" | Out-File "$SignalFile" -Append -Encoding utf8
-  Write-S3Object -BucketName "${tfi_s3_bucket}/${tfi_build_date}/${tfi_build_hour}_${tfi_build_id}/release" -File $SignalFile
+  "$(Get-Date): $Msg" | Out-File "$ErrorSignalFile" -Append -Encoding utf8
+  Write-S3Object -BucketName "$BuildSlug/${tfi_release_prefix}" -File $ErrorSignalFile
   Write-Tfi "Signal error to S3" $?
 
   # setup userdata status for passing to the test script via a file
@@ -56,7 +60,7 @@ Catch
   $UserdataStatus=@($ErrCode,"Error at: " + $Stage + " [$ErrorMessage]")
 }
 
-Rename-User -From "Administrator" -To "${tfi_rm_user}"
+Rename-User -From "Administrator" -To "$RMUser"
 
 Open-WinRM
 

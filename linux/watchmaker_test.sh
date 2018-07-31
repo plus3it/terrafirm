@@ -1,4 +1,3 @@
-#!/bin/bash
 
 finally() {
   local exit_code="$${1:-0}"
@@ -31,8 +30,6 @@ catch() {
 trap 'catch $? $${LINENO}' ERR
 
 # everything below this is the TRY
-
-ami_key=${tfi_ami_key}
 
 echo "*****************************************************************************"
 echo "Running Watchmaker test script: $ami_key"
