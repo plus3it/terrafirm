@@ -1,11 +1,10 @@
 
-
 Write-Host ("*****************************************************************************")
-Write-Host ("Running Watchmaker test script: WINDOWS")
+Write-Host ("Running Watchmaker test script: $AMIKey")
 Write-Host ("*****************************************************************************")
 Write-Host ((Get-WmiObject -class Win32_OperatingSystem).Caption)
 
-$UdPath = "C:\Temp\userdata_status"
+$UdPath = "${tfi_userdata_status_file}"
 
 If (Test-Path -Path $UdPath)
 {   # file exists, read into variable
@@ -19,20 +18,30 @@ Else
 
 $TestStatus=@(0,"Not run")
 
-If ($UserdataStatus[0] -eq 0) 
+If ($UserdataStatus[0] -eq 0)
 {   # userdata was successful so now TRY the watchmaker tests
 
-    Try 
-    {   
+    Try
+    {
         # userdata was successful so now try the watchmaker tests
         # put the tests between the dashed comments
         # NOTE: if tests don't have an error action of "Stop," by default or explicitly set, won't be caught
         # NOTE: default erroraction in powershell is "Continue"
         # ------------------------------------------------------------ WAM TESTS BEGIN
-        Invoke-Expression -Command "watchmaker --version"  -ErrorAction Stop
+        If ( $AMIKey.EndsWith("pkg") )
+        {
+            Write-Host ("Testing standalone executable package...")
+            $DownloadDir = "${tfi_download_dir}"
+            Invoke-Expression -Command "$DownloadDir\watchmaker.exe --version"  -ErrorAction Stop
+        }
+        Else
+        {
+            Write-Host ("Testing install from source...")
+            Invoke-Expression -Command "watchmaker --version"  -ErrorAction Stop
+        }
 
         # ------------------------------------------------------------ WAM TESTS END
-        
+
         # if we made it here through all the tests, consider it a success
         $TestStatus=@(0,"Success")
     }
@@ -54,5 +63,3 @@ Else
     Write-Host ("Test Status    : ($TestStatus[0]) $TestStatus[1]")
     exit 1
 }
-
-

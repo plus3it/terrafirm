@@ -15,10 +15,8 @@ jobs:
         - JOB="Terraform Format Verification"
       before_script:
         # Download Terraform
-        - curl --silent --output terraform.zip https://releases.hashicorp.com/terraform/0.11.3/terraform_0.11.3_linux_amd64.zip
-        - sha256sum terraform.zip  | grep "6b8a7b83954597d36bbed23913dd51bc253906c612a070a21db373eab71b277b" -q
-        - unzip terraform.zip ; rm -f terraform.zip; chmod +x terraform
-        - mkdir -p ${HOME}/bin ; export PATH=${PATH}:${HOME}/bin; mv terraform ${HOME}/bin/
+        - git clone https://github.com/plus3it/terraform-bootstrap.git
+        - cd terraform-bootstrap && ./install.sh
         - terraform -v
       script:
         - echo 'Terraform Format Check'
