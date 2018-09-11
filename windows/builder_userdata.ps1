@@ -14,8 +14,8 @@ Try {
   # Install prereqs
   $Stage = "install boto3"
   
-  pip install --index-url="$PypiUrl" -r requirements\deploy.txt
-  Test-DisplayResult "Install prerequisites" $?
+  pip install --index-url="$PypiUrl" -r requirements\build.txt
+  Test-DisplayResult "Install build prerequisites" $?
 
   # create standalone application
   gravitybee --src-dir src --sha file --with-latest --extra-data static --verbose --extra-pkgs boto3 --extra-modules boto3
