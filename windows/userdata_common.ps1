@@ -1,5 +1,5 @@
 
-# functions, vars in common between builder and normal userdata
+# in common between builder and normal userdata
 
 # global vars
 $BuildSlug = "${tfi_build_slug}"
@@ -23,8 +23,7 @@ If(-not (Test-Path "$TempDir"))
 cd $TempDir
 
 function Write-Tfi
-## Writes messages to a Terrafirm log file. If a second parameter is included,
-## it will display success/failure outcome.
+## Writes messages to a Terrafirm log file. Second param is success/failure related to msg.
 {
 
   Param
@@ -50,8 +49,7 @@ function Write-Tfi
 }
 
 function Test-Command
-## Tests commands and handles errors that result. Can also re-try commands if
-## -Tries is set > 1.
+## Tests commands and handles/retries errors that result.
 {
   #
   Param (
@@ -134,10 +132,7 @@ function Publish-Artifacts
 }
 
 function Test-DisplayResult
-## For some situations, Test-Command is not an option because, for instance,
-## several commands need to share an environment. In that case, after a
-## command, this function can be called with $? to log the outcome and throw
-## errors.
+## Call this function with $? to log the outcome and throw errors.
 {
   Param
   (
@@ -153,9 +148,7 @@ function Test-DisplayResult
 }
 
 function Debug-2S3
-## With as few dependencies as possible, immediately upload the debug and log
-## files to S3. Calling this multiple times will simply overwrite the
-## previously uploaded logs.
+## Immediately upload the debug and log files to S3.
 {
   Param
   (
@@ -169,8 +162,7 @@ function Debug-2S3
 }
 
 function Write-UserdataStatus
-## Write a file to the local system that can be read by other processes (e.g.,
-## the test process) to indicate the outcome of the userdata script.
+## Write file to the local system to indicate the outcome of the userdata script.
 {
   Param
   (
@@ -197,9 +189,7 @@ function Open-WinRM
 }
 
 function Close-Firewall
-## Close the local firewall to WinRM traffic. Useful for preventing, for
-## example, a Terraform remote-exec provisioner from connecting before the
-## userdata script has finished.
+## Close the local firewall to WinRM traffic.
 {
   # close the firewall
   netsh advfirewall firewall add rule name="WinRM in" protocol=tcp dir=in profile=any localport=5985 remoteip=any localip=any action=block
@@ -254,12 +244,10 @@ function Set-Password
 }
 
 function Invoke-CmdScript
-## Invoke the specified batch file (and parameters), but also propagate any
-## environment variable changes back to the PowerShell environment that
-## called it.
+## Invoke the specified batch file with params, and propagate env var changes back to 
+## PowerShell environment that called it.
 ##
 ## Recipe from "Windows PowerShell Cookbook by Lee Holmes"
-## https://www.safaribooksonline.com/library/view/windows-powershell-cookbook/9780596528492/ch01s09.html
 {
 
   Param
@@ -321,9 +309,6 @@ function Install-Watchmaker
   # Upgrade pip and setuptools
   $Stage = "upgrade pip setuptools boto3"
   Test-Command "python -m pip install --index-url=`"$PypiUrl`" --upgrade pip setuptools" -Tries 2
-  #Test-Command "python -m ensurepip --index-url=`"$PypiUrl`"" -Tries 2
-  #Test-Command "python -m pip install -U pip --index-url=`"$PypiUrl`"" -Tries 2
-
   Test-Command "pip install --index-url=`"$PypiUrl`" --upgrade boto3" -Tries 2
 
   If($UseVenv)
