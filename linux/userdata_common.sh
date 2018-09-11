@@ -10,7 +10,7 @@ if [ ! -f /etc/redhat-release ]; then
   region_flag="--region ${tfi_aws_region}"
 fi
 
-echo "AMI KEY: ------------------------------- $ami_key ---------------------"
+echo "AMI KEY: ------------------------------- $${index_str}$${ami_key} ---------------------"
 
 write-tfi() {
   local msg=$1
@@ -35,8 +35,8 @@ debug-2s3() {
 
   debug_file="$temp_dir/debug.log"
   echo "$msg" >> $debug_file
-  aws s3 cp $debug_file "s3://$build_slug/$ami_key/" $region_flag || true
-  aws s3 cp ${tfi_userdata_log} "s3://$build_slug/$ami_key/" $region_flag || true
+  aws s3 cp $debug_file "s3://$build_slug/$${index_str}$${ami_key}/" $region_flag || true
+  aws s3 cp ${tfi_userdata_log} "s3://$build_slug/$${index_str}$${ami_key}/" $region_flag || true
 }
 
 retry() {
@@ -130,13 +130,13 @@ publish-artifacts() {
   cp -R /var/lib/cloud/instance/scripts/* "$${artifact_dir}/cloud/scripts/" || true
 
   # move logs to s3
-  artifact_dest="s3://$build_slug/$ami_key"
+  artifact_dest="s3://$build_slug/$${index_str}$${ami_key}"
   cp "${tfi_userdata_log}" "$${artifact_dir}"
   aws s3 cp "$${artifact_dir}" "$${artifact_dest}" --recursive $region_flag || true
   write-tfi "Uploaded logs to $${artifact_dest}" $?
 
   # creates compressed archive to upload to s3
-  zip_file="$${artifact_base}/$${build_slug//\//-}-$ami_key.tgz"
+  zip_file="$${artifact_base}/$${build_slug//\//-}-$${index_str}$${ami_key}.tgz"
   cd "$${artifact_dir}"
   tar -cvzf "$${zip_file}" .
   aws s3 cp "$${zip_file}" "s3://$build_slug/" $region_flag || true

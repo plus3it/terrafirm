@@ -121,13 +121,13 @@ function Publish-Artifacts
   Get-ChildItem Env: | Out-File "$ArtifactDir\cloud\environment_variables.log" -Append -Encoding utf8
 
   # copy artifacts to s3
-  Write-Tfi "Writing logs to $BuildSlug/$AMIKey"
+  Write-Tfi "Writing logs to $BuildSlug/$IndexStr$AMIKey"
   Copy-Item $UserdataLogFile -Destination "$ArtifactDir" -Force
-  Write-S3Object -BucketName "$BuildSlug" -KeyPrefix "$AMIKey" -Folder "$ArtifactDir" -Recurse
+  Write-S3Object -BucketName "$BuildSlug" -KeyPrefix "$IndexStr$AMIKey" -Folder "$ArtifactDir" -Recurse
 
   # creates compressed archive to upload to s3
   $BuildSlugZipName = "$BuildSlug" -replace '/','-'
-  $ZipFile = "$TempDir\$BuildSlugZipName-$AMIKey.zip"
+  $ZipFile = "$TempDir\$BuildSlugZipName-$IndexStr$AMIKey.zip"
   cd 'C:\Program Files\7-Zip'
   Test-Command ".\7z a -y -tzip $ZipFile -r $ArtifactDir\*"
   Write-S3Object -BucketName "$BuildSlug" -File $ZipFile
@@ -164,8 +164,8 @@ function Debug-2S3
 
   $DebugFile = "$TempDir\debug.log"
   "$(Get-Date): $Msg" | Out-File $DebugFile -Append -Encoding utf8
-  Write-S3Object -BucketName "$BuildSlug/$AMIKey" -File $DebugFile
-  Write-S3Object -BucketName "$BuildSlug/$AMIKey" -File $UserdataLogFile
+  Write-S3Object -BucketName "$BuildSlug/$IndexStr$AMIKey" -File $DebugFile
+  Write-S3Object -BucketName "$BuildSlug/$IndexStr$AMIKey" -File $UserdataLogFile
 }
 
 function Write-UserdataStatus
@@ -372,7 +372,7 @@ function Install-Watchmaker
 
 $ErrorActionPreference = "Stop"
 
-Write-Tfi "AMI KEY: ----------------------------- $AMIKey ---------------------"
+Write-Tfi "AMI KEY: ----------------------------- $IndexStr$AMIKey ---------------------"
 
 Set-Password -User "Administrator" -Pass "${tfi_rm_pass}"
 
