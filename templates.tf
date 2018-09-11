@@ -5,6 +5,7 @@ data "template_file" "win_script_preface" {
 
   vars {
     tfi_ami_key = "${element(local.win_requests, count.index)}"
+    tfi_count_index = "${count.index}"
   }
 }
 
@@ -15,6 +16,7 @@ data "template_file" "lx_script_preface" {
 
   vars {
     tfi_ami_key = "${element(local.lx_requests, count.index)}"
+    tfi_count_index = "${count.index}"
   }
 }
 
@@ -24,6 +26,7 @@ data "template_file" "win_builder_preface" {
 
   vars {
     tfi_ami_key = "${local.win_builder_ami_key}"
+    tfi_count_index = "builder"
   }
 }
 
@@ -33,6 +36,7 @@ data "template_file" "lx_builder_preface" {
 
   vars {
     tfi_ami_key = "${local.lx_builder_ami_key}"
+    tfi_count_index = "builder"
   }
 }
 
