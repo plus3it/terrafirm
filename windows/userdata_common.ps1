@@ -352,7 +352,7 @@ function Install-Watchmaker
 
   # Install watchmaker
   $Stage = "install wam"
-  Test-Command "pip install --index-url `"$PypiUrl`" --editable ."
+  Test-Command "pip install --upgrade --index-url `"$PypiUrl`" --editable ."
 }
 
 $ErrorActionPreference = "Stop"
