@@ -224,7 +224,7 @@ install-watchmaker() {
   write-tfi "$stage" $?
 
   # Install watchmaker
-  stage="Install Watchmaker" && pip install --index-url "$PYPI_URL" --editable .
+  stage="Install Watchmaker" && pip install --upgrade --index-url "$PYPI_URL" --editable .
   write-tfi "$stage" $?
 }
 
