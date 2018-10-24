@@ -17,14 +17,25 @@ locals {
   ))}"
 
   ami_name_filters = {
-    "${local.lx_ami_keys[0]}"     = "spel-minimal-centos-6*"
-    "${local.lx_ami_keys[1]}"     = "spel-minimal-centos-7*"
-    "${local.lx_ami_keys[2]}"     = "spel-minimal-rhel-6*"
-    "${local.lx_ami_keys[3]}"     = "spel-minimal-rhel-7*"
+    "${local.lx_ami_keys[0]}"     = "spel-minimal-centos-6-hvm-*.x86_64-gp2"
+    "${local.lx_ami_keys[1]}"     = "spel-minimal-centos-7-hvm-*.x86_64-gp2"
+    "${local.lx_ami_keys[2]}"     = "spel-minimal-rhel-6-hvm-*.x86_64-gp2"
+    "${local.lx_ami_keys[3]}"     = "spel-minimal-rhel-7-hvm-*.x86_64-gp2"
     "${local.win_ami_keys[0]}"    = "Windows_Server-2008-R2_SP1-English-64Bit-Base*"
     "${local.win_ami_keys[1]}"    = "Windows_Server-2012-R2_RTM-English-64Bit-Base*"
     "${local.win_ami_keys[2]}"    = "Windows_Server-2016-English-Full-Base*"
     "${local.lx_builder_ami_key}" = "ubuntu/images/hvm-ssd/ubuntu-trusty-14.04-amd64-server*"
+  }
+
+    ami_name_regexes = {
+    "${local.lx_ami_keys[0]}"     = "spel-minimal-centos-6-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
+    "${local.lx_ami_keys[1]}"     = "spel-minimal-centos-7-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
+    "${local.lx_ami_keys[2]}"     = "spel-minimal-rhel-6-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
+    "${local.lx_ami_keys[3]}"     = "spel-minimal-rhel-7-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
+    "${local.win_ami_keys[0]}"    = ""
+    "${local.win_ami_keys[1]}"    = ""
+    "${local.win_ami_keys[2]}"    = ""
+    "${local.lx_builder_ami_key}" = ""
   }
 
   # given any user ami key, which ami to use? (i.e., win08pkg = win08; win08 = win08)
@@ -90,12 +101,21 @@ locals {
       )
     )
   )}"
+
   # only search for AMIs that have been requested and only once (i.e, win08pkg + win08 is only 1 search)
   ami_filters_to_search = "${matchkeys(
     values(local.ami_name_filters),
     keys(local.ami_name_filters),
     local.amis_to_search
   )}"
+
+  # get regex for appropriate AMIs
+  ami_regexes_to_search = "${matchkeys(
+    values(local.ami_name_regexes),
+    keys(local.ami_name_regexes),
+    local.amis_to_search
+  )}"
+
   # one stop shop / data structure for getting ami id with ami key
   ami_ids = "${zipmap(
     local.amis_to_search,
@@ -107,6 +127,8 @@ locals {
 data "aws_ami" "find_amis" {
   count       = "${length(local.ami_filters_to_search)}"
   most_recent = true
+
+  name_regex = "${element(local.ami_regexes_to_search, count.index)}"
 
   filter {
     name   = "virtualization-type"
