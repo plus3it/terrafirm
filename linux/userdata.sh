@@ -47,8 +47,6 @@ if [[ "$ami_key" == *pkg ]]; then
   write-tfi "Download Watchmaker standalone" $?
   chmod +x $standalone_dest/watchmaker
 
-  export LC_ALL=en_US.UTF-8
-  export LANG=en_US.UTF-8
   stage="Run Watchmaker" && $standalone_dest/watchmaker ${tfi_common_args} ${tfi_lx_args}
   write-tfi "$stage" $?
 

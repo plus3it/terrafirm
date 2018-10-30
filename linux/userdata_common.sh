@@ -189,12 +189,13 @@ install-watchmaker() {
 
   # Install pip
   stage="Install Python/Git" \
-    && curl "$PIP_URL" | python - --index-url="$PYPI_URL" 'wheel<0.30.0;python_version<"2.7"' 'wheel;python_version>="2.7"'
+    && curl "$PIP_URL" | python3 - --index-url="$PYPI_URL"
   write-tfi "$stage" $?
 
   # Upgrade pip and setuptools
   stage="Upgrade pip/setuptools" \
-    && pip install --index-url="$PYPI_URL" --upgrade 'pip<10' 'setuptools<37;python_version<"2.7"' 'setuptools;python_version>="2.7"'
+    && pip install --index-url="$PYPI_URL" --upgrade pip setuptools
+  pip --version
   write-tfi "$stage" $?
 
   # Install boto3
@@ -225,6 +226,7 @@ install-watchmaker() {
 
   # Install watchmaker
   stage="Install Watchmaker" && pip install --upgrade --index-url "$PYPI_URL" --editable .
+  watchmaker --version
   write-tfi "$stage" $?
 }
 
