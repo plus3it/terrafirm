@@ -12,13 +12,16 @@ Try {
   Install-Watchmaker -UseVenv $true
 
   # Install prereqs
-  $Stage = "install boto3"
+  $Stage = "install build prerequisites"
   
+  python -m pip install --index-url="$PypiUrl" -r requirements\pip.txt
+  Test-DisplayResult "Install pip" $?
+
   pip install --index-url="$PypiUrl" -r requirements\build.txt
   Test-DisplayResult "Install build prerequisites" $?
 
   # create standalone application
-  gravitybee --src-dir src --sha file --with-latest --extra-data static --verbose --extra-pkgs boto3 --extra-modules boto3
+  gravitybee --src-dir src --sha file --with-latest --extra-data static --extra-pkgs boto3 --extra-modules boto3
   Test-DisplayResult "Run gravitybee (build standalone)" $?
 
   Invoke-CmdScript .\.gravitybee\gravitybee-environs.bat
