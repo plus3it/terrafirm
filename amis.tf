@@ -24,7 +24,7 @@ locals {
     "${local.win_ami_keys[0]}"    = "Windows_Server-2008-R2_SP1-English-64Bit-Base*"
     "${local.win_ami_keys[1]}"    = "Windows_Server-2012-R2_RTM-English-64Bit-Base*"
     "${local.win_ami_keys[2]}"    = "Windows_Server-2016-English-Full-Base*"
-    "${local.lx_builder_ami_key}" = "ubuntu/images/hvm-ssd/ubuntu-trusty-14.04-amd64-server*"
+    "${local.lx_builder_ami_key}" = "ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server*"
   }
 
     ami_name_regexes = {
