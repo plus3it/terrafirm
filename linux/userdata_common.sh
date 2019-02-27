@@ -4,39 +4,45 @@ exec &> ${tfi_userdata_log}
 build_slug="${tfi_build_slug}"
 error_signal_file="${tfi_error_signal_file}"
 temp_dir="${tfi_temp_dir}"
+export AWS_REGION="${tfi_aws_region}"
+debug_mode="${tfi_debug}"
 
-# strangely necessary on ubuntu
-if [ ! -f /etc/redhat-release ]; then
-  region_flag="--region ${tfi_aws_region}"
+if [[ "$ami_key" == rhel6* ]] ; then
+  yum-config-manager --enable rhui-REGION-rhel-server-releases-optional
+  yum -y update
 fi
 
-echo "AMI KEY: ------------------------------- $${index_str}$${ami_key} ---------------------"
+echo "AMI KEY: ------------------------------- $index_str $ami_key ---------------------"
+
+debug-2s3() {
+  ## With as few dependencies as possible, immediately upload the debug and log
+  ## files to S3. Calling this multiple times will simply overwrite the
+  ## previously uploaded logs.
+  local msg="$1"
+
+  debug_file="$temp_dir/debug.log"
+  echo "$msg" >> $debug_file
+  aws s3 cp "$debug_file" "s3://$build_slug/$${index_str}$${ami_key}/" || true
+  aws s3 cp "${tfi_userdata_log}" "s3://$build_slug/$${index_str}$${ami_key}/" || true
+}
 
 write-tfi() {
   local msg=$1
   local success=$2
 
-  if [ "$${success}" = "" ]; then
+  if [ "$success" = "" ]; then
     out_result="" # needed to distinguish between null and false
-  elif [ "$${success}" = "0" ]; then
+  elif [ "$success" = "0" ]; then
     out_result=": Succeeded"
   else
     out_result=": Failed"
   fi
 
   echo "$(date +%F_%T): $msg $out_result"
-}
 
-debug-2s3() {
-  ## With as few dependencies as possible, immediately upload the debug and log
-  ## files to S3. Calling this multiple times will simply overwrite the
-  ## previously uploaded logs.
-  local msg=$1
-
-  debug_file="$temp_dir/debug.log"
-  echo "$msg" >> $debug_file
-  aws s3 cp $debug_file "s3://$build_slug/$${index_str}$${ami_key}/" $region_flag || true
-  aws s3 cp ${tfi_userdata_log} "s3://$build_slug/$${index_str}$${ami_key}/" $region_flag || true
+  if [ "$debug_mode" != "0" ] ; then
+    debug-2s3 "$(date +%F_%T): $msg $out_result"
+  fi
 }
 
 retry() {
@@ -51,7 +57,7 @@ retry() {
 
     write-tfi "Will try $try time(s) :: $cmd"
 
-    if [[ "$${SHELLOPTS}" == *":errexit:"* ]]; then
+    if [[ "$SHELLOPTS" == *":errexit:"* ]]; then
         set +e
         local ERREXIT=1
     fi
@@ -68,7 +74,7 @@ retry() {
         fi
     done
 
-    if [[ "$${ERREXIT}" == "1" ]]; then
+    if [[ "$ERREXIT" == "1" ]]; then
         set -e
     fi
 
@@ -87,8 +93,8 @@ open-ssh() {
     setenforce 0
 
     # open firewall (iptables for rhel/centos 6, firewalld for 7
-    systemctl status firewalld &> /dev/null
-    if [ $? -eq 0 ] ; then
+
+    if systemctl status firewalld &> /dev/null ; then
       firewall-cmd --zone=public --permanent --add-port=$new_ssh_port/tcp
       firewall-cmd --reload
       write-tfi "Configure firewalld" $?
@@ -121,25 +127,25 @@ publish-artifacts() {
 
   # create a directory with all the build artifacts
   artifact_base="$temp_dir/terrafirm"
-  artifact_dir="$${artifact_base}/build-artifacts"
-  mkdir -p "$${artifact_dir}/scap_output"
-  mkdir -p "$${artifact_dir}/cloud/scripts"
-  cp -R /var/log/watchmaker/ "$${artifact_dir}" || true
-  cp -R /root/scap/output/* "$${artifact_dir}/scap_output/" || true
-  cp -R /var/log/cloud*log "$${artifact_dir}/cloud/" || true
-  cp -R /var/lib/cloud/instance/scripts/* "$${artifact_dir}/cloud/scripts/" || true
+  artifact_dir="$artifact_base/build-artifacts"
+  mkdir -p "$artifact_dir/scap_output"
+  mkdir -p "$artifact_dir/cloud/scripts"
+  cp -R /var/log/watchmaker/ "$artifact_dir" || true
+  cp -R /root/scap/output/* "$artifact_dir/scap_output/" || true
+  cp -R /var/log/cloud*log "$artifact_dir/cloud/" || true
+  cp -R /var/lib/cloud/instance/scripts/* "$artifact_dir/cloud/scripts/" || true
 
   # move logs to s3
   artifact_dest="s3://$build_slug/$${index_str}$${ami_key}"
-  cp "${tfi_userdata_log}" "$${artifact_dir}"
-  aws s3 cp "$${artifact_dir}" "$${artifact_dest}" --recursive $region_flag || true
-  write-tfi "Uploaded logs to $${artifact_dest}" $?
+  cp "${tfi_userdata_log}" "$artifact_dir"
+  aws s3 cp "$artifact_dir" "$artifact_dest" --recursive || true
+  write-tfi "Uploaded logs to $artifact_dest" $?
 
   # creates compressed archive to upload to s3
-  zip_file="$${artifact_base}/$${build_slug//\//-}-$${index_str}$${ami_key}.tgz"
-  cd "$${artifact_dir}"
-  tar -cvzf "$${zip_file}" .
-  aws s3 cp "$${zip_file}" "s3://$build_slug/" $region_flag || true
+  zip_file="$artifact_base/$${build_slug//\//-}-$${index_str}$${ami_key}.tgz"
+  cd "$artifact_dir"
+  tar -cvzf "$zip_file" .
+  aws s3 cp "$zip_file" "s3://$build_slug/" || true
   write-tfi "Uploaded artifact zip to S3" $?
 }
 
@@ -149,33 +155,32 @@ finally() {
   local exit_code="$${1:-0}"
 
   # time it took to install
-  end=`date +%s`
+  end=$(date +%s)
   runtime=$((end-start))
   write-tfi "WAM install took $runtime seconds."
 
   write-tfi "Finally: "
 
   # write the status to a file for reading by test script
-  printf "%s\n" "$${userdata_status[@]}" > ${tfi_userdata_status_file}
+  printf "%s\n" "$${userdata_status[@]}" > "${tfi_userdata_status_file}"
 
   open-ssh
 
   publish-artifacts
 
-  exit "$${exit_code}"
+  exit "$exit_code"
 }
 
 catch() {
-  # what to do in case of an error
+  if [ "$1" != "0" ] ; then
+    # what to do in case of an error
 
-  local this_script="$0"
-  local exit_code="$${1:-1}"
-  local err_lineno="$2"
-  write-tfi "$0: line $2: exiting with status $${exit_code}"
+    write-tfi "$0: line $2: exiting with status $1"
 
-  userdata_status=($exit_code "Userdata install error at stage $stage")
+    userdata_status=("$1" "Userdata install error at stage $stage")
+  fi
 
-  finally $@
+  finally "$@"
 }
 
 install-watchmaker() {
@@ -184,8 +189,8 @@ install-watchmaker() {
   GIT_REPO="${tfi_git_repo}"
   GIT_REF="${tfi_git_ref}"
 
-  PIP_URL=${tfi_pip_bootstrap_url}
-  PYPI_URL=${tfi_pypi_url}
+  PIP_URL="${tfi_pip_bootstrap_url}"
+  PYPI_URL="${tfi_pypi_url}"
 
   # Install pip
   stage="Install Python/Git" \
@@ -233,7 +238,7 @@ install-watchmaker() {
 # everything below this is the TRY
 
 # start time of install
-start=`date +%s`
+start=$(date +%s)
 
 # declare an array to hold the status (number and message)
 userdata_status=(0 "Success")

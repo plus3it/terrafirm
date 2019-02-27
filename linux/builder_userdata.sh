@@ -1,13 +1,18 @@
-signal_error() {
-  echo "For more information on the error, see the lx_builder/userdata.log file." > $temp_dir/error.log
-  echo "$0: line $2: exiting with status $${exit_code}" >> $temp_dir/error.log
+handle_builder_exit() {
+  if [ "$1" != "0" ] ; then
+    echo "For more information on the error, see the lx_builder/userdata.log file." > "$temp_dir/error.log"
+    echo "$0: line $2: exiting with status $1" >> "$temp_dir/error.log"
 
-  artifact_dest="s3://$build_slug/$error_signal_file"
-  write-tfi "Signaling error at $artifact_dest"
-  aws s3 cp $temp_dir/error.log "$artifact_dest" $region_flag || true
-  write-tfi "Upload error signal" $?
+    artifact_dest="s3://$build_slug/$error_signal_file"
+    write-tfi "Signaling error at $artifact_dest"
+    aws s3 cp "$temp_dir/error.log" "$artifact_dest" || true
+    write-tfi "Upload error signal" $?
 
-  catch $@
+    catch "$@"
+  
+  else
+    finally "$@"
+  fi
 }
 
 # to resolve the issue with "sudo: unable to resolve host"
@@ -40,7 +45,9 @@ apt-get -y install \
 write-tfi "Install packages" $?
 
 # setup error trap to go to signal_error function
-trap 'signal_error $? $${LINENO}' ERR
+set -e
+
+trap 'handle_builder_exit $? $LINENO' EXIT
 
 # start the firewall
 ufw enable
@@ -69,12 +76,12 @@ source .gravitybee/gravitybee-environs.sh
 if [ -n "$GB_ENV_STAGING_DIR" ] ; then
 
   # only using "latest" so versioned copy is just wasted space
-  rm -rf $GB_ENV_STAGING_DIR/0*
+  rm -rf "$GB_ENV_STAGING_DIR"/0*
   write-tfi "Remove versioned standalone (keeping 'latest')" $?
 
   artifact_dest="s3://$build_slug/${tfi_release_prefix}/"
-  aws s3 cp $GB_ENV_STAGING_DIR "$${artifact_dest}" --recursive $region_flag
-  write-tfi "Copy standalones to $${artifact_dest}" $?
+  aws s3 cp "$GB_ENV_STAGING_DIR" "$artifact_dest" --recursive
+  write-tfi "Copy standalones to $artifact_dest" $?
 
 fi
 

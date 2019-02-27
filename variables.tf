@@ -78,3 +78,7 @@ variable "tfi_docker_slug" {
 variable "tfi_aws_region" {
   default = "us-east-1"
 }
+
+variable "tfi_debug" {
+  default = "1"
+}

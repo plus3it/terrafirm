@@ -105,6 +105,7 @@ data "template_file" "win_userdata_common" {
     tfi_temp_dir             = "${local.win_temp_dir}"
     tfi_userdata_log         = "${var.tfi_win_userdata_log}"
     tfi_userdata_status_file = "${local.win_userdata_status_file}"
+    tfi_debug                = "${var.tfi_debug}"
   }
 }
 
@@ -125,6 +126,7 @@ data "template_file" "lx_userdata_common" {
     tfi_temp_dir             = "${local.lx_temp_dir}"
     tfi_userdata_log         = "${var.tfi_lx_userdata_log}"
     tfi_userdata_status_file = "${local.lx_userdata_status_file}"
+    tfi_debug                = "${var.tfi_debug}"
   }
 }
 
