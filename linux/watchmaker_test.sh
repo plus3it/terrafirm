@@ -4,7 +4,7 @@ finally() {
 
   # FINALLY after everything, give results
   if [ "$${userdata_status[0]}" -ne 0 ] || [ "$${test_status[0]}" -ne 0 ] ; then
-    echo ".............................................................................FAILED!"
+    echo "........................................................FAILED!"
     echo "Userdata Status: ($${userdata_status[0]}) $${userdata_status[1]}"
     echo "Test Status    : ($${test_status[0]}) $${test_status[1]}"
     ((exit_code=$${userdata_status[0]}+$${test_status[0]}))
@@ -12,7 +12,7 @@ finally() {
       exit_code=1
     fi
   else
-    echo ".............................................................................Success!"
+    echo ".......................................................Success!"
   fi
   exit "$exit_code"
 }
@@ -29,9 +29,9 @@ trap 'catch $? $LINENO' ERR
 
 # everything below this is the TRY
 
-echo "*****************************************************************************"
+echo "***************************************************************"
 echo "Running Watchmaker test script: $ami_key"
-echo "*****************************************************************************"
+echo "***************************************************************"
 cat /etc/redhat-release # this will only work for redhat and centos
 
 ud_path="${tfi_userdata_status_file}"

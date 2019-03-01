@@ -4,14 +4,14 @@ finally() {
 
   # FINALLY after everything, give results
   if [ "$${userdata_status[0]}" -ne 0 ]; then
-    echo ".............................................................................FAILED!"
+    echo "........................................................FAILED!"
     echo "Userdata Status: ($${userdata_status[0]}) $${userdata_status[1]}"
     exit_code="$${userdata_status[0]}"
     if [ "$exit_code" -eq 0 ] ; then
       exit_code=1
     fi
   else
-    echo ".............................................................................Success!"
+    echo ".......................................................Success!"
   fi
   exit "$exit_code"
 }
@@ -28,9 +28,9 @@ trap 'catch $? $LINENO' ERR
 
 # everything below this is the TRY
 
-echo "*****************************************************************************"
+echo "***************************************************************"
 echo "Running Linux standalone package builder test script: $ami_key"
-echo "*****************************************************************************"
+echo "***************************************************************"
 lsb_release -a # this works on Ubuntu
 
 ud_path=${tfi_userdata_status_file}
