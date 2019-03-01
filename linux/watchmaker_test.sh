@@ -4,43 +4,41 @@ finally() {
 
   # FINALLY after everything, give results
   if [ "$${userdata_status[0]}" -ne 0 ] || [ "$${test_status[0]}" -ne 0 ] ; then
-    echo ".............................................................................FAILED!"
+    echo "........................................................FAILED!"
     echo "Userdata Status: ($${userdata_status[0]}) $${userdata_status[1]}"
     echo "Test Status    : ($${test_status[0]}) $${test_status[1]}"
     ((exit_code=$${userdata_status[0]}+$${test_status[0]}))
-    if [ "$${exit_code}" -eq 0 ] ; then
+    if [ "$exit_code" -eq 0 ] ; then
       exit_code=1
     fi
   else
-    echo ".............................................................................Success!"
+    echo ".......................................................Success!"
   fi
-  exit "$${exit_code}"
+  exit "$exit_code"
 }
 
 catch() {
-  local this_script="$0"
   local exit_code="$1"
-  local err_lineno="$2"
 
-  test_status=($exit_code "Testing error")
+  test_status=("$exit_code" "Testing error")
 
-  finally $@ #important to call here and as the last line of the script
+  finally "$@" #important to call here and as the last line of the script
 }
 
-trap 'catch $? $${LINENO}' ERR
+trap 'catch $? $LINENO' ERR
 
 # everything below this is the TRY
 
-echo "*****************************************************************************"
+echo "***************************************************************"
 echo "Running Watchmaker test script: $ami_key"
-echo "*****************************************************************************"
+echo "***************************************************************"
 cat /etc/redhat-release # this will only work for redhat and centos
 
-ud_path=${tfi_userdata_status_file}
+ud_path="${tfi_userdata_status_file}"
 
-if [ -f "$${ud_path}" ] ; then
+if [ -f "$ud_path" ] ; then
   # file exists, read into variable
-  readarray -t userdata_status < "$${ud_path}"
+  readarray -t userdata_status < "$ud_path"
 else
   # error, no userdata status found
   userdata_status=(1 "No status returned by userdata")

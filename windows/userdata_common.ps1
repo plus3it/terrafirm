@@ -6,6 +6,7 @@ $BuildSlug = "${tfi_build_slug}"
 $ErrorSignalFile = "${tfi_error_signal_file}"
 $RMUser = "${tfi_rm_user}"
 $PypiUrl = "${tfi_pypi_url}"
+$DebugMode = "${tfi_debug}"
 
 # log file
 $UserdataLogFile = "${tfi_userdata_log}"
@@ -21,6 +22,20 @@ If(-not (Test-Path "$TempDir"))
   New-Item "$TempDir" -ItemType "directory" -Force
 }
 cd $TempDir
+
+function Debug-2S3
+## Immediately upload the debug and log files to S3.
+{
+  Param
+  (
+    [Parameter(Mandatory=$false)][string]$Msg
+  )
+
+  $DebugFile = "$TempDir\debug.log"
+  "$(Get-Date): $Msg" | Out-File $DebugFile -Append -Encoding utf8
+  Write-S3Object -BucketName "$BuildSlug/$IndexStr$AMIKey" -File $DebugFile
+  Write-S3Object -BucketName "$BuildSlug/$IndexStr$AMIKey" -File $UserdataLogFile
+}
 
 function Write-Tfi
 ## Writes messages to a Terrafirm log file. Second param is success/failure related to msg.
@@ -46,6 +61,11 @@ function Write-Tfi
   }
 
   "$(Get-Date): $Msg $OutResult" | Out-File "$UserdataLogFile" -Append -Encoding utf8
+
+  If ("$DebugMode" -ne "0" )
+  {
+    Debug-2S3 "$Msg $OutResult"
+  }
 }
 
 function Test-Command
@@ -145,20 +165,6 @@ function Test-DisplayResult
   {
     throw "$Msg : FAILED"
   }
-}
-
-function Debug-2S3
-## Immediately upload the debug and log files to S3.
-{
-  Param
-  (
-    [Parameter(Mandatory=$false)][string]$Msg
-  )
-
-  $DebugFile = "$TempDir\debug.log"
-  "$(Get-Date): $Msg" | Out-File $DebugFile -Append -Encoding utf8
-  Write-S3Object -BucketName "$BuildSlug/$IndexStr$AMIKey" -File $DebugFile
-  Write-S3Object -BucketName "$BuildSlug/$IndexStr$AMIKey" -File $UserdataLogFile
 }
 
 function Write-UserdataStatus

@@ -1,7 +1,7 @@
 
-Write-Host ("*****************************************************************************")
+Write-Host ("***************************************************************")
 Write-Host ("Running Windows standalone package builder test script: $AMIKey")
-Write-Host ("*****************************************************************************")
+Write-Host ("***************************************************************")
 Write-Host ((Get-WmiObject -class Win32_OperatingSystem).Caption)
 
 $UdPath = "${tfi_userdata_status_file}"
@@ -20,11 +20,11 @@ Else
 # FINALLY after everything, give results
 If ( $UserdataStatus[0] -eq 0 )
 {
-    Write-Host (".............................................................................Success!")
+    Write-Host (".......................................................Success!")
 }
 Else
 {
-    Write-Host (".............................................................................FAILED!")
+    Write-Host ("........................................................FAILED!")
     Write-Host ("Userdata Status: ($UserdataStatus[0]) $UserdataStatus[1]")
     exit 1
 }

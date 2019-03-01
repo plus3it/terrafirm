@@ -1,5 +1,8 @@
 # setup error trap to go to catch function
-trap 'catch $? $${LINENO}' ERR
+
+
+set -e
+trap 'catch $? $LINENO' EXIT
 
 if [[ "$ami_key" == *pkg ]]; then
   # if it ends with 'pkg', test standalone
@@ -25,14 +28,14 @@ if [[ "$ami_key" == *pkg ]]; then
       # error signaled by the builder
       write-tfi "Error signaled by the builder"
       write-tfi "Error file found at $error_location"
-      catch 1 $${LINENO}
+      catch 1 "$LINENO"
       break
     else
       # no builder errors signaled
       if [ "$exists" = "$nonexistent_code"  ]; then
         # standalone does not exist
-        write-tfi "The standalone executable was not found. Trying again in $${sleep_time}s..."
-        sleep $sleep_time
+        write-tfi "The standalone executable was not found. Trying again in $sleep_time s..."
+        sleep "$sleep_time"
       else
         # it exists!
         write-tfi "The standalone executable was found!"
@@ -43,9 +46,9 @@ if [[ "$ami_key" == *pkg ]]; then
   done
 
   standalone_dest=/home/maintuser
-  aws s3 cp $standalone_location $standalone_dest/watchmaker
+  aws s3 cp "$standalone_location" "$standalone_dest/watchmaker"
   write-tfi "Download Watchmaker standalone" $?
-  chmod +x $standalone_dest/watchmaker
+  chmod +x "$standalone_dest/watchmaker"
 
   stage="Run Watchmaker" && $standalone_dest/watchmaker ${tfi_common_args} ${tfi_lx_args}
   write-tfi "$stage" $?
