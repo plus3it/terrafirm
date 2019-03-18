@@ -26,7 +26,7 @@ resource "random_string" "password" {
   count            = "${local.win_request_any_count}"
   length           = 18
   special          = true
-  override_special = "()~!@#^&*+=|{}[]:;<>,?"
+  override_special = "()~!@#^*+=|{}[]:;,?"
 }
 
 resource "aws_default_subnet" "tfi" {
