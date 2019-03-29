@@ -183,6 +183,19 @@ catch() {
   finally "$@"
 }
 
+install-pip() {
+  pip_installed=1
+  command -v pip >/dev/null 2>&1 || pip_installed=0
+
+  if [ "$pip_installed" != "1" ] ; then
+    # Install pip
+    stage="Install pip" \
+      && python3 -m ensurepip --upgrade --default-pip
+    write-tfi "$stage" $?
+  fi
+
+}
+
 install-watchmaker() {
   # install watchmaker from source
 
@@ -191,10 +204,7 @@ install-watchmaker() {
 
   PYPI_URL="${tfi_pypi_url}"
 
-  # Install pip
-  stage="Install pip" \
-    && python3 -m ensurepip --upgrade --default-pip
-  write-tfi "$stage" $?
+  install-pip
 
   # Upgrade pip and setuptools
   stage="Upgrade pip/setuptools" \
