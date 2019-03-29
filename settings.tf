@@ -6,7 +6,6 @@ locals {
   lx_executable             = "${local.release_prefix}/latest/watchmaker-latest-standalone-linux-x86_64"
   lx_temp_dir               = "/tmp"
   lx_userdata_status_file   = "${local.lx_temp_dir}/userdata_status"
-  pip_bootstrap_url         = "https://bootstrap.pypa.io/get-pip.py"
   pypi_url                  = "https://pypi.org/simple"
   release_prefix            = "release"
   ssh_port                  = 122

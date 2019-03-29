@@ -120,7 +120,6 @@ data "template_file" "lx_userdata_common" {
     tfi_error_signal_file    = "${local.lx_error_signal_file}"
     tfi_git_ref              = "${var.tfi_git_ref}"
     tfi_git_repo             = "${var.tfi_git_repo}"
-    tfi_pip_bootstrap_url    = "${local.pip_bootstrap_url}"
     tfi_pypi_url             = "${local.pypi_url}"
     tfi_ssh_port             = "${local.ssh_port}"
     tfi_temp_dir             = "${local.lx_temp_dir}"

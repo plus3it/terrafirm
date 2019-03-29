@@ -189,12 +189,11 @@ install-watchmaker() {
   GIT_REPO="${tfi_git_repo}"
   GIT_REF="${tfi_git_ref}"
 
-  PIP_URL="${tfi_pip_bootstrap_url}"
   PYPI_URL="${tfi_pypi_url}"
 
   # Install pip
-  stage="Install Python/Git" \
-    && curl "$PIP_URL" | python3 - --index-url="$PYPI_URL"
+  stage="Install pip" \
+    && python3 -m ensurepip --upgrade --default-pip
   write-tfi "$stage" $?
 
   # Upgrade pip and setuptools
