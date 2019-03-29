@@ -41,6 +41,8 @@ apt-get -y install \
   curl \
   software-properties-common \
   python3 \
+  python3-venv \
+  python3-pip \
   git
 write-tfi "Install packages" $?
 
