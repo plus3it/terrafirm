@@ -184,16 +184,10 @@ catch() {
 }
 
 install-pip() {
-  pip_installed=1
-  command -v pip >/dev/null 2>&1 || pip_installed=0
-
-  if [ "$pip_installed" != "1" ] ; then
-    # Install pip
-    stage="Install pip" \
-      && python3 -m ensurepip --upgrade --default-pip
-    write-tfi "$stage" $?
-  fi
-
+  # Install pip
+  stage="Install pip" \
+    && python3 -m ensurepip --upgrade --default-pip
+  write-tfi "$stage" $?
 }
 
 install-watchmaker() {
