@@ -9,11 +9,16 @@ handle_builder_exit() {
     write-tfi "Upload error signal" $?
 
     catch "$@"
-  
+
   else
     finally "$@"
   fi
 }
+
+export DEBIAN_FRONTEND=noninteractive
+
+apt-get -y update && apt-get -y install awscli
+write-tfi "apt-get update, install awscli" $?
 
 # to resolve the issue with "sudo: unable to resolve host"
 # https://forums.aws.amazon.com/message.jspa?messageID=495274
@@ -28,13 +33,18 @@ else
 fi
 write-tfi "Fix host resolution" $?
 
-apt-get -y update
-apt-get -y upgrade
+echo "ARRAY <ignore> devices=/dev/sda" >> /etc/mdadm/mdadm.conf
+write-tfi "Fix no arrays warning" $?
+
+UCF_FORCE_CONFFNEW=1 \
+  apt-get -y \
+  -o Dpkg::Options::="--force-confdef" \
+  -o Dpkg::Options::="--force-confnew" \
+  upgrade
 write-tfi "apt-get upgrade" $?
 
 # install prerequisites
 apt-get -y install \
-  awscli \
   python-virtualenv \
   apt-transport-https \
   ca-certificates \
