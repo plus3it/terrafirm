@@ -17,7 +17,6 @@ resource "aws_key_pair" "auth" {
 }
 
 resource "tls_private_key" "gen_key" {
-  count     = "1"
   algorithm = "RSA"
   rsa_bits  = "4096"
 }
