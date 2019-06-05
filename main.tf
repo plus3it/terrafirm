@@ -8,8 +8,8 @@ resource "aws_instance" "win_builder" {
   instance_type               = "${local.win_builder_instance_type}"
   key_name                    = "${aws_key_pair.auth.id}"
   subnet_id                   = "${var.tfi_subnet_id}"
-  user_data                   = "<powershell>${data.template_file.win_builder_preface.rendered}\n${data.template_file.win_userdata_common.rendered} ${data.template_file.win_userdata_builder_specific.rendered}</powershell>"
-  vpc_security_group_ids      = ["${aws_security_group.winrm_sg.id}"]
+  user_data                   = "<powershell>${join("", data.template_file.win_builder_preface.*.rendered)}\n${join("", data.template_file.win_userdata_common.*.rendered)} ${join("", data.template_file.win_userdata_builder_specific.*.rendered)}</powershell>"
+  vpc_security_group_ids      = ["${join("", aws_security_group.winrm_sg.*.id)}"]
 
   tags = {
     Name = "${local.resource_name}-builder"
@@ -22,12 +22,12 @@ resource "aws_instance" "win_builder" {
   connection {
     type     = "winrm"
     user     = "${var.tfi_rm_user}"
-    password = "${random_string.password.result}"
+    password = "${join("", random_string.password.*.result)}"
     timeout  = "30m"
   }
 
   provisioner "file" {
-    content     = "${data.template_file.win_builder_preface.rendered}\n${data.template_file.win_build_test.rendered}"
+    content     = "${join("", data.template_file.win_builder_preface.*.rendered)}\n${join(data.template_file.win_build_test.*.rendered)}"
     destination = "C:\\scripts\\builder_test.ps1"
   }
 
@@ -48,8 +48,8 @@ resource "aws_instance" "lx_builder" {
   instance_type               = "${local.lx_builder_instance_type}"
   key_name                    = "${aws_key_pair.auth.id}"
   subnet_id                   = "${var.tfi_subnet_id}"
-  user_data                   = "${data.template_file.lx_builder_preface.rendered}\n${data.template_file.lx_userdata_common.rendered}\n${data.template_file.lx_userdata_builder_specific.rendered}"
-  vpc_security_group_ids      = ["${aws_security_group.ssh_sg.id}"]
+  user_data                   = "${join("", data.template_file.lx_builder_preface.*.rendered)}\n${join("", data.template_file.lx_userdata_common.*.rendered)}\n${join("", data.template_file.lx_userdata_builder_specific.*.rendered)}"
+  vpc_security_group_ids      = ["${join("", aws_security_group.ssh_sg.*.id)}"]
 
   tags = {
     Name = "${local.resource_name}-builder"
@@ -68,7 +68,7 @@ resource "aws_instance" "lx_builder" {
   }
 
   provisioner "file" {
-    content     = "${data.template_file.lx_builder_preface.rendered}\n${data.template_file.lx_build_test.rendered}"
+    content     = "${join("", data.template_file.lx_builder_preface.*.rendered)}\n${join("", data.template_file.lx_build_test.*.rendered)}"
     destination = "~/builder_test.sh"
   }
 
@@ -95,8 +95,8 @@ resource "aws_instance" "win" {
   instance_type               = "${var.tfi_win_instance_type}"
   key_name                    = "${aws_key_pair.auth.id}"
   subnet_id                   = "${var.tfi_subnet_id}"
-  user_data                   = "<powershell>${element(data.template_file.win_script_preface.*.rendered, count.index)}\n${data.template_file.win_userdata_common.rendered} ${data.template_file.win_userdata_specific.rendered}</powershell>"
-  vpc_security_group_ids      = ["${aws_security_group.winrm_sg.id}"]
+  user_data                   = "<powershell>${element(data.template_file.win_script_preface.*.rendered, count.index)}\n${join("", data.template_file.win_userdata_common.*.rendered)} ${join("", data.template_file.win_userdata_specific.*.rendered)}</powershell>"
+  vpc_security_group_ids      = ["${join("", aws_security_group.winrm_sg.*.id)}"]
 
   tags = {
     Name = "${local.resource_name}"
@@ -109,12 +109,12 @@ resource "aws_instance" "win" {
   connection {
     type     = "winrm"
     user     = "${var.tfi_rm_user}"
-    password = "${random_string.password.result}"
+    password = "${join("", random_string.password.*.result)}"
     timeout  = "40m"
   }
 
   provisioner "file" {
-    content     = "${element(data.template_file.win_script_preface.*.rendered, count.index)}\n${data.template_file.win_test.rendered}"
+    content     = "${element(data.template_file.win_script_preface.*.rendered, count.index)}\n${join("", data.template_file.win_test.*.rendered)}"
     destination = "C:\\scripts\\watchmaker_test.ps1"
   }
 
@@ -135,8 +135,8 @@ resource "aws_instance" "lx" {
   instance_type               = "${var.tfi_lx_instance_type}"
   key_name                    = "${aws_key_pair.auth.id}"
   subnet_id                   = "${var.tfi_subnet_id}"
-  user_data                   = "${element(data.template_file.lx_script_preface.*.rendered, count.index)}\n${data.template_file.lx_userdata_common.rendered}\n${data.template_file.lx_userdata_specific.rendered}"
-  vpc_security_group_ids      = ["${aws_security_group.ssh_sg.id}"]
+  user_data                   = "${element(data.template_file.lx_script_preface.*.rendered, count.index)}\n${join("", data.template_file.lx_userdata_common.*.rendered)}\n${join("", data.template_file.lx_userdata_specific.*.rendered)}"
+  vpc_security_group_ids      = ["${join("", aws_security_group.ssh_sg.*.id)}"]
 
   tags = {
     Name = "${local.resource_name}"
@@ -155,7 +155,7 @@ resource "aws_instance" "lx" {
   }
 
   provisioner "file" {
-    content     = "${element(data.template_file.lx_script_preface.*.rendered, count.index)}\n${data.template_file.lx_test.rendered}"
+    content     = "${element(data.template_file.lx_script_preface.*.rendered, count.index)}\n${join("", data.template_file.lx_test.*.rendered)}"
     destination = "~/watchmaker_test.sh"
   }
 

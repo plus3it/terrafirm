@@ -100,7 +100,7 @@ data "template_file" "win_userdata_common" {
     tfi_git_url              = "${local.win_git_url}"
     tfi_pypi_url             = "${local.pypi_url}"
     tfi_python_url           = "${local.win_python_url}"
-    tfi_rm_pass              = "${random_string.password.result}"
+    tfi_rm_pass              = "${join("", random_string.password.*.result)}"
     tfi_rm_user              = "${var.tfi_rm_user}"
     tfi_temp_dir             = "${local.win_temp_dir}"
     tfi_userdata_log         = "${var.tfi_win_userdata_log}"
