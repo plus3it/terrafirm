@@ -21,13 +21,14 @@ resource "aws_instance" "win_builder" {
 
   connection {
     type     = "winrm"
+    host     = "${self.public_ip}"
     user     = "${var.tfi_rm_user}"
     password = "${join("", random_string.password.*.result)}"
     timeout  = "30m"
   }
 
   provisioner "file" {
-    content     = "${join("", data.template_file.win_builder_preface.*.rendered)}\n${join(data.template_file.win_build_test.*.rendered)}"
+    content     = "${join("", data.template_file.win_builder_preface.*.rendered)}\n${join("", data.template_file.win_build_test.*.rendered)}"
     destination = "C:\\scripts\\builder_test.ps1"
   }
 
@@ -61,6 +62,7 @@ resource "aws_instance" "lx_builder" {
 
   connection {
     #ssh connection to tier-2 instance
+    host        = "${self.public_ip}"
     user        = "${local.lx_builder_user}"
     private_key = "${tls_private_key.gen_key.private_key_pem}"
     port        = "${local.ssh_port}"
@@ -108,6 +110,7 @@ resource "aws_instance" "win" {
 
   connection {
     type     = "winrm"
+    host     = "${self.public_ip}"
     user     = "${var.tfi_rm_user}"
     password = "${join("", random_string.password.*.result)}"
     timeout  = "40m"
@@ -148,6 +151,7 @@ resource "aws_instance" "lx" {
 
   connection {
     #ssh connection to tier-2 instance
+    host        = "${self.public_ip}"
     user        = "${var.tfi_ssh_user}"
     private_key = "${tls_private_key.gen_key.private_key_pem}"
     port        = "${local.ssh_port}"
