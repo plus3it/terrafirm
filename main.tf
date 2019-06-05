@@ -11,7 +11,7 @@ resource "aws_instance" "win_builder" {
   user_data                   = "<powershell>${data.template_file.win_builder_preface.rendered}\n${data.template_file.win_userdata_common.rendered} ${data.template_file.win_userdata_builder_specific.rendered}</powershell>"
   vpc_security_group_ids      = ["${aws_security_group.winrm_sg.id}"]
 
-  tags {
+  tags = {
     Name = "${local.resource_name}-builder"
   }
 
@@ -51,7 +51,7 @@ resource "aws_instance" "lx_builder" {
   user_data                   = "${data.template_file.lx_builder_preface.rendered}\n${data.template_file.lx_userdata_common.rendered}\n${data.template_file.lx_userdata_builder_specific.rendered}"
   vpc_security_group_ids      = ["${aws_security_group.ssh_sg.id}"]
 
-  tags {
+  tags = {
     Name = "${local.resource_name}-builder"
   }
 
@@ -98,7 +98,7 @@ resource "aws_instance" "win" {
   user_data                   = "<powershell>${element(data.template_file.win_script_preface.*.rendered, count.index)}\n${data.template_file.win_userdata_common.rendered} ${data.template_file.win_userdata_specific.rendered}</powershell>"
   vpc_security_group_ids      = ["${aws_security_group.winrm_sg.id}"]
 
-  tags {
+  tags = {
     Name = "${local.resource_name}"
   }
 
@@ -138,7 +138,7 @@ resource "aws_instance" "lx" {
   user_data                   = "${element(data.template_file.lx_script_preface.*.rendered, count.index)}\n${data.template_file.lx_userdata_common.rendered}\n${data.template_file.lx_userdata_specific.rendered}"
   vpc_security_group_ids      = ["${aws_security_group.ssh_sg.id}"]
 
-  tags {
+  tags = {
     Name = "${local.resource_name}"
   }
 

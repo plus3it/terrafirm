@@ -3,7 +3,7 @@ data "template_file" "win_script_preface" {
   count    = "${local.win_request_count}"
   template = "${file("windows/preface.ps1")}"
 
-  vars {
+  vars = {
     tfi_ami_key = "${element(local.win_requests, count.index)}"
     tfi_count_index = "${count.index}"
   }
@@ -14,7 +14,7 @@ data "template_file" "lx_script_preface" {
   count    = "${local.lx_request_count}"
   template = "${file("linux/preface.sh")}"
 
-  vars {
+  vars = {
     tfi_ami_key = "${element(local.lx_requests, count.index)}"
     tfi_count_index = "${count.index}"
   }
@@ -24,7 +24,7 @@ data "template_file" "win_builder_preface" {
   count    = "${local.win_need_builder}"
   template = "${file("windows/preface.ps1")}"
 
-  vars {
+  vars = {
     tfi_ami_key = "${local.win_builder_ami_key}"
     tfi_count_index = "builder"
   }
@@ -34,7 +34,7 @@ data "template_file" "lx_builder_preface" {
   count    = "${local.lx_need_builder}"
   template = "${file("linux/preface.sh")}"
 
-  vars {
+  vars = {
     tfi_ami_key = "${local.lx_builder_ami_key}"
     tfi_count_index = "builder"
   }
@@ -45,7 +45,7 @@ data "template_file" "win_userdata_specific" {
   count    = "${local.win_request_any_count}"
   template = "${file("windows/userdata.ps1")}"
 
-  vars {
+  vars = {
     tfi_common_args  = "${var.tfi_common_args}"
     tfi_win_args     = "${var.tfi_win_args}"
     tfi_executable   = "${local.win_executable}"
@@ -58,7 +58,7 @@ data "template_file" "lx_userdata_specific" {
   count    = "${local.lx_request_any_count}"
   template = "${file("linux/userdata.sh")}"
 
-  vars {
+  vars = {
     tfi_common_args = "${var.tfi_common_args}"
     tfi_lx_args     = "${var.tfi_lx_args}"
     tfi_executable  = "${local.lx_executable}"
@@ -70,7 +70,7 @@ data "template_file" "win_userdata_builder_specific" {
   count    = "${local.win_need_builder}"
   template = "${file("windows/builder_userdata.ps1")}"
 
-  vars {
+  vars = {
     tfi_release_prefix = "${local.release_prefix}"
   }
 }
@@ -80,7 +80,7 @@ data "template_file" "lx_userdata_builder_specific" {
   count    = "${local.lx_need_builder}"
   template = "${file("linux/builder_userdata.sh")}"
 
-  vars {
+  vars = {
     tfi_docker_slug    = "${var.tfi_docker_slug}"
     tfi_release_prefix = "${local.release_prefix}"
   }
@@ -90,7 +90,7 @@ data "template_file" "win_userdata_common" {
   count    = "${local.win_request_any_count}"
   template = "${file("windows/userdata_common.ps1")}"
 
-  vars {
+  vars = {
     tfi_7zip_url             = "${local.win_7zip_url}"
     tfi_bootstrap_url        = "${local.win_bootstrap_url}"
     tfi_build_slug           = "${local.build_slug}"
@@ -114,7 +114,7 @@ data "template_file" "lx_userdata_common" {
   count    = "${local.lx_request_any_count}"
   template = "${file("linux/userdata_common.sh")}"
 
-  vars {
+  vars = {
     tfi_aws_region           = "${var.tfi_aws_region}"
     tfi_build_slug           = "${local.build_slug}"
     tfi_error_signal_file    = "${local.lx_error_signal_file}"
@@ -133,7 +133,7 @@ data "template_file" "win_test" {
   count    = "${local.win_request_any_count}"
   template = "${file("windows/watchmaker_test.ps1")}"
 
-  vars {
+  vars = {
     tfi_download_dir         = "${local.win_download_dir}"
     tfi_userdata_status_file = "${local.win_userdata_status_file}"
   }
@@ -143,7 +143,7 @@ data "template_file" "lx_test" {
   count    = "${local.lx_request_any_count}"
   template = "${file("linux/watchmaker_test.sh")}"
 
-  vars {
+  vars = {
     tfi_userdata_status_file = "${local.lx_userdata_status_file}"
   }
 }
@@ -152,7 +152,7 @@ data "template_file" "win_build_test" {
   count    = "${local.win_need_builder}"
   template = "${file("windows/builder_test.ps1")}"
 
-  vars {
+  vars = {
     tfi_ami_key              = "${local.win_builder_ami_key}"
     tfi_userdata_status_file = "${local.win_userdata_status_file}"
   }
@@ -162,7 +162,7 @@ data "template_file" "lx_build_test" {
   count    = "${local.lx_need_builder}"
   template = "${file("linux/builder_test.sh")}"
 
-  vars {
+  vars = {
     tfi_ami_key              = "${local.lx_builder_ami_key}"
     tfi_userdata_status_file = "${local.lx_userdata_status_file}"
   }
