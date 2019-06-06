@@ -39,7 +39,7 @@ resource "aws_security_group" "winrm_sg" {
   description = "Used in terrafirm"
   vpc_id      = "${data.aws_subnet.tfi.vpc_id}"
 
-  tags {
+  tags = {
     Name = "${local.resource_name}"
   }
 
@@ -67,7 +67,7 @@ resource "aws_security_group" "ssh_sg" {
   description = "Used in terrafirm"
   vpc_id      = "${data.aws_subnet.tfi.vpc_id}"
 
-  tags {
+  tags = {
     Name = "${local.resource_name}"
   }
 
