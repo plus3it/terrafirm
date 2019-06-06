@@ -27,7 +27,7 @@ locals {
     "${local.lx_builder_ami_key}" = "ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server*"
   }
 
-    ami_name_regexes = {
+  ami_name_regexes = {
     "${local.lx_ami_keys[0]}"     = "spel-minimal-centos-6-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
     "${local.lx_ami_keys[1]}"     = "spel-minimal-centos-7-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
     "${local.lx_ami_keys[2]}"     = "spel-minimal-rhel-6-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
@@ -101,21 +101,18 @@ locals {
       )
     )
   )}"
-
   # only search for AMIs that have been requested and only once (i.e, win08pkg + win08 is only 1 search)
   ami_filters_to_search = "${matchkeys(
     values(local.ami_name_filters),
     keys(local.ami_name_filters),
     local.amis_to_search
   )}"
-
   # get regex for appropriate AMIs
   ami_regexes_to_search = "${matchkeys(
     values(local.ami_name_regexes),
     keys(local.ami_name_regexes),
     local.amis_to_search
   )}"
-
   # one stop shop / data structure for getting ami id with ami key
   ami_ids = "${zipmap(
     local.amis_to_search,
