@@ -28,7 +28,7 @@ variable "tfi_assign_public_ip" {
 }
 
 variable "tfi_win_instance_type" {
-  default = "t2.medium"
+  default = "t2.large"
 }
 
 variable "tfi_lx_instance_type" {
