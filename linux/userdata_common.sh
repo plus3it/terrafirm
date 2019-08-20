@@ -202,13 +202,13 @@ install-watchmaker() {
 
   # Upgrade pip and setuptools
   stage="Upgrade pip/setuptools" \
-    && pip install --index-url="$PYPI_URL" --upgrade pip setuptools
-  pip --version
+    && python3 -m pip install --index-url="$PYPI_URL" --upgrade pip setuptools
+  python3 -m pip --version
   write-tfi "$stage" $?
 
   # Install boto3
   stage="Install boto3" \
-    && pip install --index-url="$PYPI_URL" --upgrade boto3
+    && python3 -m pip install --index-url="$PYPI_URL" --upgrade boto3
   write-tfi "$stage" $?
 
   # Clone watchmaker
@@ -233,7 +233,7 @@ install-watchmaker() {
   write-tfi "$stage" $?
 
   # Install watchmaker
-  stage="Install Watchmaker" && pip install --upgrade --index-url "$PYPI_URL" --editable .
+  stage="Install Watchmaker" && python3 -m pip install --upgrade --index-url "$PYPI_URL" --editable .
   watchmaker --version
   write-tfi "$stage" $?
 }
