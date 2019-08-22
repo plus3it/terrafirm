@@ -15,8 +15,8 @@ Variable | Default | Req/Opt (in CodeBuild) | Description
 `TF_VAR_tfi_ssh_user` | root | optional | Which username to use when connecting via SSH to Linux instances.
 `TF_VAR_tfi_instance_profile` | [empty] | optional | Instance profile to be used in provisioning resources. This is generally the same as the role if the role is an EC2 role.
 `TF_VAR_tfi_assign_public_ip` | false | optional | Whether or not to assign a public IP to the instances built by Terraform.
-`TF_VAR_tfi_win_instance_type` | t2.medium | optional | AWS instance type for Windows instances.
-`TF_VAR_tfi_lx_instance_type` | t2.micro | optional | AWS instance type for Linux instances.
+`TF_VAR_tfi_win_instance_type` | t2.large | optional | AWS instance type for Windows instances.
+`TF_VAR_tfi_lx_instance_type` | t2.medium | optional | AWS instance type for Linux instances.
 `TF_VAR_tfi_git_repo` | https://github.com/plus3it/watchmaker.git | optional | Which git repository to use in getting watchmaker code.
 `TF_VAR_tfi_git_ref` | master | optional | Which branch or pull request number of the repository to use in getting watchmaker code.
 `TF_VAR_tfi_common_args` | -n --log-level debug | optional | Command line arguments used when installing Watchmaker (Windows/Linux).

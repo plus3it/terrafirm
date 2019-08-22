@@ -32,7 +32,7 @@ variable "tfi_win_instance_type" {
 }
 
 variable "tfi_lx_instance_type" {
-  default = "t2.micro"
+  default = "t2.medium"
 }
 
 variable "tfi_git_repo" {
