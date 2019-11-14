@@ -2,7 +2,7 @@
 
 # Subnet for instances
 data "aws_subnet" "tfi" {
-  id = "${var.tfi_subnet_id == "" ? aws_default_subnet.tfi.id : var.tfi_subnet_id}"
+  id = var.tfi_subnet_id == "" ? aws_default_subnet.tfi.id : var.tfi_subnet_id
 }
 
 # Used to get local ip for security group ingress
@@ -13,7 +13,7 @@ data "http" "ip" {
 # used for importing the key pair created using aws cli
 resource "aws_key_pair" "auth" {
   key_name   = "${local.resource_name}-key"
-  public_key = "${tls_private_key.gen_key.public_key_openssh}"
+  public_key = tls_private_key.gen_key.public_key_openssh
 }
 
 resource "tls_private_key" "gen_key" {
@@ -22,25 +22,25 @@ resource "tls_private_key" "gen_key" {
 }
 
 resource "random_string" "password" {
-  count            = "${local.win_request_any_count}"
+  count            = local.win_request_any_count
   length           = 18
   special          = true
   override_special = "()~!@#^*+=|{}[]:;,?"
 }
 
 resource "aws_default_subnet" "tfi" {
-  availability_zone = "${var.tfi_availability_zone}"
+  availability_zone = var.tfi_availability_zone
 }
 
 # Security group to access the instances over WinRM
 resource "aws_security_group" "winrm_sg" {
-  count       = "${local.win_request_any_count}"
+  count       = local.win_request_any_count
   name        = "${local.resource_name}-winrm"
   description = "Used in terrafirm"
-  vpc_id      = "${data.aws_subnet.tfi.vpc_id}"
+  vpc_id      = data.aws_subnet.tfi.vpc_id
 
   tags = {
-    Name = "${local.resource_name}"
+    Name = local.resource_name
   }
 
   # SSH access from anywhere
@@ -62,19 +62,19 @@ resource "aws_security_group" "winrm_sg" {
 
 # Security group to access the instances over SSH
 resource "aws_security_group" "ssh_sg" {
-  count       = "${local.lx_request_any_count}" # only create if any lx instances
+  count       = local.lx_request_any_count # only create if any lx instances
   name        = "${local.resource_name}-ssh"
   description = "Used in terrafirm"
-  vpc_id      = "${data.aws_subnet.tfi.vpc_id}"
+  vpc_id      = data.aws_subnet.tfi.vpc_id
 
   tags = {
-    Name = "${local.resource_name}"
+    Name = local.resource_name
   }
 
   # Non-standard port SSH access
   ingress {
-    from_port   = "${local.ssh_port}"
-    to_port     = "${local.ssh_port}"
+    from_port   = local.ssh_port
+    to_port     = local.ssh_port
     protocol    = "tcp"
     cidr_blocks = ["${chomp(data.http.ip.body)}/32"]
   }
