@@ -15,7 +15,7 @@ output "ami_ids" {
 }
 
 output "winrm_pass" {
-  value = random_string.password.*.result
+  value = join("", random_string.password.*.result)
 }
 
 output "private_key" {
