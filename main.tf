@@ -8,10 +8,12 @@ resource "aws_instance" "win_builder" {
   instance_type               = local.win_builder_instance_type
   key_name                    = aws_key_pair.auth.id
   subnet_id                   = var.tfi_subnet_id
-  user_data = "<powershell>${join("", data.template_file.win_builder_preface.*.rendered)}\n${join("", data.template_file.win_userdata_common.*.rendered)} ${join(
-    "",
-    data.template_file.win_userdata_builder_specific.*.rendered,
-  )}</powershell>"
+  user_data = <<-HEREDOC
+    <powershell>
+    ${join("", data.template_file.win_builder_preface.*.rendered)}
+    ${join("", data.template_file.win_userdata_common.*.rendered)} ${join("", data.template_file.win_userdata_builder_specific.*.rendered)}
+    </powershell>
+    HEREDOC
   vpc_security_group_ids = [join("", aws_security_group.winrm_sg.*.id)]
 
   tags = {
@@ -31,7 +33,10 @@ resource "aws_instance" "win_builder" {
   }
 
   provisioner "file" {
-    content     = "${join("", data.template_file.win_builder_preface.*.rendered)}\n${join("", data.template_file.win_build_test.*.rendered)}"
+    content     = <<-HEREDOC
+      ${join("", data.template_file.win_builder_preface.*.rendered)}
+      ${join("", data.template_file.win_build_test.*.rendered)}
+      HEREDOC
     destination = "C:\\scripts\\builder_test.ps1"
   }
 
@@ -52,10 +57,11 @@ resource "aws_instance" "lx_builder" {
   instance_type               = local.lx_builder_instance_type
   key_name                    = aws_key_pair.auth.id
   subnet_id                   = var.tfi_subnet_id
-  user_data = "${join("", data.template_file.lx_builder_preface.*.rendered)}\n${join("", data.template_file.lx_userdata_common.*.rendered)}\n${join(
-    "",
-    data.template_file.lx_userdata_builder_specific.*.rendered,
-  )}"
+  user_data = <<-HEREDOC
+    ${join("", data.template_file.lx_builder_preface.*.rendered)}
+    ${join("", data.template_file.lx_userdata_common.*.rendered)}
+    ${join("", data.template_file.lx_userdata_builder_specific.*.rendered)}
+    HEREDOC
   vpc_security_group_ids = [join("", aws_security_group.ssh_sg.*.id)]
 
   tags = {
@@ -77,7 +83,10 @@ resource "aws_instance" "lx_builder" {
   }
 
   provisioner "file" {
-    content     = "${join("", data.template_file.lx_builder_preface.*.rendered)}\n${join("", data.template_file.lx_build_test.*.rendered)}"
+    content     = <<-HEREDOC
+      ${join("", data.template_file.lx_builder_preface.*.rendered)}
+      ${join("", data.template_file.lx_build_test.*.rendered)}
+      HEREDOC
     destination = "~/builder_test.sh"
   }
 
@@ -106,10 +115,12 @@ resource "aws_instance" "win" {
   instance_type               = var.tfi_win_instance_type
   key_name                    = aws_key_pair.auth.id
   subnet_id                   = var.tfi_subnet_id
-  user_data = "<powershell>${element(
-    data.template_file.win_script_preface.*.rendered,
-    count.index,
-  )}\n${join("", data.template_file.win_userdata_common.*.rendered)} ${join("", data.template_file.win_userdata_specific.*.rendered)}</powershell>"
+  user_data = <<-HEREDOC
+    <powershell>
+    ${element(data.template_file.win_script_preface.*.rendered, count.index)}
+    ${join("", data.template_file.win_userdata_common.*.rendered)} ${join("", data.template_file.win_userdata_specific.*.rendered)}
+    </powershell>
+    HEREDOC
   vpc_security_group_ids = [join("", aws_security_group.winrm_sg.*.id)]
 
   tags = {
@@ -129,10 +140,10 @@ resource "aws_instance" "win" {
   }
 
   provisioner "file" {
-    content = "${element(
-      data.template_file.win_script_preface.*.rendered,
-      count.index,
-    )}\n${join("", data.template_file.win_test.*.rendered)}"
+    content = <<-HEREDOC
+      ${element(data.template_file.win_script_preface.*.rendered, count.index)}
+      ${join("", data.template_file.win_test.*.rendered)}
+      HEREDOC
     destination = "C:\\scripts\\watchmaker_test.ps1"
   }
 
@@ -153,7 +164,11 @@ resource "aws_instance" "lx" {
   instance_type               = var.tfi_lx_instance_type
   key_name                    = aws_key_pair.auth.id
   subnet_id                   = var.tfi_subnet_id
-  user_data                   = "${element(data.template_file.lx_script_preface.*.rendered, count.index)}\n${join("", data.template_file.lx_userdata_common.*.rendered)}\n${join("", data.template_file.lx_userdata_specific.*.rendered)}"
+  user_data                   = <<-HEREDOC
+    ${element(data.template_file.lx_script_preface.*.rendered, count.index)}
+    ${join("", data.template_file.lx_userdata_common.*.rendered)}
+    ${join("", data.template_file.lx_userdata_specific.*.rendered)}
+    HEREDOC
   vpc_security_group_ids      = [join("", aws_security_group.ssh_sg.*.id)]
 
   tags = {
@@ -175,7 +190,10 @@ resource "aws_instance" "lx" {
   }
 
   provisioner "file" {
-    content     = "${element(data.template_file.lx_script_preface.*.rendered, count.index)}\n${join("", data.template_file.lx_test.*.rendered)}"
+    content     = <<-HEREDOC
+      ${element(data.template_file.lx_script_preface.*.rendered, count.index)}
+      ${join("", data.template_file.lx_test.*.rendered)}
+      HEREDOC
     destination = "~/watchmaker_test.sh"
   }
 
@@ -193,4 +211,3 @@ resource "aws_instance" "lx" {
     }
   }
 }
-
