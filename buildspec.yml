@@ -26,3 +26,4 @@ phases:
         if [ "${TF_DESTROY_AFTER_TEST}" = "true" ]; then                       # destroy resources
           terraform destroy -no-color -input=false -force
         fi
+      - echo "ARTIFACT_LOCATION=https://s3.console.aws.amazon.com/s3/buckets/${ARTIFACT_PATH}/"

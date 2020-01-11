@@ -8,7 +8,7 @@ variable "tfi_subnet_id" {
 
 variable "tfi_instances" {
   default = []
-  type    = "list"
+  type    = list(string)
 }
 
 variable "tfi_rm_user" {
@@ -82,3 +82,4 @@ variable "tfi_aws_region" {
 variable "tfi_debug" {
   default = "1"
 }
+
