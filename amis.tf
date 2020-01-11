@@ -19,25 +19,25 @@ locals {
   )
 
   ami_name_filters = {
-    local.lx_ami_keys[0]     = "spel-minimal-centos-6-hvm-*.x86_64-gp2"
-    local.lx_ami_keys[1]     = "spel-minimal-centos-7-hvm-*.x86_64-gp2"
-    local.lx_ami_keys[2]     = "spel-minimal-rhel-6-hvm-*.x86_64-gp2"
-    local.lx_ami_keys[3]     = "spel-minimal-rhel-7-hvm-*.x86_64-gp2"
-    local.win_ami_keys[0]    = "Windows_Server-2008-R2_SP1-English-64Bit-Base*"
-    local.win_ami_keys[1]    = "Windows_Server-2012-R2_RTM-English-64Bit-Base*"
-    local.win_ami_keys[2]    = "Windows_Server-2016-English-Full-Base*"
-    local.lx_builder_ami_key = "ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server*"
+    (local.lx_ami_keys[0])     = "spel-minimal-centos-6-hvm-*.x86_64-gp2"
+    (local.lx_ami_keys[1])    = "spel-minimal-centos-7-hvm-*.x86_64-gp2"
+    (local.lx_ami_keys[2])     = "spel-minimal-rhel-6-hvm-*.x86_64-gp2"
+    (local.lx_ami_keys[3])     = "spel-minimal-rhel-7-hvm-*.x86_64-gp2"
+    (local.win_ami_keys[0])    = "Windows_Server-2008-R2_SP1-English-64Bit-Base*"
+    (local.win_ami_keys[1])    = "Windows_Server-2012-R2_RTM-English-64Bit-Base*"
+    (local.win_ami_keys[2])    = "Windows_Server-2016-English-Full-Base*"
+    (local.lx_builder_ami_key) = "ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server*"
   }
 
   ami_name_regexes = {
-    local.lx_ami_keys[0]     = "spel-minimal-centos-6-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
-    local.lx_ami_keys[1]     = "spel-minimal-centos-7-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
-    local.lx_ami_keys[2]     = "spel-minimal-rhel-6-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
-    local.lx_ami_keys[3]     = "spel-minimal-rhel-7-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
-    local.win_ami_keys[0]    = ""
-    local.win_ami_keys[1]    = ""
-    local.win_ami_keys[2]    = ""
-    local.lx_builder_ami_key = ""
+    (local.lx_ami_keys[0])     = "spel-minimal-centos-6-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
+    (local.lx_ami_keys[1])     = "spel-minimal-centos-7-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
+    (local.lx_ami_keys[2])     = "spel-minimal-rhel-6-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
+    (local.lx_ami_keys[3])     = "spel-minimal-rhel-7-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
+    (local.win_ami_keys[0])    = ""
+    (local.win_ami_keys[1])    = ""
+    (local.win_ami_keys[2])    = ""
+    (local.lx_builder_ami_key) = ""
   }
 
   # given any user ami key, which ami to use? (i.e., win08pkg = win08; win08 = win08)
@@ -47,10 +47,10 @@ locals {
     zipmap(local.lx_ami_keys, local.lx_ami_keys),
     zipmap(local.lx_pkg_ami_keys, local.lx_ami_keys),
     {
-      local.lx_builder_ami_key = local.lx_builder_ami_key
+      (local.lx_builder_ami_key) = local.lx_builder_ami_key
     },
     {
-      local.win_builder_ami_key = local.win_all_ami_keys[0]
+      (local.win_builder_ami_key) = local.win_all_ami_keys[0]
     },
   )
 
