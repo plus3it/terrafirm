@@ -17,7 +17,7 @@ resource "aws_instance" "win_builder" {
   vpc_security_group_ids = [join("", aws_security_group.winrm_sg.*.id)]
 
   tags = {
-    Name = "${local.resource_name}-builder"
+    Name = "${local.resource_name}-builder-${local.ami_underlying[local.win_builder_ami_key]}"
   }
 
   timeouts {
@@ -65,7 +65,7 @@ resource "aws_instance" "lx_builder" {
   vpc_security_group_ids = [join("", aws_security_group.ssh_sg.*.id)]
 
   tags = {
-    Name = "${local.resource_name}-builder"
+    Name = "${local.resource_name}-builder-${local.ami_underlying[local.lx_builder_ami_key]}"
   }
 
   timeouts {
@@ -124,7 +124,7 @@ resource "aws_instance" "win" {
   vpc_security_group_ids = [join("", aws_security_group.winrm_sg.*.id)]
 
   tags = {
-    Name = local.resource_name
+    Name = "${local.resource_name}-${local.ami_underlying[element(local.win_requests, count.index)]}"
   }
 
   timeouts {
@@ -172,7 +172,7 @@ resource "aws_instance" "lx" {
   vpc_security_group_ids      = [join("", aws_security_group.ssh_sg.*.id)]
 
   tags = {
-    Name = local.resource_name
+    Name = "${local.resource_name}-${local.ami_underlying[element(local.lx_requests, count.index)]}"
   }
 
   timeouts {
