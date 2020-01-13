@@ -1,6 +1,6 @@
 # AMIs and AMI keys - data structures to represent, no user input considered... yet
 locals {
-  win_ami_keys        = ["win08", "win12", "win16"]
+  win_ami_keys        = ["win08", "win12", "win16", "win19"]
   lx_ami_keys         = ["centos6", "centos7", "rhel6", "rhel7"]
   win_pkg_ami_keys    = formatlist("%spkg", local.win_ami_keys)
   lx_pkg_ami_keys     = formatlist("%spkg", local.lx_ami_keys)
@@ -20,12 +20,13 @@ locals {
 
   ami_name_filters = {
     (local.lx_ami_keys[0])     = "spel-minimal-centos-6-hvm-*.x86_64-gp2"
-    (local.lx_ami_keys[1])    = "spel-minimal-centos-7-hvm-*.x86_64-gp2"
+    (local.lx_ami_keys[1])     = "spel-minimal-centos-7-hvm-*.x86_64-gp2"
     (local.lx_ami_keys[2])     = "spel-minimal-rhel-6-hvm-*.x86_64-gp2"
     (local.lx_ami_keys[3])     = "spel-minimal-rhel-7-hvm-*.x86_64-gp2"
     (local.win_ami_keys[0])    = "Windows_Server-2008-R2_SP1-English-64Bit-Base*"
     (local.win_ami_keys[1])    = "Windows_Server-2012-R2_RTM-English-64Bit-Base*"
     (local.win_ami_keys[2])    = "Windows_Server-2016-English-Full-Base*"
+    (local.win_ami_keys[3])    = "Windows_Server-2019-English-Full-Base*"
     (local.lx_builder_ami_key) = "ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server*"
   }
 
@@ -37,6 +38,7 @@ locals {
     (local.win_ami_keys[0])    = ""
     (local.win_ami_keys[1])    = ""
     (local.win_ami_keys[2])    = ""
+    (local.win_ami_keys[3])    = ""
     (local.lx_builder_ami_key) = ""
   }
 
