@@ -1,6 +1,6 @@
 # AMIs and AMI keys - data structures to represent, no user input considered... yet
 locals {
-  win_ami_keys        = ["win08", "win12", "win16", "win19"]
+  win_ami_keys        = ["win12", "win16", "win19"]
   lx_ami_keys         = ["centos6", "centos7", "rhel6", "rhel7"]
   win_pkg_ami_keys    = formatlist("%spkg", local.win_ami_keys)
   lx_pkg_ami_keys     = formatlist("%spkg", local.lx_ami_keys)
@@ -23,10 +23,9 @@ locals {
     (local.lx_ami_keys[1])     = "spel-minimal-centos-7-hvm-*.x86_64-gp2"
     (local.lx_ami_keys[2])     = "spel-minimal-rhel-6-hvm-*.x86_64-gp2"
     (local.lx_ami_keys[3])     = "spel-minimal-rhel-7-hvm-*.x86_64-gp2"
-    (local.win_ami_keys[0])    = "Windows_Server-2008-R2_SP1-English-64Bit-Base*"
-    (local.win_ami_keys[1])    = "Windows_Server-2012-R2_RTM-English-64Bit-Base*"
-    (local.win_ami_keys[2])    = "Windows_Server-2016-English-Full-Base*"
-    (local.win_ami_keys[3])    = "Windows_Server-2019-English-Full-Base*"
+    (local.win_ami_keys[0])    = "Windows_Server-2012-R2_RTM-English-64Bit-Base*"
+    (local.win_ami_keys[1])    = "Windows_Server-2016-English-Full-Base*"
+    (local.win_ami_keys[2])    = "Windows_Server-2019-English-Full-Base*"
     (local.lx_builder_ami_key) = "ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server*"
   }
 
@@ -38,11 +37,10 @@ locals {
     (local.win_ami_keys[0])    = ""
     (local.win_ami_keys[1])    = ""
     (local.win_ami_keys[2])    = ""
-    (local.win_ami_keys[3])    = ""
     (local.lx_builder_ami_key) = ""
   }
 
-  # given any user ami key, which ami to use? (i.e., win08pkg = win08; win08 = win08)
+  # given any user ami key, which ami to use? (i.e., win12pkg = win12; win12 = win12)
   ami_underlying = merge(
     zipmap(local.win_ami_keys, local.win_ami_keys),
     zipmap(local.win_pkg_ami_keys, local.win_ami_keys),
@@ -107,7 +105,7 @@ locals {
     local.user_requests */
 
   # Starting from innermost:
-  #   reduce to underlying (actual) ami (e.g., win08pkg -> win08),
+  #   reduce to underlying (actual) ami (e.g., win12pkg -> win12),
   #   concat = combine with builder lists in case 1 or both builders are needed,
   #   compact = get rid of empty builder lists (empty string lists) if they aren't needed,
   #   reduce to distinct values,
@@ -130,7 +128,7 @@ locals {
     ),
   )
 
-  # only search for AMIs that have been requested and only once (i.e, win08pkg + win08 is only 1 search)
+  # only search for AMIs that have been requested and only once (i.e, win12pkg + win12 is only 1 search)
   ami_filters_to_search = matchkeys(
     values(local.ami_name_filters),
     keys(local.ami_name_filters),

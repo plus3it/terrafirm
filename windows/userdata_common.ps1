@@ -130,8 +130,7 @@ function Publish-Artifacts
   Invoke-Expression -Command "mkdir $ArtifactDir" -ErrorAction SilentlyContinue
   Invoke-Expression -Command "mkdir $ArtifactDir\watchmaker" -ErrorAction SilentlyContinue # need to create dir if globbing to it
   Copy-Item "C:\Watchmaker\Logs\*log" -Destination "$ArtifactDir\watchmaker" -Recurse -Force
-  Copy-Item "C:\Watchmaker\SCAP\Results" -Destination "$ArtifactDir\scap_output" -Recurse -Force
-  Copy-Item "C:\Watchmaker\SCAP\Logs" -Destination "$ArtifactDir\scap_logs" -Recurse -Force
+  Copy-Item "C:\Watchmaker\SCAP" -Destination "$ArtifactDir\scap" -Recurse -Force
   Copy-Item "C:\ProgramData\Amazon\EC2-Windows\Launch\Log" -Destination "$ArtifactDir\cloud" -Recurse -Force
   Copy-Item "C:\Program Files\Amazon\Ec2ConfigService\Logs" -Destination "$ArtifactDir\cloud" -Recurse -Force
   Copy-Item "C:\Windows\TEMP\*.tmp" -Destination "$ArtifactDir\cloud" -Recurse -Force
