@@ -1,8 +1,11 @@
 # setup error trap to go to catch function
 
+check-metadata-availability
 
 set -e
 trap 'catch $? $LINENO' EXIT
+
+enable-yum-repo
 
 if [[ "$ami_key" == *pkg ]]; then
   # if it ends with 'pkg', test standalone

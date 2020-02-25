@@ -1,4 +1,7 @@
 
+## Only functions and environment variables in this file.
+## Calls and functionality should be in userdata.sh or builder_userdata.sh.
+
 exec &> ${tfi_userdata_log}
 
 build_slug="${tfi_build_slug}"
@@ -6,11 +9,6 @@ error_signal_file="${tfi_error_signal_file}"
 temp_dir="${tfi_temp_dir}"
 export AWS_REGION="${tfi_aws_region}"
 debug_mode="${tfi_debug}"
-
-if [[ "$ami_key" == rhel6* ]] ; then
-  yum-config-manager --enable rhui-REGION-rhel-server-releases-optional
-  yum -y update
-fi
 
 echo "AMI KEY: ------------------------------- $index_str $ami_key ---------------------"
 
@@ -24,6 +22,21 @@ debug-2s3() {
   echo "$msg" >> $debug_file
   aws s3 cp "$debug_file" "s3://$build_slug/$${index_str}$${ami_key}/" || true
   aws s3 cp "${tfi_userdata_log}" "s3://$build_slug/$${index_str}$${ami_key}/" || true
+}
+
+check-metadata-availability() {
+  local metadata_loopback_az="http://169.254.169.254/latest/meta-data/placement/availability-zone"
+
+  retry 50 curl -sSL $metadata_loopback_az
+
+  write-tfi "Connect to EC2 metadata (AZ is $( curl $metadata_loopback_az ))" $?
+}
+
+enable-yum-repo() {
+  if [[ "$ami_key" == rhel6* ]] ; then
+    yum-config-manager --enable rhui-REGION-rhel-server-releases-optional
+    yum -y update
+  fi
 }
 
 write-tfi() {
