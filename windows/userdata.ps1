@@ -1,4 +1,6 @@
 
+Check-Metadata-Availability
+
 Try {
 
   Write-Tfi "Start install"

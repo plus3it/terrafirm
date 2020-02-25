@@ -37,6 +37,18 @@ function Debug-2S3
   Write-S3Object -BucketName "$BuildSlug/$IndexStr$AMIKey" -File $UserdataLogFile
 }
 
+function Check-Metadata-Availability
+## This will not return until metadata is available.
+{
+  $MetadataLoopbackAZ = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
+  $MetadataCommand = "Invoke-WebRequest -Uri $MetadataLoopbackAZ -UseBasicParsing | Select-Object -ExpandProperty Content"
+
+  Test-Command $MetadataCommand 50
+
+  Invoke-Expression -Command $MetadataCommand -OutVariable AZ
+  Write-Tfi "Connect to EC2 metadata (AZ is $AZ)" $?
+}
+
 function Write-Tfi
 ## Writes messages to a Terrafirm log file. Second param is success/failure related to msg.
 {
@@ -245,11 +257,11 @@ function Set-Password
   {
     Write-Tfi "Unable to set password because user ($User) was not found."
   }
-  
+
 }
 
 function Invoke-CmdScript
-## Invoke the specified batch file with params, and propagate env var changes back to 
+## Invoke the specified batch file with params, and propagate env var changes back to
 ## PowerShell environment that called it.
 ##
 ## Recipe from "Windows PowerShell Cookbook by Lee Holmes"
