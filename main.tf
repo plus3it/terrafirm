@@ -207,7 +207,7 @@ resource "aws_instance" "lx" {
       host = coalesce(self.public_ip, self.private_ip)
       type = "ssh"
       # this is where terraform puts the above inline script
-      script_path = "~/inline.sh"
+      script_path = "~/inline-mini-${local.ami_underlying[element(local.lx_requests, count.index)]}.sh"
     }
   }
 }
