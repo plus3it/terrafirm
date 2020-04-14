@@ -144,12 +144,12 @@ resource "aws_instance" "win" {
       ${element(data.template_file.win_script_preface.*.rendered, count.index)}
       ${join("", data.template_file.win_test.*.rendered)}
       HEREDOC
-    destination = "C:\\scripts\\watchmaker_test.ps1"
+    destination = "C:\\scripts\\inline-${local.ami_underlying[element(local.win_requests, count.index)]}.ps1"
   }
 
   provisioner "remote-exec" {
     inline = [
-      "powershell.exe -File C:\\scripts\\watchmaker_test.ps1",
+      "powershell.exe -File C:\\scripts\\inline-${local.ami_underlying[element(local.win_requests, count.index)]}.ps1",
     ]
   }
 }
@@ -194,13 +194,13 @@ resource "aws_instance" "lx" {
       ${element(data.template_file.lx_script_preface.*.rendered, count.index)}
       ${join("", data.template_file.lx_test.*.rendered)}
       HEREDOC
-    destination = "~/watchmaker_test.sh"
+    destination = "~/inline-${local.ami_underlying[element(local.lx_requests, count.index)]}.sh"
   }
 
   provisioner "remote-exec" {
     inline = [
-      "chmod +x ~/watchmaker_test.sh",
-      "~/watchmaker_test.sh",
+      "chmod +x ~/inline-${local.ami_underlying[element(local.lx_requests, count.index)]}.sh",
+      "~/inline-${local.ami_underlying[element(local.lx_requests, count.index)]}.sh",
     ]
 
     connection {
