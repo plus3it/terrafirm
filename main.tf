@@ -128,7 +128,7 @@ resource "aws_instance" "win" {
   }
 
   timeouts {
-    create = "50m"
+    create = "60m"
   }
 
   connection {
@@ -136,7 +136,7 @@ resource "aws_instance" "win" {
     host     = self.public_ip
     user     = var.tfi_rm_user
     password = join("", random_string.password.*.result)
-    timeout  = "40m"
+    timeout  = "55m"
   }
 
   provisioner "file" {
