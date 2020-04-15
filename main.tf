@@ -128,7 +128,7 @@ resource "aws_instance" "win" {
   }
 
   timeouts {
-    create = "60m"
+    create = "85m"
   }
 
   connection {
@@ -136,7 +136,7 @@ resource "aws_instance" "win" {
     host     = self.public_ip
     user     = var.tfi_rm_user
     password = join("", random_string.password.*.result)
-    timeout  = "55m"
+    timeout  = "75m"
   }
 
   provisioner "file" {
@@ -151,6 +151,13 @@ resource "aws_instance" "win" {
     inline = [
       "powershell.exe -File C:\\scripts\\inline-${local.ami_underlying[element(local.win_requests, count.index)]}.ps1",
     ]
+
+    connection {
+      host = coalesce(self.public_ip, self.private_ip)
+      type = "winrm"
+      # this is where terraform puts the above inline script
+      script_path = "C:\\scripts\\inline-mini-${local.ami_underlying[element(local.win_requests, count.index)]}.sh"
+    }    
   }
 }
 
