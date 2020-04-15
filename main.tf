@@ -128,7 +128,7 @@ resource "aws_instance" "win" {
   }
 
   timeouts {
-    create = "50m"
+    create = "85m"
   }
 
   connection {
@@ -136,7 +136,7 @@ resource "aws_instance" "win" {
     host     = self.public_ip
     user     = var.tfi_rm_user
     password = join("", random_string.password.*.result)
-    timeout  = "40m"
+    timeout  = "75m"
   }
 
   provisioner "file" {
@@ -144,13 +144,20 @@ resource "aws_instance" "win" {
       ${element(data.template_file.win_script_preface.*.rendered, count.index)}
       ${join("", data.template_file.win_test.*.rendered)}
       HEREDOC
-    destination = "C:\\scripts\\watchmaker_test.ps1"
+    destination = "C:\\scripts\\inline-${local.ami_underlying[element(local.win_requests, count.index)]}.ps1"
   }
 
   provisioner "remote-exec" {
     inline = [
-      "powershell.exe -File C:\\scripts\\watchmaker_test.ps1",
+      "powershell.exe -File C:\\scripts\\inline-${local.ami_underlying[element(local.win_requests, count.index)]}.ps1",
     ]
+
+    connection {
+      host = coalesce(self.public_ip, self.private_ip)
+      type = "winrm"
+      # this is where terraform puts the above inline script
+      script_path = "C:\\scripts\\inline-mini-${local.ami_underlying[element(local.win_requests, count.index)]}.sh"
+    }    
   }
 }
 
@@ -194,20 +201,20 @@ resource "aws_instance" "lx" {
       ${element(data.template_file.lx_script_preface.*.rendered, count.index)}
       ${join("", data.template_file.lx_test.*.rendered)}
       HEREDOC
-    destination = "~/watchmaker_test.sh"
+    destination = "~/inline-${local.ami_underlying[element(local.lx_requests, count.index)]}.sh"
   }
 
   provisioner "remote-exec" {
     inline = [
-      "chmod +x ~/watchmaker_test.sh",
-      "~/watchmaker_test.sh",
+      "chmod +x ~/inline-${local.ami_underlying[element(local.lx_requests, count.index)]}.sh",
+      "~/inline-${local.ami_underlying[element(local.lx_requests, count.index)]}.sh",
     ]
 
     connection {
       host = coalesce(self.public_ip, self.private_ip)
       type = "ssh"
       # this is where terraform puts the above inline script
-      script_path = "~/inline.sh"
+      script_path = "~/inline-mini-${local.ami_underlying[element(local.lx_requests, count.index)]}.sh"
     }
   }
 }
