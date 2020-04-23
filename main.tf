@@ -8,13 +8,13 @@ resource "aws_instance" "win_builder" {
   instance_type               = local.win_builder_instance_type
   key_name                    = aws_key_pair.auth.id
   subnet_id                   = var.tfi_subnet_id
-  user_data = <<-HEREDOC
+  user_data                   = <<-HEREDOC
     <powershell>
     ${join("", data.template_file.win_builder_preface.*.rendered)}
     ${join("", data.template_file.win_userdata_common.*.rendered)} ${join("", data.template_file.win_userdata_builder_specific.*.rendered)}
     </powershell>
     HEREDOC
-  vpc_security_group_ids = [join("", aws_security_group.winrm_sg.*.id)]
+  vpc_security_group_ids      = [join("", aws_security_group.winrm_sg.*.id)]
 
   tags = {
     Name = "${local.resource_name}-builder-${local.ami_underlying[local.win_builder_ami_key]}"
@@ -57,12 +57,12 @@ resource "aws_instance" "lx_builder" {
   instance_type               = local.lx_builder_instance_type
   key_name                    = aws_key_pair.auth.id
   subnet_id                   = var.tfi_subnet_id
-  user_data = <<-HEREDOC
+  user_data                   = <<-HEREDOC
     ${join("", data.template_file.lx_builder_preface.*.rendered)}
     ${join("", data.template_file.lx_userdata_common.*.rendered)}
     ${join("", data.template_file.lx_userdata_builder_specific.*.rendered)}
     HEREDOC
-  vpc_security_group_ids = [join("", aws_security_group.ssh_sg.*.id)]
+  vpc_security_group_ids      = [join("", aws_security_group.ssh_sg.*.id)]
 
   tags = {
     Name = "${local.resource_name}-builder-${local.ami_underlying[local.lx_builder_ami_key]}"
@@ -115,13 +115,13 @@ resource "aws_instance" "win" {
   instance_type               = var.tfi_win_instance_type
   key_name                    = aws_key_pair.auth.id
   subnet_id                   = var.tfi_subnet_id
-  user_data = <<-HEREDOC
+  user_data                   = <<-HEREDOC
     <powershell>
     ${element(data.template_file.win_script_preface.*.rendered, count.index)}
     ${join("", data.template_file.win_userdata_common.*.rendered)} ${join("", data.template_file.win_userdata_specific.*.rendered)}
     </powershell>
     HEREDOC
-  vpc_security_group_ids = [join("", aws_security_group.winrm_sg.*.id)]
+  vpc_security_group_ids      = [join("", aws_security_group.winrm_sg.*.id)]
 
   tags = {
     Name = "${local.resource_name}-${local.ami_underlying[element(local.win_requests, count.index)]}"
@@ -140,24 +140,24 @@ resource "aws_instance" "win" {
   }
 
   provisioner "file" {
-    content = <<-HEREDOC
+    content     = <<-HEREDOC
       ${element(data.template_file.win_script_preface.*.rendered, count.index)}
       ${join("", data.template_file.win_test.*.rendered)}
       HEREDOC
-    destination = "C:\\scripts\\inline-${local.ami_underlying[element(local.win_requests, count.index)]}.ps1"
+    destination = "C:\\scripts\\watchmaker-test-${local.ami_underlying[element(local.win_requests, count.index)]}.ps1"
   }
 
   provisioner "remote-exec" {
     inline = [
-      "powershell.exe -File C:\\scripts\\inline-${local.ami_underlying[element(local.win_requests, count.index)]}.ps1",
+      "powershell.exe -File C:\\scripts\\watchmaker-test-${local.ami_underlying[element(local.win_requests, count.index)]}.ps1",
     ]
 
     connection {
       host = coalesce(self.public_ip, self.private_ip)
       type = "winrm"
       # this is where terraform puts the above inline script
-      script_path = "C:\\scripts\\inline-mini-${local.ami_underlying[element(local.win_requests, count.index)]}.sh"
-    }    
+      script_path = "C:\\scripts\\inline-${local.ami_underlying[element(local.win_requests, count.index)]}.cmd"
+    }
   }
 }
 
@@ -201,20 +201,20 @@ resource "aws_instance" "lx" {
       ${element(data.template_file.lx_script_preface.*.rendered, count.index)}
       ${join("", data.template_file.lx_test.*.rendered)}
       HEREDOC
-    destination = "~/inline-${local.ami_underlying[element(local.lx_requests, count.index)]}.sh"
+    destination = "~/watchmaker-test-${local.ami_underlying[element(local.lx_requests, count.index)]}.sh"
   }
 
   provisioner "remote-exec" {
     inline = [
-      "chmod +x ~/inline-${local.ami_underlying[element(local.lx_requests, count.index)]}.sh",
-      "~/inline-${local.ami_underlying[element(local.lx_requests, count.index)]}.sh",
+      "chmod +x ~/watchmaker-test-${local.ami_underlying[element(local.lx_requests, count.index)]}.sh",
+      "~/watchmaker-test-${local.ami_underlying[element(local.lx_requests, count.index)]}.sh",
     ]
 
     connection {
       host = coalesce(self.public_ip, self.private_ip)
       type = "ssh"
       # this is where terraform puts the above inline script
-      script_path = "~/inline-mini-${local.ami_underlying[element(local.lx_requests, count.index)]}.sh"
+      script_path = "~/inline-${local.ami_underlying[element(local.lx_requests, count.index)]}.sh"
     }
   }
 }
