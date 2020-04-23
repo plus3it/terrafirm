@@ -154,12 +154,12 @@ data "aws_ami" "find_amis" {
   name_regex = element(local.ami_regexes_to_search, count.index)
 
   filter {
-    name = "virtualization-type"
+    name   = "virtualization-type"
     values = [local.ami_virtualization_type]
   }
 
   filter {
-    name = "name"
+    name   = "name"
     values = [element(local.ami_filters_to_search, count.index)]
   }
 
