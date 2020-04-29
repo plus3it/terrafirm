@@ -242,7 +242,7 @@ install-watchmaker() {
   fi
 
   # Update submodule refs
-  stage="Update submodules" && git submodule update
+  stage="Update submodules" && git submodule update --init --recursive
   write-tfi "$stage" $?
 
   # Install watchmaker
