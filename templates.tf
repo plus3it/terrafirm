@@ -1,21 +1,43 @@
 # very short template that is scaled based on win instances so that no other templates need be scaled
-data "template_file" "win_script_preface" {
-  count    = local.win_request_count
+data "template_file" "win_src_script_preface" {
+  count    = local.win_src_count
   template = file("windows/preface.ps1")
 
   vars = {
-    tfi_ami_key     = element(local.win_requests, count.index)
+    tfi_ami_key     = element(local.win_src_requests, count.index)
+    tfi_count_index = count.index
+  }
+}
+
+# very short template that is scaled based on win instances so that no other templates need be scaled
+data "template_file" "win_pkg_script_preface" {
+  count    = local.win_pkg_count
+  template = file("windows/preface.ps1")
+
+  vars = {
+    tfi_ami_key     = element(local.win_pkg_requests, count.index)
     tfi_count_index = count.index
   }
 }
 
 # very short template that is scaled based on lx instances so that no other templates need be scaled
-data "template_file" "lx_script_preface" {
-  count    = local.lx_request_count
+data "template_file" "lx_src_script_preface" {
+  count    = local.lx_src_count
   template = file("linux/preface.sh")
 
   vars = {
-    tfi_ami_key     = element(local.lx_requests, count.index)
+    tfi_ami_key     = element(local.lx_src_requests, count.index)
+    tfi_count_index = count.index
+  }
+}
+
+# very short template that is scaled based on lx instances so that no other templates need be scaled
+data "template_file" "lx_pkg_script_preface" {
+  count    = local.lx_pkg_count
+  template = file("linux/preface.sh")
+
+  vars = {
+    tfi_ami_key     = element(local.lx_pkg_requests, count.index)
     tfi_count_index = count.index
   }
 }
@@ -42,7 +64,7 @@ data "template_file" "lx_builder_preface" {
 
 # userdata for initial configuration powershell script
 data "template_file" "win_userdata_specific" {
-  count    = local.win_request_any_count
+  count    = local.win_any
   template = file("windows/userdata.ps1")
 
   vars = {
@@ -55,7 +77,7 @@ data "template_file" "win_userdata_specific" {
 
 # userdata for initial configuration bash script
 data "template_file" "lx_userdata_specific" {
-  count    = local.lx_request_any_count
+  count    = local.lx_any
   template = file("linux/userdata.sh")
 
   vars = {
@@ -87,7 +109,7 @@ data "template_file" "lx_userdata_builder_specific" {
 }
 
 data "template_file" "win_userdata_common" {
-  count    = local.win_request_any_count
+  count    = local.win_any
   template = file("windows/userdata_common.ps1")
 
   vars = {
@@ -111,7 +133,7 @@ data "template_file" "win_userdata_common" {
 
 # userdate for the builder
 data "template_file" "lx_userdata_common" {
-  count    = local.lx_request_any_count
+  count    = local.lx_any
   template = file("linux/userdata_common.sh")
 
   vars = {
@@ -130,7 +152,7 @@ data "template_file" "lx_userdata_common" {
 }
 
 data "template_file" "win_test" {
-  count    = local.win_request_any_count
+  count    = local.win_any
   template = file("windows/watchmaker_test.ps1")
 
   vars = {
@@ -140,7 +162,7 @@ data "template_file" "win_test" {
 }
 
 data "template_file" "lx_test" {
-  count    = local.lx_request_any_count
+  count    = local.lx_any
   template = file("linux/watchmaker_test.sh")
 
   vars = {
@@ -167,4 +189,3 @@ data "template_file" "lx_build_test" {
     tfi_userdata_status_file = local.lx_userdata_status_file
   }
 }
-
