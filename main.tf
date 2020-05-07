@@ -124,7 +124,8 @@ resource "aws_instance" "win_src" {
   vpc_security_group_ids      = [join("", aws_security_group.winrm_sg.*.id)]
 
   tags = {
-    Name = "${local.resource_name}-${element(local.win_src_requests, count.index)}-from_source"
+    Name      = "${local.resource_name}-${element(local.win_src_requests, count.index)}"
+    BuilderID = "None (from source)"
   }
 
   timeouts {
@@ -180,7 +181,8 @@ resource "aws_instance" "win_pkg" {
   vpc_security_group_ids      = [join("", aws_security_group.winrm_sg.*.id)]
 
   tags = {
-    Name = "${local.resource_name}-${element(local.win_pkg_requests, count.index)}-${join("", aws_instance.win_builder.*.id)}(builder id)"
+    Name      = "${local.resource_name}-${element(local.win_pkg_requests, count.index)}"
+    BuilderID = aws_instance.win_builder[0].id
   }
 
   timeouts {
@@ -235,7 +237,8 @@ resource "aws_instance" "lx_src" {
   vpc_security_group_ids      = [join("", aws_security_group.ssh_sg.*.id)]
 
   tags = {
-    Name = "${local.resource_name}-${element(local.lx_src_requests, count.index)}-from_source"
+    Name      = "${local.resource_name}-${element(local.lx_src_requests, count.index)}"
+    BuilderID = "None (from source)"
   }
 
   timeouts {
@@ -292,7 +295,8 @@ resource "aws_instance" "lx_pkg" {
   vpc_security_group_ids      = [join("", aws_security_group.ssh_sg.*.id)]
 
   tags = {
-    Name = "${local.resource_name}-${element(local.lx_pkg_requests, count.index)}-${join("", aws_instance.lx_builder.*.id)}(builder id)"
+    Name      = "${local.resource_name}-${element(local.lx_pkg_requests, count.index)}"
+    BuilderID = aws_instance.lx_builder[0].id
   }
 
   timeouts {
