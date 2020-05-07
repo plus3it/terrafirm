@@ -22,7 +22,7 @@ resource "tls_private_key" "gen_key" {
 }
 
 resource "random_string" "password" {
-  count            = local.win_request_any_count
+  count            = local.win_any
   length           = 18
   special          = true
   override_special = "()~!@#^*+=|{}[]:;,?"
@@ -34,7 +34,7 @@ resource "aws_default_subnet" "tfi" {
 
 # Security group to access the instances over WinRM
 resource "aws_security_group" "winrm_sg" {
-  count       = local.win_request_any_count
+  count       = local.win_any
   name        = "${local.resource_name}-winrm"
   description = "Used in terrafirm"
   vpc_id      = data.aws_subnet.tfi.vpc_id
@@ -62,7 +62,7 @@ resource "aws_security_group" "winrm_sg" {
 
 # Security group to access the instances over SSH
 resource "aws_security_group" "ssh_sg" {
-  count       = local.lx_request_any_count # only create if any lx instances
+  count       = local.lx_any # only create if any lx instances
   name        = "${local.resource_name}-ssh"
   description = "Used in terrafirm"
   vpc_id      = data.aws_subnet.tfi.vpc_id

@@ -4,6 +4,8 @@ locals {
   lx_ami_keys         = ["centos6", "centos7", "rhel6", "rhel7"]
   win_pkg_ami_keys    = formatlist("%spkg", local.win_ami_keys)
   lx_pkg_ami_keys     = formatlist("%spkg", local.lx_ami_keys)
+  win_src_ami_keys    = local.win_ami_keys
+  lx_src_ami_keys     = local.lx_ami_keys
   win_all_ami_keys    = sort(concat(local.win_ami_keys, local.win_pkg_ami_keys))
   lx_all_ami_keys     = sort(concat(local.lx_ami_keys, local.lx_pkg_ami_keys))
   win_builder_ami_key = "win-builder"
@@ -42,9 +44,9 @@ locals {
 
   # given any user ami key, which ami to use? (i.e., win12pkg = win12; win12 = win12)
   ami_underlying = merge(
-    zipmap(local.win_ami_keys, local.win_ami_keys),
+    zipmap(local.win_src_ami_keys, local.win_src_ami_keys),
     zipmap(local.win_pkg_ami_keys, local.win_ami_keys),
-    zipmap(local.lx_ami_keys, local.lx_ami_keys),
+    zipmap(local.lx_src_ami_keys, local.lx_src_ami_keys),
     zipmap(local.lx_pkg_ami_keys, local.lx_ami_keys),
     {
       (local.lx_builder_ami_key) = local.lx_builder_ami_key
@@ -63,20 +65,17 @@ locals {
 # use user input to figure out what needs to be done
 locals {
   user_requests = sort(var.tfi_instances)
-  win_requests = matchkeys(
-    local.win_all_ami_keys,
-    local.win_all_ami_keys,
+
+  win_src_requests = matchkeys(
+    local.win_src_ami_keys,
+    local.win_src_ami_keys,
     local.user_requests,
   )
-  lx_requests = matchkeys(
-    local.lx_all_ami_keys,
-    local.lx_all_ami_keys,
+  lx_src_requests = matchkeys(
+    local.lx_src_ami_keys,
+    local.lx_src_ami_keys,
     local.user_requests,
   )
-  win_request_count     = length(local.win_requests)
-  lx_request_count      = length(local.lx_requests)
-  win_request_any_count = local.win_request_count == 0 ? 0 : 1
-  lx_request_any_count  = local.lx_request_count == 0 ? 0 : 1
   win_pkg_requests = matchkeys(
     local.win_pkg_ami_keys,
     local.win_pkg_ami_keys,
@@ -87,6 +86,14 @@ locals {
     local.lx_pkg_ami_keys,
     local.user_requests,
   )
+
+  win_src_count = length(local.win_src_requests)
+  lx_src_count  = length(local.lx_src_requests)
+  win_pkg_count = length(local.win_pkg_requests)
+  lx_pkg_count  = length(local.lx_pkg_requests)
+  win_any       = (local.win_src_count + local.win_pkg_count) == 0 ? 0 : 1
+  lx_any        = (local.lx_src_count + local.lx_pkg_count) == 0 ? 0 : 1
+
   win_need_builder = length(local.win_pkg_requests) > 0 ? 1 : 0
   lx_need_builder  = length(local.lx_pkg_requests) > 0 ? 1 : 0
   win_builder_list = [
@@ -100,8 +107,10 @@ locals {
   the instance delivered.
     local.amis_to_search
     local.ami_filters_to_search
-    local.win_requests
-    local.lx_requests
+    local.win_src_requests
+    local.lx_src_requests
+    local.win_pkg_requests
+    local.lx_pkg_requests
     local.user_requests */
 
   # Starting from innermost:
