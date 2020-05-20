@@ -10,14 +10,11 @@ install:
 jobs:
   include:
     - stage: test
-      # Begin Terraform Format Verfiication Job
       env:
         - JOB="Terraform Format Verification"
       before_script:
-        # Download Terraform
         - git clone https://github.com/plus3it/terraform-bootstrap.git
         - cd terraform-bootstrap && ./install.sh
         - terraform -v
       script:
-        - echo 'Terraform Format Check'
         - terraform fmt -check=true

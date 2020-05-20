@@ -1,4 +1,4 @@
-variable "tfi_availability_zone" {
+variable "tfi_az" {
   default = "us-east-1c"
 }
 
@@ -9,6 +9,10 @@ variable "tfi_subnet_id" {
 variable "tfi_instances" {
   default = []
   type    = list(string)
+}
+
+variable "tfi_instance_multiplier" {
+  default = "1"
 }
 
 variable "tfi_rm_user" {
@@ -40,7 +44,7 @@ variable "tfi_git_repo" {
 }
 
 variable "tfi_git_ref" {
-  default = "master"
+  default = "develop"
 }
 
 variable "tfi_common_args" {
@@ -82,4 +86,5 @@ variable "tfi_aws_region" {
 variable "tfi_debug" {
   default = "1"
 }
+
 
