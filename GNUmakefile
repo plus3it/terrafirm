@@ -1,5 +1,6 @@
 export SHELL = /bin/bash
 export AWS_REGION ?= us-east-1
+export TERRAFORM_PARALLELISM ?= 20
 
 default: again
 
@@ -9,13 +10,32 @@ ifeq (,$(wildcard ./.terraform/))
 endif
 ifneq (,$(wildcard .env))
 	@source .env && \
-		terraform apply -parallelism=20 $(COLOR_OPTION) -input=false -auto-approve
+		terraform apply \
+			-parallelism=$(TERRAFORM_PARALLELISM) $(COLOR_OPTION) \
+			-input=false \
+			-auto-approve
 else
-	@terraform apply -parallelism=20 $(COLOR_OPTION) -input=false -auto-approve
+	@terraform apply \
+		-parallelism=$(TERRAFORM_PARALLELISM) $(COLOR_OPTION) \
+		-input=false \
+		-auto-approve
+endif
+
+valid:
+ifeq (,$(wildcard ./.terraform/))
+	@terraform init $(COLOR_OPTION)
+endif
+ifneq (,$(wildcard .env))
+	@source .env && \
+		terraform validate $(COLOR_OPTION)
+else
+	@terraform validate $(COLOR_OPTION)
 endif
 
 clean:
-	@terraform destroy $(COLOR_OPTION) -input=false -auto-approve
+	@terraform destroy \
+		-input=false $(COLOR_OPTION) \
+		-auto-approve
 
 fresh: clean
 	@-rm -rf terraform.tfstate*
@@ -31,4 +51,4 @@ state:
 count:
 	@echo "State currently has $(shell terraform state list | wc -l | xargs) items"
 
-.PHONY: clean fresh again neat state count
+.PHONY: again valid clean fresh neat state count

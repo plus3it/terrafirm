@@ -1,15 +1,11 @@
 
-$InstanceOS = "${instance_os}"
-$InstanceType = "${instance_type}"
-$InstanceSlug = "win_$InstanceType-$InstanceOS"
+$BuildOS = "${build_os}"
+$BuildType = "${build_type}"
+$BuildLabel = "win_$BuildType-$BuildOS"
 
 Write-Host ("***************************************************************")
-switch ($InstanceType) {
-    "src" {$testType = "From Source"; Break}
-    "sa" {$testType = "Standalone"; Break}
-    "builder" {$testType = "Standalone Builder"; Break}
-}
-Write-Host ("Running Watchmaker $testType Test ($InstanceSlug)")
+$BuildTitle = (Get-Culture).TextInfo.ToTitleCase($BuildType)
+Write-Host ("Running Watchmaker $BuildTitle Build ($BuildLabel)")
 Write-Host ("***************************************************************")
 Write-Host ((Get-WmiObject -class Win32_OperatingSystem).Caption)
 
@@ -25,7 +21,7 @@ if (Test-Path -Path $UdPath) {
 
 $TestStatus=@(0,"Not run")
 
-if ($InstanceType -ne "builder" -and $UserdataStatus[0] -eq 0) {   
+if ($BuildType -ne "builder" -and $UserdataStatus[0] -eq 0) {   
     # userdata was successful so now TRY the watchmaker tests
 
     try {
@@ -34,7 +30,7 @@ if ($InstanceType -ne "builder" -and $UserdataStatus[0] -eq 0) {
         # NOTE: if tests don't have an error action of "Stop," by default or explicitly set, won't be caught
         # NOTE: default erroraction in powershell is "Continue"
         # ------------------------------------------------------------ WAM TESTS BEGIN
-        if ( $InstanceType -eq "sa" ) {
+        if ( $BuildType -eq "standalone" ) {
             Invoke-Expression -Command "${standalone_path}\watchmaker.exe --version"  -ErrorAction Stop
         } else {
             Invoke-Expression -Command "watchmaker --version"  -ErrorAction Stop

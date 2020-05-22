@@ -3,9 +3,9 @@
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 
-instance_os="${instance_os}"
-instance_type="${instance_type}"
-instance_slug="lx_$instance_type-$instance_os"
+build_os="${build_os}"
+build_type="${build_type}"
+build_label="lx_$build_type-$build_os"
 
 finally() {
   local exit_code=0
@@ -37,22 +37,12 @@ catch() {
 trap 'catch $? $LINENO' ERR
 
 echo "***************************************************************"
-case "$instance_type" in
-  builder)
-    test_title="Standalone Builder"
-    ;;
-  sa)
-    test_title="Standalone"
-    ;;
-  src)
-    test_title="From Source"
-    ;;
-esac
-echo "Running Watchmaker $test_title Test ($instance_slug)"
+build_title=$${build_type^}
+echo "Running Watchmaker $test_title Build ($build_label)"
 echo "***************************************************************"
 
 # everything below this is the TRY
-if [ "$instance_os" = "xenial" ]; then
+if [ "$build_os" = "xenial" ]; then
   lsb_release -a
 else
   # this will only work for redhat and centos
@@ -69,9 +59,9 @@ fi
 
 test_status=(0 "Not run")
 
-if [ "$instance_type" != "builder" ] && [ "$${userdata_status[0]}" -eq 0 ]; then
+if [ "$build_type" != "builder" ] && [ "$${userdata_status[0]}" -eq 0 ]; then
   # ------------------------------------------------------------ WAM TESTS BEGIN
-  if [ "$instance_type" = "sa" ]; then
+  if [ "$build_type" = "standalone" ]; then
     ./watchmaker --version
   else
     watchmaker --version

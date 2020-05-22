@@ -1,4 +1,4 @@
-# various settings used by the instances
+# various settings used by the builds
 locals {
   pypi_url       = "https://pypi.org/simple"
   release_prefix = "release"
@@ -6,8 +6,11 @@ locals {
   lx_builder_instance_type  = "t2.large"
   win_builder_instance_type = "t2.xlarge"
 
-  lx_sa_error_signal_file  = "${local.release_prefix}/lx_standalone_error_signal.log"
-  win_sa_error_signal_file = "${local.release_prefix}/win_standalone_error_signal.log"
+  lx_builder_os  = "xenial"
+  win_builder_os = "win12"
+
+  lx_standalone_error_signal_file  = "${local.release_prefix}/lx_standalone_error_signal.log"
+  win_standalone_error_signal_file = "${local.release_prefix}/win_standalone_error_signal.log"
 
   lx_executable  = "${local.release_prefix}/latest/watchmaker-latest-standalone-linux-x86_64"
   win_executable = "${local.release_prefix}/latest/watchmaker-latest-standalone-windows-amd64.exe"
@@ -29,52 +32,52 @@ locals {
 
   # build settings
   name_prefix   = "terrafirm"
-  date_ymd      = "${substr(data.null_data_source.start_time.inputs.tfi_timestamp, 0, 4)}${substr(data.null_data_source.start_time.inputs.tfi_timestamp, 5, 2)}${substr(data.null_data_source.start_time.inputs.tfi_timestamp, 8, 2)}" #equivalent of $(date +'%Y%m%d')
-  date_hm       = "${substr(data.null_data_source.start_time.inputs.tfi_timestamp, 11, 2)}${substr(data.null_data_source.start_time.inputs.tfi_timestamp, 14, 2)}"                                                                     #equivalent of $(date +'%H%M')
-  full_build_id = var.tfi_codebuild_id == "" ? format("notcb:%s", uuid()) : var.tfi_codebuild_id                                                                                                                                       #128-bit rfc 4122 v4 UUID
-  build_id      = "${substr(element(split(":", local.full_build_id), 1), 0, 8)}${substr(element(split(":", local.full_build_id), 1), 9, 4)}"                                                                                           #extract node portion of uuid (last 6 octets) for brevity
+  date_ymd      = "${substr(data.null_data_source.start_time.inputs.timestamp, 0, 4)}${substr(data.null_data_source.start_time.inputs.timestamp, 5, 2)}${substr(data.null_data_source.start_time.inputs.timestamp, 8, 2)}" #equivalent of $(date +'%Y%m%d')
+  date_hm       = "${substr(data.null_data_source.start_time.inputs.timestamp, 11, 2)}${substr(data.null_data_source.start_time.inputs.timestamp, 14, 2)}"                                                                 #equivalent of $(date +'%H%M')
+  full_build_id = var.codebuild_id == "" ? format("notcb:%s", uuid()) : var.codebuild_id                                                                                                                                   #128-bit rfc 4122 v4 UUID
+  build_id      = "${substr(element(split(":", local.full_build_id), 1), 0, 8)}${substr(element(split(":", local.full_build_id), 1), 9, 4)}"                                                                               #extract node portion of uuid (last 6 octets) for brevity
   resource_name = "${local.name_prefix}-${local.build_id}"
-  build_slug    = "${var.tfi_s3_bucket}/${local.date_ymd}/${local.date_hm}-${local.build_id}"
+  build_slug    = "${var.s3_bucket}/${local.date_ymd}/${local.date_hm}-${local.build_id}"
 
   # amis
-  win_ami_find = {
+  win_build_info = {
     win12 = {
-      search = "Windows_Server-2012-R2_RTM-English-64Bit-Base*"
+      ami_search = "Windows_Server-2012-R2_RTM-English-64Bit-Base*"
     }
 
     win16 = {
-      search = "Windows_Server-2016-English-Full-Base*"
+      ami_search = "Windows_Server-2016-English-Full-Base*"
     }
 
     win19 = {
-      search = "Windows_Server-2019-English-Full-Base*"
+      ami_search = "Windows_Server-2019-English-Full-Base*"
     }
   }
 
-  lx_ami_find = {
+  lx_build_info = {
     centos6 = {
-      search = "spel-minimal-centos-6-hvm-*.x86_64-gp2"
-      regex  = "spel-minimal-centos-6-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
+      ami_search = "spel-minimal-centos-6-hvm-*.x86_64-gp2"
+      ami_regex  = "spel-minimal-centos-6-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
     }
 
     centos7 = {
-      search = "spel-minimal-centos-7-hvm-*.x86_64-gp2"
-      regex  = "spel-minimal-centos-7-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
+      ami_search = "spel-minimal-centos-7-hvm-*.x86_64-gp2"
+      ami_regex  = "spel-minimal-centos-7-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
     }
 
     rhel6 = {
-      search = "spel-minimal-rhel-6-hvm-*.x86_64-gp2"
-      regex  = "spel-minimal-rhel-6-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
+      ami_search = "spel-minimal-rhel-6-hvm-*.x86_64-gp2"
+      ami_regex  = "spel-minimal-rhel-6-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
     }
 
     rhel7 = {
-      search = "spel-minimal-rhel-7-hvm-*.x86_64-gp2"
-      regex  = "spel-minimal-rhel-7-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
+      ami_search = "spel-minimal-rhel-7-hvm-*.x86_64-gp2"
+      ami_regex  = "spel-minimal-rhel-7-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
     }
 
     xenial = {
-      search = "ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server*"
-      regex  = ""
+      ami_search = "ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server*"
+      ami_regex  = ""
     }
   }
 
@@ -83,34 +86,78 @@ locals {
     virtualization_type = "hvm"
   }
 
-  user_requests = sort(var.tfi_instances)
+  # get list of all possible builds
+  win_possible_builds = toset(keys(local.win_build_info))
+  lx_possible_builds = setsubtract(
+    toset(keys(local.lx_build_info)),
+    toset([local.lx_builder_os])
+  )
+  possible_builds = setunion(local.win_possible_builds, local.lx_possible_builds)
 
-  win_src_requests    = [for k, v in local.win_ami_find : k if contains(local.user_requests, format("win_src-%s", k))]
-  win_sa_requests     = [for k, v in local.win_ami_find : k if contains(local.user_requests, format("win_sa-%s", k))]
-  win_builder_request = length(local.win_sa_requests) > 0 ? ["win12"] : []
-  win_all_requests    = toset(concat(local.win_src_requests, local.win_sa_requests, local.win_builder_request))
-  win_any_request     = length(local.win_all_requests) > 0 ? 1 : 0
-  win_src_expanded    = var.tfi_instance_multiplier > 1 ? [for i in setproduct(local.win_src_requests, range(1, var.tfi_instance_multiplier + 1)) : format("%s-%02d", i[0], i[1])] : local.win_src_requests
-  win_sa_expanded     = var.tfi_instance_multiplier > 1 ? [for i in setproduct(local.win_sa_requests, range(1, var.tfi_instance_multiplier + 1)) : format("%s-%02d", i[0], i[1])] : local.win_sa_requests
+  # user input
+  source_builds     = var.run_all_builds ? local.possible_builds : var.source_builds
+  standalone_builds = var.run_all_builds ? local.possible_builds : var.standalone_builds
 
-  lx_src_requests    = [for k, v in local.lx_ami_find : k if contains(local.user_requests, format("lx_src-%s", k))]
-  lx_sa_requests     = [for k, v in local.lx_ami_find : k if contains(local.user_requests, format("lx_sa-%s", k))]
-  lx_builder_request = length(local.lx_sa_requests) > 0 ? ["xenial"] : []
-  lx_all_requests    = toset(concat(local.lx_src_requests, local.lx_sa_requests, local.lx_builder_request))
-  lx_any_request     = length(local.lx_all_requests) > 0 ? 1 : 0
-  lx_src_expanded    = var.tfi_instance_multiplier > 1 ? [for i in setproduct(local.lx_src_requests, range(1, var.tfi_instance_multiplier + 1)) : format("%s-%02d", i[0], i[1])] : local.lx_src_requests
-  lx_sa_expanded     = var.tfi_instance_multiplier > 1 ? [for i in setproduct(local.lx_sa_requests, range(1, var.tfi_instance_multiplier + 1)) : format("%s-%02d", i[0], i[1])] : local.lx_sa_requests
+  # win unique builds
+  win_source_unique_builds     = setintersection(local.win_possible_builds, local.source_builds)
+  win_standalone_unique_builds = setintersection(local.win_possible_builds, local.standalone_builds)
+  win_builder_needed           = length(local.win_standalone_unique_builds) > 0 ? [local.win_builder_os] : []
+  win_unique_builds            = setunion(local.win_source_unique_builds, local.win_standalone_unique_builds, local.win_builder_needed)
+  win_any_builds               = length(local.win_unique_builds) > 0 ? 1 : 0
+
+  # if build_multiplier is > 1, these will be used
+  win_source_multiplied_builds = [
+    for i in setproduct(
+      local.win_source_unique_builds,
+      range(1, var.build_multiplier + 1)
+    ) : format("%s-%02d", i[0], i[1])
+  ]
+  win_standalone_multiplied_builds = [
+    for i in setproduct(
+      local.win_standalone_unique_builds,
+      range(1, var.build_multiplier + 1)
+    ) : format("%s-%02d", i[0], i[1])
+  ]
+
+  # which win builds to run
+  win_source_builds     = var.build_multiplier > 1 ? local.win_source_multiplied_builds : local.win_source_unique_builds
+  win_standalone_builds = var.build_multiplier > 1 ? local.win_standalone_multiplied_builds : local.win_standalone_unique_builds
+
+  # lx unique builds
+  lx_source_unique_builds     = setintersection(local.lx_possible_builds, local.source_builds)
+  lx_standalone_unique_builds = setintersection(local.lx_possible_builds, local.standalone_builds)
+  lx_builder_needed           = length(local.lx_standalone_unique_builds) > 0 ? [local.lx_builder_os] : []
+  lx_unique_builds            = setunion(local.lx_source_unique_builds, local.lx_standalone_unique_builds, local.lx_builder_needed)
+  lx_any_builds               = length(local.lx_unique_builds) > 0 ? 1 : 0
+
+  # if build_multiplier is > 1, these will be used
+  lx_source_multiplied_builds = [
+    for i in setproduct(
+      local.lx_source_unique_builds,
+      range(1, var.build_multiplier + 1)
+    ) : format("%s-%02d", i[0], i[1])
+  ]
+  lx_standalone_multiplied_builds = [
+    for i in setproduct(
+      local.lx_standalone_unique_builds,
+      range(1, var.build_multiplier + 1)
+    ) : format("%s-%02d", i[0], i[1])
+  ]
+
+  # which lx builds to run
+  lx_source_builds     = var.build_multiplier > 1 ? local.lx_source_multiplied_builds : local.lx_source_unique_builds
+  lx_standalone_builds = var.build_multiplier > 1 ? local.lx_standalone_multiplied_builds : local.lx_standalone_unique_builds
 }
 
 data "null_data_source" "start_time" {
   inputs = {
     # necessary because if you just call timestamp in a local it re-evaluates it everytime that var is read
-    tfi_timestamp = timestamp()
+    timestamp = timestamp()
   }
 }
 
 data "aws_ami" "win_amis" {
-  for_each    = local.win_all_requests
+  for_each    = local.win_unique_builds
   most_recent = true
 
   filter {
@@ -120,17 +167,17 @@ data "aws_ami" "win_amis" {
 
   filter {
     name   = "name"
-    values = [local.win_ami_find[each.key].search]
+    values = [local.win_build_info[each.key].ami_search]
   }
 
   owners = local.ami_settings.owners
 }
 
 data "aws_ami" "lx_amis" {
-  for_each    = local.lx_all_requests
+  for_each    = local.lx_unique_builds
   most_recent = true
 
-  name_regex = local.lx_ami_find[each.key].regex
+  name_regex = local.lx_build_info[each.key].ami_regex
 
   filter {
     name   = "virtualization-type"
@@ -139,14 +186,14 @@ data "aws_ami" "lx_amis" {
 
   filter {
     name   = "name"
-    values = [local.lx_ami_find[each.key].search]
+    values = [local.lx_build_info[each.key].ami_search]
   }
 
   owners = local.ami_settings.owners
 }
 
 data "aws_subnet" "tfi" {
-  id = var.tfi_subnet_id == "" ? aws_default_subnet.tfi.id : var.tfi_subnet_id
+  id = var.subnet_id == "" ? aws_default_subnet.tfi.id : var.subnet_id
 }
 
 data "http" "ip" {
@@ -165,18 +212,18 @@ resource "tls_private_key" "gen_key" {
 }
 
 resource "random_string" "password" {
-  count            = local.win_any_request
+  count            = local.win_any_builds
   length           = 18
   special          = true
   override_special = "()~!@#^*+=|{}[]:;,?"
 }
 
 resource "aws_default_subnet" "tfi" {
-  availability_zone = var.tfi_az
+  availability_zone = var.availability_zone
 }
 
 resource "aws_security_group" "winrm_sg" {
-  count       = local.win_any_request
+  count       = local.win_any_builds
   name        = "${local.resource_name}-winrm"
   description = "Used in terrafirm"
   vpc_id      = data.aws_subnet.tfi.vpc_id
@@ -201,7 +248,7 @@ resource "aws_security_group" "winrm_sg" {
 }
 
 resource "aws_security_group" "ssh_sg" {
-  count       = local.lx_any_request # only create if any lx instances
+  count       = local.lx_any_builds # only create if any lx builds
   name        = "${local.resource_name}-ssh"
   description = "Used in terrafirm"
   vpc_id      = data.aws_subnet.tfi.vpc_id
@@ -225,41 +272,71 @@ resource "aws_security_group" "ssh_sg" {
   }
 }
 
+locals {
+  common_template_vars = {
+    build_slug     = local.build_slug
+    common_args    = var.common_args
+    debug          = var.debug
+    git_ref        = var.git_ref
+    git_repo       = var.git_repo
+    pypi_url       = local.pypi_url
+    release_prefix = local.release_prefix
+  }
+
+  win_template_vars = {
+    bootstrap_url                = local.win_bootstrap_url
+    download_dir                 = local.win_download_dir
+    executable                   = local.win_executable
+    git_url                      = local.win_git_url
+    python_url                   = local.win_python_url
+    rm_pass                      = random_string.password[0].result
+    rm_user                      = var.rm_user
+    seven_zip_url                = local.win_7zip_url
+    standalone_error_signal_file = local.win_standalone_error_signal_file
+    temp_dir                     = local.win_temp_dir
+    userdata_log                 = var.win_userdata_log
+    userdata_status_file         = local.win_userdata_status_file
+    win_args                     = var.win_args
+  }
+
+  lx_template_vars = {
+    aws_region                   = var.aws_region
+    docker_slug                  = var.docker_slug
+    executable                   = local.lx_executable
+    lx_args                      = var.lx_args
+    ssh_port                     = local.ssh_port
+    standalone_error_signal_file = local.lx_standalone_error_signal_file
+    temp_dir                     = local.lx_temp_dir
+    userdata_log                 = var.lx_userdata_log
+    userdata_status_file         = local.lx_userdata_status_file
+  }
+}
+
 resource "aws_instance" "win_builder" {
-  for_each = toset(local.win_builder_request)
+  for_each = toset(local.win_builder_needed)
   ami      = data.aws_ami.win_amis[each.key].id
 
-  associate_public_ip_address = var.tfi_assign_public_ip
-  iam_instance_profile        = var.tfi_instance_profile
+  associate_public_ip_address = var.assign_public_ip
+  iam_instance_profile        = var.instance_profile
   instance_type               = local.win_builder_instance_type
   key_name                    = aws_key_pair.auth.id
-  subnet_id                   = var.tfi_subnet_id
+  subnet_id                   = var.subnet_id
   vpc_security_group_ids      = aws_security_group.winrm_sg.*.id
 
-  user_data = format("<powershell>%s</powershell>", templatefile("templates/win_userdata.ps1", {
-    bootstrap_url        = local.win_bootstrap_url
-    build_slug           = local.build_slug
-    common_args          = var.tfi_common_args
-    debug                = var.tfi_debug
-    download_dir         = local.win_download_dir
-    sa_error_signal_file = local.win_sa_error_signal_file
-    executable           = local.win_executable
-    git_ref              = var.tfi_git_ref
-    git_repo             = var.tfi_git_repo
-    git_url              = local.win_git_url
-    instance_os          = each.key
-    instance_type        = "builder"
-    pypi_url             = local.pypi_url
-    python_url           = local.win_python_url
-    release_prefix       = local.release_prefix
-    rm_pass              = random_string.password[0].result
-    rm_user              = var.tfi_rm_user
-    seven_zip_url        = local.win_7zip_url
-    temp_dir             = local.win_temp_dir
-    userdata_log         = var.tfi_win_userdata_log
-    userdata_status_file = local.win_userdata_status_file
-    win_args             = var.tfi_win_args
-  }))
+  user_data = format(
+    "<powershell>%s</powershell>",
+    templatefile(
+      "templates/win_userdata.ps1",
+      merge(
+        local.common_template_vars,
+        local.win_template_vars,
+        {
+          build_os   = each.key
+          build_type = "builder"
+        }
+      )
+    )
+  )
 
   tags = {
     Name = "${local.resource_name}-win_builder-${each.key}"
@@ -272,15 +349,15 @@ resource "aws_instance" "win_builder" {
   connection {
     type     = "winrm"
     host     = self.public_ip
-    user     = var.tfi_rm_user
+    user     = var.rm_user
     password = join("", random_string.password.*.result)
     timeout  = "30m"
   }
 
   provisioner "file" {
     content = templatefile("templates/win_test.ps1", {
-      instance_os          = each.key
-      instance_type        = "builder"
+      build_os             = each.key
+      build_type           = "builder"
       standalone_path      = local.win_download_dir
       userdata_status_file = local.win_userdata_status_file
     })
@@ -301,44 +378,34 @@ resource "aws_instance" "win_builder" {
   }
 }
 
-resource "aws_instance" "win_src" {
-  for_each = toset(local.win_src_expanded)
-  ami      = data.aws_ami.win_amis[regex("[a-z0-9]+", each.key)].id   # in case of multiples, regex removes # to find ami (e.g., rhel7-01 becomes rhel7)
+resource "aws_instance" "win_source" {
+  for_each = toset(local.win_source_builds)
+  ami      = data.aws_ami.win_amis[regex("[a-z0-9]+", each.key)].id # in case of multiples, regex removes # to find ami (e.g., rhel7-01 becomes rhel7)
 
-  associate_public_ip_address = var.tfi_assign_public_ip
-  iam_instance_profile        = var.tfi_instance_profile
-  instance_type               = var.tfi_win_instance_type
+  associate_public_ip_address = var.assign_public_ip
+  iam_instance_profile        = var.instance_profile
+  instance_type               = var.win_instance_type
   key_name                    = aws_key_pair.auth.id
-  subnet_id                   = var.tfi_subnet_id
+  subnet_id                   = var.subnet_id
   vpc_security_group_ids      = aws_security_group.winrm_sg.*.id
 
-  user_data = format("<powershell>%s</powershell>", templatefile("templates/win_userdata.ps1", {
-    bootstrap_url        = local.win_bootstrap_url
-    build_slug           = local.build_slug
-    common_args          = var.tfi_common_args
-    debug                = var.tfi_debug
-    download_dir         = local.win_download_dir
-    sa_error_signal_file = local.win_sa_error_signal_file
-    executable           = local.win_executable
-    git_ref              = var.tfi_git_ref
-    git_repo             = var.tfi_git_repo
-    git_url              = local.win_git_url
-    instance_os          = each.key
-    instance_type        = "src"
-    pypi_url             = local.pypi_url
-    python_url           = local.win_python_url
-    release_prefix       = local.release_prefix
-    rm_pass              = random_string.password[0].result
-    rm_user              = var.tfi_rm_user
-    seven_zip_url        = local.win_7zip_url
-    temp_dir             = local.win_temp_dir
-    userdata_log         = var.tfi_win_userdata_log
-    userdata_status_file = local.win_userdata_status_file
-    win_args             = var.tfi_win_args
-  }))
+  user_data = format(
+    "<powershell>%s</powershell>",
+    templatefile(
+      "templates/win_userdata.ps1",
+      merge(
+        local.common_template_vars,
+        local.win_template_vars,
+        {
+          build_os   = each.key
+          build_type = "source"
+        }
+      )
+    )
+  )
 
   tags = {
-    Name      = "${local.resource_name}-win_src-${each.key}"
+    Name      = "${local.resource_name}-win_source-${each.key}"
     BuilderID = "None (from source)"
   }
 
@@ -349,74 +416,64 @@ resource "aws_instance" "win_src" {
   connection {
     type     = "winrm"
     host     = self.public_ip
-    user     = var.tfi_rm_user
+    user     = var.rm_user
     password = join("", random_string.password.*.result)
     timeout  = "75m"
   }
 
   provisioner "file" {
     content = templatefile("templates/win_test.ps1", {
-      instance_os          = each.key
-      instance_type        = "src"
+      build_os             = each.key
+      build_type           = "source"
       userdata_status_file = local.win_userdata_status_file
       standalone_path      = local.win_download_dir
     })
-    destination = "C:\\scripts\\watchmaker-test-win_src-${each.key}.ps1"
+    destination = "C:\\scripts\\watchmaker-test-win_source-${each.key}.ps1"
   }
 
   provisioner "remote-exec" {
     inline = [
-      "powershell.exe -File C:\\scripts\\watchmaker-test-win_src-${each.key}.ps1",
+      "powershell.exe -File C:\\scripts\\watchmaker-test-win_source-${each.key}.ps1",
     ]
 
     connection {
       host = coalesce(self.public_ip, self.private_ip)
       type = "winrm"
       # this is where terraform puts the above mini inline script
-      script_path = "C:\\scripts\\inline-win_src-${each.key}.cmd"
+      script_path = "C:\\scripts\\inline-win_source-${each.key}.cmd"
     }
   }
 }
 
-resource "aws_instance" "win_sa" {
-  for_each = toset(local.win_sa_expanded)
-  ami      = data.aws_ami.win_amis[regex("[a-z0-9]+", each.key)].id   # in case of multiples, regex removes # to find ami (e.g., rhel7-01 becomes rhel7)
+resource "aws_instance" "win_standalone" {
+  for_each = toset(local.win_standalone_builds)
+  ami      = data.aws_ami.win_amis[regex("[a-z0-9]+", each.key)].id # in case of multiples, regex removes # to find ami (e.g., rhel7-01 becomes rhel7)
 
-  associate_public_ip_address = var.tfi_assign_public_ip
-  iam_instance_profile        = var.tfi_instance_profile
-  instance_type               = var.tfi_win_instance_type
+  associate_public_ip_address = var.assign_public_ip
+  iam_instance_profile        = var.instance_profile
+  instance_type               = var.win_instance_type
   key_name                    = aws_key_pair.auth.id
-  subnet_id                   = var.tfi_subnet_id
+  subnet_id                   = var.subnet_id
   vpc_security_group_ids      = aws_security_group.winrm_sg.*.id
 
-  user_data = format("<powershell>%s</powershell>", templatefile("templates/win_userdata.ps1", {
-    bootstrap_url        = local.win_bootstrap_url
-    build_slug           = local.build_slug
-    common_args          = var.tfi_common_args
-    debug                = var.tfi_debug
-    download_dir         = local.win_download_dir
-    sa_error_signal_file = local.win_sa_error_signal_file
-    executable           = local.win_executable
-    git_ref              = var.tfi_git_ref
-    git_repo             = var.tfi_git_repo
-    git_url              = local.win_git_url
-    instance_os          = each.key
-    instance_type        = "sa"
-    pypi_url             = local.pypi_url
-    python_url           = local.win_python_url
-    release_prefix       = local.release_prefix
-    rm_pass              = random_string.password[0].result
-    rm_user              = var.tfi_rm_user
-    seven_zip_url        = local.win_7zip_url
-    temp_dir             = local.win_temp_dir
-    userdata_log         = var.tfi_win_userdata_log
-    userdata_status_file = local.win_userdata_status_file
-    win_args             = var.tfi_win_args
-  }))
+  user_data = format(
+    "<powershell>%s</powershell>",
+    templatefile(
+      "templates/win_userdata.ps1",
+      merge(
+        local.common_template_vars,
+        local.win_template_vars,
+        {
+          build_os   = each.key
+          build_type = "standalone"
+        }
+      )
+    )
+  )
 
   tags = {
-    Name      = "${local.resource_name}-win_sa-${each.key}"
-    BuilderID = aws_instance.win_builder[local.win_builder_request[0]].id
+    Name      = "${local.resource_name}-win_standalone-${each.key}"
+    BuilderID = aws_instance.win_builder[local.win_builder_needed[0]].id
   }
 
   timeouts {
@@ -426,66 +483,57 @@ resource "aws_instance" "win_sa" {
   connection {
     type     = "winrm"
     host     = self.public_ip
-    user     = var.tfi_rm_user
+    user     = var.rm_user
     password = join("", random_string.password.*.result)
     timeout  = "75m"
   }
 
   provisioner "file" {
     content = templatefile("templates/win_test.ps1", {
-      instance_os          = each.key
-      instance_type        = "sa"
+      build_os             = each.key
+      build_type           = "standalone"
       standalone_path      = local.win_download_dir
       userdata_status_file = local.win_userdata_status_file
     })
-    destination = "C:\\scripts\\watchmaker-test-win_sa-${each.key}.ps1"
+    destination = "C:\\scripts\\watchmaker-test-win_standalone-${each.key}.ps1"
   }
 
   provisioner "remote-exec" {
     inline = [
-      "powershell.exe -File C:\\scripts\\watchmaker-test-win_sa-${each.key}.ps1",
+      "powershell.exe -File C:\\scripts\\watchmaker-test-win_standalone-${each.key}.ps1",
     ]
 
     connection {
       host = coalesce(self.public_ip, self.private_ip)
       type = "winrm"
       # this is where terraform puts the above mini inline script
-      script_path = "C:\\scripts\\inline-win_sa-${each.key}.cmd"
+      script_path = "C:\\scripts\\inline-win_standalone-${each.key}.cmd"
     }
   }
 }
 
 resource "aws_instance" "lx_builder" {
-  for_each = toset(local.lx_builder_request)
+  for_each = toset(local.lx_builder_needed)
   ami      = data.aws_ami.lx_amis[each.key].id
 
-  associate_public_ip_address = var.tfi_assign_public_ip
-  iam_instance_profile        = var.tfi_instance_profile
+  associate_public_ip_address = var.assign_public_ip
+  iam_instance_profile        = var.instance_profile
   instance_type               = local.lx_builder_instance_type
   key_name                    = aws_key_pair.auth.id
-  subnet_id                   = var.tfi_subnet_id
+  subnet_id                   = var.subnet_id
   vpc_security_group_ids      = aws_security_group.ssh_sg.*.id
 
-  user_data = templatefile("templates/lx_userdata.sh", {
-    aws_region           = var.tfi_aws_region
-    build_slug           = local.build_slug
-    common_args          = var.tfi_common_args
-    debug                = var.tfi_debug
-    docker_slug          = var.tfi_docker_slug
-    sa_error_signal_file = local.lx_sa_error_signal_file
-    executable           = local.lx_executable
-    git_ref              = var.tfi_git_ref
-    git_repo             = var.tfi_git_repo
-    instance_os          = each.key
-    instance_type        = "builder"
-    lx_args              = var.tfi_lx_args
-    pypi_url             = local.pypi_url
-    release_prefix       = local.release_prefix
-    ssh_port             = local.ssh_port
-    temp_dir             = local.lx_temp_dir
-    userdata_log         = var.tfi_lx_userdata_log
-    userdata_status_file = local.lx_userdata_status_file
-  })
+  user_data = templatefile(
+    "templates/lx_userdata.sh",
+    merge(
+      local.common_template_vars,
+      local.lx_template_vars,
+      {
+        build_os   = each.key
+        build_type = "builder"
+      }
+    )
+  )
 
   tags = {
     Name = "${local.resource_name}-lx_builder-${each.key}"
@@ -496,8 +544,7 @@ resource "aws_instance" "lx_builder" {
   }
 
   connection {
-    type = "ssh"
-    #ssh connection to tier-2 instance
+    type        = "ssh"
     host        = self.public_ip
     user        = local.lx_builder_user
     private_key = tls_private_key.gen_key.private_key_pem
@@ -507,8 +554,8 @@ resource "aws_instance" "lx_builder" {
 
   provisioner "file" {
     content = templatefile("templates/lx_test.sh", {
-      instance_os          = each.key
-      instance_type        = "builder"
+      build_os             = each.key
+      build_type           = "builder"
       userdata_status_file = local.lx_userdata_status_file
     })
     destination = "~/watchmaker-test-lx_builder-${each.key}.sh"
@@ -529,40 +576,31 @@ resource "aws_instance" "lx_builder" {
   }
 }
 
-resource "aws_instance" "lx_src" {
-  for_each = toset(local.lx_src_expanded)
-  ami      = data.aws_ami.lx_amis[regex("[a-z0-9]+", each.key)].id   # in case of multiples, regex removes # to find ami (e.g., rhel7-01 becomes rhel7)
+resource "aws_instance" "lx_source" {
+  for_each = toset(local.lx_source_builds)
+  ami      = data.aws_ami.lx_amis[regex("[a-z0-9]+", each.key)].id # in case of multiples, regex removes # to find ami (e.g., rhel7-01 becomes rhel7)
 
-  associate_public_ip_address = var.tfi_assign_public_ip
-  iam_instance_profile        = var.tfi_instance_profile
-  instance_type               = var.tfi_lx_instance_type
+  associate_public_ip_address = var.assign_public_ip
+  iam_instance_profile        = var.instance_profile
+  instance_type               = var.lx_instance_type
   key_name                    = aws_key_pair.auth.id
-  subnet_id                   = var.tfi_subnet_id
+  subnet_id                   = var.subnet_id
   vpc_security_group_ids      = aws_security_group.ssh_sg.*.id
 
-  user_data = templatefile("templates/lx_userdata.sh", {
-    aws_region           = var.tfi_aws_region
-    build_slug           = local.build_slug
-    common_args          = var.tfi_common_args
-    debug                = var.tfi_debug
-    docker_slug          = var.tfi_docker_slug
-    sa_error_signal_file = local.lx_sa_error_signal_file
-    executable           = local.lx_executable
-    git_ref              = var.tfi_git_ref
-    git_repo             = var.tfi_git_repo
-    instance_os          = each.key
-    instance_type        = "src"
-    lx_args              = var.tfi_lx_args
-    pypi_url             = local.pypi_url
-    release_prefix       = local.release_prefix
-    ssh_port             = local.ssh_port
-    temp_dir             = local.lx_temp_dir
-    userdata_log         = var.tfi_lx_userdata_log
-    userdata_status_file = local.lx_userdata_status_file
-  })
+  user_data = templatefile(
+    "templates/lx_userdata.sh",
+    merge(
+      local.common_template_vars,
+      local.lx_template_vars,
+      {
+        build_os   = each.key
+        build_type = "source"
+      }
+    )
+  )
 
   tags = {
-    Name      = "${local.resource_name}-lx_src-${each.key}"
+    Name      = "${local.resource_name}-lx_source-${each.key}"
     BuilderID = "None (from source)"
   }
 
@@ -573,7 +611,7 @@ resource "aws_instance" "lx_src" {
   connection {
     type        = "ssh"
     host        = self.public_ip
-    user        = var.tfi_ssh_user
+    user        = var.ssh_user
     private_key = tls_private_key.gen_key.private_key_pem
     port        = local.ssh_port
     timeout     = "40m"
@@ -581,63 +619,54 @@ resource "aws_instance" "lx_src" {
 
   provisioner "file" {
     content = templatefile("templates/lx_test.sh", {
-      instance_os          = each.key
-      instance_type        = "src"
+      build_os             = each.key
+      build_type           = "source"
       userdata_status_file = local.lx_userdata_status_file
     })
-    destination = "~/watchmaker-test-lx_src-${each.key}.sh"
+    destination = "~/watchmaker-test-lx_source-${each.key}.sh"
   }
 
   provisioner "remote-exec" {
     inline = [
-      "chmod +x ~/watchmaker-test-lx_src-${each.key}.sh",
-      "~/watchmaker-test-lx_src-${each.key}.sh",
+      "chmod +x ~/watchmaker-test-lx_source-${each.key}.sh",
+      "~/watchmaker-test-lx_source-${each.key}.sh",
     ]
 
     connection {
       host = coalesce(self.public_ip, self.private_ip)
       type = "ssh"
       # this is where terraform puts the above mini inline script
-      script_path = "~/inline-lx_src-${each.key}.sh"
+      script_path = "~/inline-lx_source-${each.key}.sh"
     }
   }
 }
 
-resource "aws_instance" "lx_sa" {
-  for_each = toset(local.lx_sa_expanded)
-  ami      = data.aws_ami.lx_amis[regex("[a-z0-9]+", each.key)].id   # in case of multiples, regex removes # to find ami (e.g., rhel7-01 becomes rhel7)
+resource "aws_instance" "lx_standalone" {
+  for_each = toset(local.lx_standalone_builds)
+  ami      = data.aws_ami.lx_amis[regex("[a-z0-9]+", each.key)].id # in case of multiples, regex removes "-01" to find ami (e.g., rhel7-01 becomes rhel7)
 
-  associate_public_ip_address = var.tfi_assign_public_ip
-  iam_instance_profile        = var.tfi_instance_profile
-  instance_type               = var.tfi_lx_instance_type
+  associate_public_ip_address = var.assign_public_ip
+  iam_instance_profile        = var.instance_profile
+  instance_type               = var.lx_instance_type
   key_name                    = aws_key_pair.auth.id
-  subnet_id                   = var.tfi_subnet_id
+  subnet_id                   = var.subnet_id
   vpc_security_group_ids      = aws_security_group.ssh_sg.*.id
 
-  user_data = templatefile("templates/lx_userdata.sh", {
-    aws_region           = var.tfi_aws_region
-    build_slug           = local.build_slug
-    common_args          = var.tfi_common_args
-    debug                = var.tfi_debug
-    docker_slug          = var.tfi_docker_slug
-    sa_error_signal_file = local.lx_sa_error_signal_file
-    executable           = local.lx_executable
-    git_ref              = var.tfi_git_ref
-    git_repo             = var.tfi_git_repo
-    instance_os          = each.key
-    instance_type        = "sa"
-    lx_args              = var.tfi_lx_args
-    pypi_url             = local.pypi_url
-    release_prefix       = local.release_prefix
-    ssh_port             = local.ssh_port
-    temp_dir             = local.lx_temp_dir
-    userdata_log         = var.tfi_lx_userdata_log
-    userdata_status_file = local.lx_userdata_status_file
-  })
+  user_data = templatefile(
+    "templates/lx_userdata.sh",
+    merge(
+      local.common_template_vars,
+      local.lx_template_vars,
+      {
+        build_os   = each.key
+        build_type = "standalone"
+      }
+    )
+  )
 
   tags = {
-    Name      = "${local.resource_name}-lx_sa-${each.key}"
-    BuilderID = aws_instance.lx_builder[local.lx_builder_request[0]].id
+    Name      = "${local.resource_name}-lx_standalone-${each.key}"
+    BuilderID = aws_instance.lx_builder[local.lx_builder_needed[0]].id
   }
 
   timeouts {
@@ -645,10 +674,9 @@ resource "aws_instance" "lx_sa" {
   }
 
   connection {
-    type = "ssh"
-    #ssh connection to tier-2 instance
+    type        = "ssh"
     host        = self.public_ip
-    user        = var.tfi_ssh_user
+    user        = var.ssh_user
     private_key = tls_private_key.gen_key.private_key_pem
     port        = local.ssh_port
     timeout     = "40m"
@@ -656,24 +684,24 @@ resource "aws_instance" "lx_sa" {
 
   provisioner "file" {
     content = templatefile("templates/lx_test.sh", {
-      instance_os          = each.key
-      instance_type        = "sa"
+      build_os             = each.key
+      build_type           = "standalone"
       userdata_status_file = local.lx_userdata_status_file
     })
-    destination = "~/watchmaker-test-lx_sa-${each.key}.sh"
+    destination = "~/watchmaker-test-lx_standalone-${each.key}.sh"
   }
 
   provisioner "remote-exec" {
     inline = [
-      "chmod +x ~/watchmaker-test-lx_sa-${each.key}.sh",
-      "~/watchmaker-test-lx_sa-${each.key}.sh",
+      "chmod +x ~/watchmaker-test-lx_standalone-${each.key}.sh",
+      "~/watchmaker-test-lx_standalone-${each.key}.sh",
     ]
 
     connection {
       host = coalesce(self.public_ip, self.private_ip)
       type = "ssh"
       # this is where terraform puts the above mini inline script
-      script_path = "~/inline-lx_sa-${each.key}.sh"
+      script_path = "~/inline-lx_standalone-${each.key}.sh"
     }
   }
 }

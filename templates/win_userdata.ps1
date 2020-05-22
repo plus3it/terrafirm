@@ -1,11 +1,11 @@
 
-$InstanceOS = "${instance_os}"
-$InstanceType = "${instance_type}"
-$InstanceSlug = "win_$InstanceType-$InstanceOS"
+$BuildOS = "${build_os}"
+$BuildType = "${build_type}"
+$BuildLabel = "win_$BuildType-$BuildOS"
 
 # global vars
 $BuildSlug = "${build_slug}"
-$StandaloneErrorSignalFile = "${sa_error_signal_file}"
+$StandaloneErrorSignalFile = "${standalone_error_signal_file}"
 $RMUser = "${rm_user}"
 $PypiUrl = "${pypi_url}"
 $DebugMode = "${debug}"
@@ -31,8 +31,8 @@ function Debug-2S3 {
 
   $DebugFile = "$TempDir\debug.log"
   "$(Get-Date): $Msg" | Out-File $DebugFile -Append -Encoding utf8
-  Write-S3Object -BucketName "$BuildSlug/$InstanceSlug" -File $DebugFile
-  Write-S3Object -BucketName "$BuildSlug/$InstanceSlug" -File $UserdataLogFile
+  Write-S3Object -BucketName "$BuildSlug/$BuildLabel" -File $DebugFile
+  Write-S3Object -BucketName "$BuildSlug/$BuildLabel" -File $UserdataLogFile
 }
 
 function Check-Metadata-Availability {
@@ -42,12 +42,12 @@ function Check-Metadata-Availability {
 
   Test-Command $MetadataCommand 50
 
-  Invoke-Expression -Command $MetadataCommand -OutVariable AZ
-  Write-Tfi "Connect to EC2 metadata (AZ is $AZ)" $?
+  Invoke-Expression -Command $MetadataCommand -OutVariable availability_zone
+  Write-Tfi "Connect to EC2 metadata (Availability zone is $availability_zone)" $?
 }
 
 function Write-Tfi {
-  ## Writes messages to a SolidGround log file. Second param is success/failure related to msg.
+  ## Writes messages to a Terrafirm log file. Second param is success/failure related to msg.
   param (
     [String]$Msg,
     $Success = $null
@@ -64,7 +64,7 @@ function Write-Tfi {
 
   "$(Get-Date): $Msg $OutResult" | Out-File "$UserdataLogFile" -Append -Encoding utf8
 
-  if ("$DebugMode" -ne "0" ) {
+  if ("$DebugMode" -ne "false" ) {
     Debug-2S3 "$Msg $OutResult"
   }
 }
@@ -126,13 +126,13 @@ function Publish-Artifacts {
   Get-ChildItem Env: | Out-File "$ArtifactDir\cloud\environment_variables.log" -Append -Encoding utf8
 
   # copy artifacts to s3
-  Write-Tfi "Writing logs to $BuildSlug/$InstanceSlug"
+  Write-Tfi "Writing logs to $BuildSlug/$BuildLabel"
   Copy-Item $UserdataLogFile -Destination "$ArtifactDir" -Force
-  Write-S3Object -BucketName "$BuildSlug" -KeyPrefix "$InstanceSlug" -Folder "$ArtifactDir" -Recurse
+  Write-S3Object -BucketName "$BuildSlug" -KeyPrefix "$BuildLabel" -Folder "$ArtifactDir" -Recurse
 
   # creates compressed archive to upload to s3
   $BuildSlugZipName = "$BuildSlug" -replace '/','-'
-  $ZipFile = "$TempDir\$BuildSlugZipName-$InstanceSlug.zip"
+  $ZipFile = "$TempDir\$BuildSlugZipName-$BuildLabel.zip"
   cd 'C:\Program Files\7-Zip'
   Test-Command ".\7z a -y -tzip $ZipFile -r $ArtifactDir\*"
   Write-S3Object -BucketName "$BuildSlug" -File $ZipFile
@@ -320,7 +320,7 @@ function Install-Watchmaker {
 
 $ErrorActionPreference = "Stop"
 
-Write-Tfi "----------------------------- $InstanceSlug ---------------------"
+Write-Tfi "----------------------------- $BuildLabel ---------------------"
 
 Set-Password -User "Administrator" -Pass "${rm_pass}"
 Close-Firewall
@@ -335,7 +335,7 @@ $UserdataStatus=@(1,"Error: Build not completed (should never see this error)")
 (New-Object System.Net.WebClient).DownloadFile("${seven_zip_url}", "$TempDir\7z-install.exe")
 Invoke-Expression -Command "$TempDir\7z-install.exe /S /D='C:\Program Files\7-Zip'" -ErrorAction Continue
 
-%{ if instance_type == "builder" }
+%{ if build_type == "builder" }
 
 try {
     Write-Tfi "Start build"
@@ -382,7 +382,7 @@ try {
   Write-Tfi $ErrorMessage
   Debug-2S3 $ErrorMessage
   
-  # signal any instances waiting to test this standalone that the build failed
+  # signal any builds waiting to test this standalone that the build failed
   if (-not (Test-Path "$StandaloneErrorSignalFile")) {
       New-Item "$StandaloneErrorSignalFile" -ItemType "file" -Force
   }
@@ -412,7 +412,7 @@ try {
   # time wam install
   $StartDate=Get-Date
 
-  if ($InstanceType -eq "sa") {
+  if ($BuildType -eq "standalone") {
     Write-Tfi "Installing Watchmaker from standalone executable package............."
 
     $SleepTime = 20

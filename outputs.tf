@@ -1,45 +1,41 @@
-output "user_requests" {
-  value = local.user_requests
+output "source_builds" {
+  value = local.source_builds
 }
 
-output "win_src_requests" {
-  value = local.win_src_requests
+output "standalone_builds" {
+  value = local.standalone_builds
 }
 
-output "win_sa_requests" {
-  value = local.win_sa_requests
+output "win_source_builds" {
+  value = local.win_source_builds
 }
 
-output "win_builder_request" {
-  value = local.win_builder_request
+output "win_standalone_builds" {
+  value = local.win_standalone_builds
 }
 
-output "win_all_requests" {
-  value = local.win_all_requests
+output "win_builder_needed" {
+  value = local.win_builder_needed
 }
 
-output "lx_src_requests" {
-  value = local.lx_src_requests
+output "win_unique_builds" {
+  value = local.win_unique_builds
 }
 
-output "lx_sa_requests" {
-  value = local.lx_sa_requests
+output "lx_source_builds" {
+  value = local.lx_source_builds
 }
 
-output "lx_src_expanded" {
-  value = toset(local.lx_src_expanded)
+output "lx_standalone_builds" {
+  value = local.lx_standalone_builds
 }
 
-output "lx_sa_expanded" {
-  value = toset(local.lx_sa_expanded)
+output "lx_builder_needed" {
+  value = local.lx_builder_needed
 }
 
-output "lx_builder_request" {
-  value = local.lx_builder_request
-}
-
-output "lx_all_requests" {
-  value = local.lx_all_requests
+output "lx_unique_builds" {
+  value = local.lx_unique_builds
 }
 
 output "build_date_ymd" {

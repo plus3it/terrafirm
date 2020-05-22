@@ -3,19 +3,19 @@
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 
-instance_os="${instance_os}"
-instance_type="${instance_type}"
-instance_slug="lx_$instance_type-$instance_os"
+build_os="${build_os}"
+build_type="${build_type}"
+build_label="lx_$build_type-$build_os"
 
 exec &> "${userdata_log}"
 
 build_slug="${build_slug}"
-standalone_error_signal_file="${sa_error_signal_file}"
+standalone_error_signal_file="${standalone_error_signal_file}"
 temp_dir="${temp_dir}"
 export AWS_REGION="${aws_region}"
 debug_mode="${debug}"
 
-echo "------------------------------- $instance_slug ---------------------"
+echo "------------------------------- $build_label ---------------------"
 
 debug-2s3() {
   ## With as few dependencies as possible, immediately upload the debug and log
@@ -25,8 +25,8 @@ debug-2s3() {
 
   debug_file="$temp_dir/debug.log"
   echo "$msg" >> "$debug_file"
-  aws s3 cp "$debug_file" "s3://$build_slug/$instance_slug/" > /dev/null 2>&1 || true
-  aws s3 cp "${userdata_log}" "s3://$build_slug/$instance_slug/" > /dev/null 2>&1 || true
+  aws s3 cp "$debug_file" "s3://$build_slug/$build_label/" > /dev/null 2>&1 || true
+  aws s3 cp "${userdata_log}" "s3://$build_slug/$build_label/" > /dev/null 2>&1 || true
 }
 
 check-metadata-availability() {
@@ -35,7 +35,7 @@ check-metadata-availability() {
 }
 
 enable-yum-repo() {
-  if [[ "$instance_os" == rhel6* ]] ; then
+  if [[ "$build_os" == rhel6* ]] ; then
     try_cmd 10 yum-config-manager --enable rhui-REGION-rhel-server-releases-optional
     try_cmd 10 yum -y update
   fi
@@ -70,7 +70,7 @@ write-tfi() {
 
   echo "$(date +%F_%T): $msg $out_result"
 
-  if [ "$debug_mode" != "0" ] ; then
+  if [ "$debug_mode" != "false" ] ; then
     debug-2s3 "$(date +%F_%T): $msg $out_result"
   fi
 }
@@ -171,13 +171,13 @@ publish-artifacts() {
   cp -R /var/log/messages "$artifact_dir/messages/" || true
 
   # move logs to s3
-  artifact_dest="s3://$build_slug/$instance_slug"
+  artifact_dest="s3://$build_slug/$build_label"
   cp "${userdata_log}" "$artifact_dir"
   aws s3 cp "$artifact_dir" "$artifact_dest" --recursive || true
   write-tfi "Uploaded logs to $artifact_dest" --result $?
 
   # creates compressed archive to upload to s3
-  zip_file="$artifact_base/$${build_slug//\//-}-$instance_slug.tgz"
+  zip_file="$artifact_base/$${build_slug//\//-}-$build_label.tgz"
   cd "$artifact_dir"
   tar -cvzf "$zip_file" .
   aws s3 cp "$zip_file" "s3://$build_slug/" || true
@@ -253,7 +253,7 @@ start=$(date +%s)
 # declare an array to hold the status (number and message)
 userdata_status=(0 "Passed")
 
-%{ if instance_type == "builder" }
+%{ if build_type == "builder" }
 
 # BUILDER INPUT -------------------------------------------
 export DEBIAN_FRONTEND=noninteractive
@@ -360,7 +360,7 @@ check-metadata-availability
 set -e
 trap 'catch $? $LINENO' EXIT
 
-if [ "$instance_type" == "sa" ]; then
+if [ "$build_type" == "standalone" ]; then
   standalone_location="s3://$build_slug/${executable}"
   error_location="s3://$build_slug/$standalone_error_signal_file"
   sleep_time=20
