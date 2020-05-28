@@ -103,7 +103,6 @@ locals {
   win_standalone_unique_builds = setintersection(local.win_possible_builds, local.standalone_builds)
   win_builder_needed           = length(local.win_standalone_unique_builds) > 0 ? [local.win_builder_os] : []
   win_unique_builds            = setunion(local.win_source_unique_builds, local.win_standalone_unique_builds, local.win_builder_needed)
-  win_any_builds               = length(local.win_unique_builds) > 0 ? 1 : 0
 
   # if build_multiplier is > 1, these will be used
   win_source_multiplied_builds = [
@@ -128,7 +127,6 @@ locals {
   lx_standalone_unique_builds = setintersection(local.lx_possible_builds, local.standalone_builds)
   lx_builder_needed           = length(local.lx_standalone_unique_builds) > 0 ? [local.lx_builder_os] : []
   lx_unique_builds            = setunion(local.lx_source_unique_builds, local.lx_standalone_unique_builds, local.lx_builder_needed)
-  lx_any_builds               = length(local.lx_unique_builds) > 0 ? 1 : 0
 
   # if build_multiplier is > 1, these will be used
   lx_source_multiplied_builds = [
@@ -212,7 +210,6 @@ resource "tls_private_key" "gen_key" {
 }
 
 resource "random_string" "password" {
-  count            = local.win_any_builds
   length           = 18
   special          = true
   override_special = "()~!@#^*+=|{}[]:;,?"
@@ -222,10 +219,9 @@ resource "aws_default_subnet" "tfi" {
   availability_zone = var.availability_zone
 }
 
-resource "aws_security_group" "winrm_sg" {
-  count       = local.win_any_builds
-  name        = "${local.resource_name}-winrm"
-  description = "Used in terrafirm"
+resource "aws_security_group" "builds" {
+  name        = "${local.resource_name}"
+  description = "Used by Terrafirm"
   vpc_id      = data.aws_subnet.tfi.vpc_id
 
   tags = {
@@ -237,24 +233,6 @@ resource "aws_security_group" "winrm_sg" {
     to_port     = 5986
     protocol    = "tcp"
     cidr_blocks = ["${chomp(data.http.ip.body)}/32"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-resource "aws_security_group" "ssh_sg" {
-  count       = local.lx_any_builds # only create if any lx builds
-  name        = "${local.resource_name}-ssh"
-  description = "Used in terrafirm"
-  vpc_id      = data.aws_subnet.tfi.vpc_id
-
-  tags = {
-    Name = local.resource_name
   }
 
   ingress {
@@ -321,7 +299,7 @@ resource "aws_instance" "win_builder" {
   instance_type               = local.win_builder_instance_type
   key_name                    = aws_key_pair.auth.id
   subnet_id                   = var.subnet_id
-  vpc_security_group_ids      = aws_security_group.winrm_sg.*.id
+  vpc_security_group_ids      = aws_security_group.builds.*.id
 
   user_data = format(
     "<powershell>%s</powershell>",
@@ -387,7 +365,7 @@ resource "aws_instance" "win_source" {
   instance_type               = var.win_instance_type
   key_name                    = aws_key_pair.auth.id
   subnet_id                   = var.subnet_id
-  vpc_security_group_ids      = aws_security_group.winrm_sg.*.id
+  vpc_security_group_ids      = aws_security_group.builds.*.id
 
   user_data = format(
     "<powershell>%s</powershell>",
@@ -454,7 +432,7 @@ resource "aws_instance" "win_standalone" {
   instance_type               = var.win_instance_type
   key_name                    = aws_key_pair.auth.id
   subnet_id                   = var.subnet_id
-  vpc_security_group_ids      = aws_security_group.winrm_sg.*.id
+  vpc_security_group_ids      = aws_security_group.builds.*.id
 
   user_data = format(
     "<powershell>%s</powershell>",
@@ -521,7 +499,7 @@ resource "aws_instance" "lx_builder" {
   instance_type               = local.lx_builder_instance_type
   key_name                    = aws_key_pair.auth.id
   subnet_id                   = var.subnet_id
-  vpc_security_group_ids      = aws_security_group.ssh_sg.*.id
+  vpc_security_group_ids      = aws_security_group.builds.*.id
 
   user_data = templatefile(
     "templates/lx_userdata.sh",
@@ -585,7 +563,7 @@ resource "aws_instance" "lx_source" {
   instance_type               = var.lx_instance_type
   key_name                    = aws_key_pair.auth.id
   subnet_id                   = var.subnet_id
-  vpc_security_group_ids      = aws_security_group.ssh_sg.*.id
+  vpc_security_group_ids      = aws_security_group.builds.*.id
 
   user_data = templatefile(
     "templates/lx_userdata.sh",
@@ -650,7 +628,7 @@ resource "aws_instance" "lx_standalone" {
   instance_type               = var.lx_instance_type
   key_name                    = aws_key_pair.auth.id
   subnet_id                   = var.subnet_id
-  vpc_security_group_ids      = aws_security_group.ssh_sg.*.id
+  vpc_security_group_ids      = aws_security_group.builds.*.id
 
   user_data = templatefile(
     "templates/lx_userdata.sh",
