@@ -27,7 +27,7 @@ output "build_id" {
 }
 
 output "winrm_pass" {
-  value = random_string.password.result
+  value = local.platform_info.win.connection_password
 }
 
 output "private_key" {

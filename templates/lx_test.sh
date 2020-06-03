@@ -50,7 +50,7 @@ else
   cat /etc/redhat-release
 fi
 
-ud_path="${lx_userdata_status_file}"
+ud_path="${userdata_status_file}"
 
 if [ -f "$ud_path" ] ; then
   readarray -t userdata_status < "$ud_path"

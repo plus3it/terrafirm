@@ -10,7 +10,7 @@ Write-Host ("Running Watchmaker Test: $BuildLabel")
 Write-Host ("***************************************************************")
 Write-Host ((Get-WmiObject -class Win32_OperatingSystem).Caption)
 
-$UdPath = "${win_userdata_status_file}"
+$UdPath = "${userdata_status_file}"
 
 if (Test-Path -Path $UdPath) {
     # file exists, read into variable
@@ -32,7 +32,7 @@ if ($BuildType -ne $BuildTypeBuilder -and $UserdataStatus[0] -eq 0) {
         # NOTE: default erroraction in powershell is "Continue"
         # ------------------------------------------------------------ WAM TESTS BEGIN
         if ( $BuildType -eq $BuildTypeStandalone ) {
-            Invoke-Expression -Command "${win_download_dir}\watchmaker.exe --version"  -ErrorAction Stop
+            Invoke-Expression -Command "${download_dir}\watchmaker.exe --version"  -ErrorAction Stop
         } else {
             Invoke-Expression -Command "watchmaker --version"  -ErrorAction Stop
         }

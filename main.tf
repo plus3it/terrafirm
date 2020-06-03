@@ -23,10 +23,10 @@ locals {
   lx_builder_os                    = "xenial"
   lx_connection_type               = "ssh"
   lx_executable                    = "${local.release_prefix}/latest/watchmaker-latest-standalone-linux-x86_64"
-  lx_format_str_destination        = "~/watchmaker-test-lx_%s-%s.sh"
-  lx_format_str_inline_path        = "~/inline-lx_%s-%s.sh"
-  lx_format_str_inline_script      = "chmod +x ~/watchmaker-test-lx_%s-%s.sh\n~/watchmaker-test-lx_%[1]s-%[2]s.sh"
-  lx_format_str_instance_name      = "${local.resource_name}-lx_%s-%s"
+  lx_format_str_destination        = "~/watchmaker-test-%s-%s.sh"
+  lx_format_str_inline_path        = "~/inline-%s-%s.sh"
+  lx_format_str_inline_script      = "chmod +x ~/watchmaker-test-%s-%s.sh\n~/watchmaker-test-%[1]s-%[2]s.sh"
+  lx_format_str_instance_name      = "${local.resource_name}-%s-%s"
   lx_format_str_userdata           = "%s"
   lx_port                          = 122
   lx_standalone_error_signal_file  = "${local.release_prefix}/lx_standalone_error_signal.log"
@@ -53,10 +53,10 @@ locals {
   win_connection_type              = "winrm"
   win_download_dir                 = "C:\\Users\\Administrator\\Downloads"
   win_executable                   = "${local.release_prefix}/latest/watchmaker-latest-standalone-windows-amd64.exe"
-  win_format_str_destination       = "C:\\scripts\\watchmaker-test-win_%s-%s.ps1"
-  win_format_str_inline_path       = "C:\\scripts\\inline-win_%s-%s.cmd"
-  win_format_str_inline_script     = "powershell.exe -File C:\\scripts\\watchmaker-test-win_%s-%s.ps1"
-  win_format_str_instance_name     = "${local.resource_name}-win_%s-%s"
+  win_format_str_destination       = "C:\\scripts\\watchmaker-test-%s-%s.ps1"
+  win_format_str_inline_path       = "C:\\scripts\\inline-%s-%s.cmd"
+  win_format_str_inline_script     = "powershell.exe -File C:\\scripts\\watchmaker-test-%s-%s.ps1"
+  win_format_str_instance_name     = "${local.resource_name}-%s-%s"
   win_format_str_userdata          = "<powershell>%s</powershell>"
   win_password_length              = 18
   win_password_override_special    = "()~!@#^*+=|{}[]:;,?"
@@ -90,6 +90,7 @@ locals {
   platform_info = {
     win = {
       builder                  = local.win_builder_os
+      connection_key           = null
       connection_password      = random_string.password.result
       connection_port          = null
       connection_timeout       = local.win_timeout_connection
@@ -104,13 +105,13 @@ locals {
       format_str_userdata      = local.win_format_str_userdata
       instance_type            = var.win_instance_type
       key                      = "win"
-      private_key              = null
       test_template            = local.win_test_template
       userdata_template        = local.win_userdata_template
     }
 
     lx = {
       builder                  = local.lx_builder_os
+      connection_key           = tls_private_key.gen_key.private_key_pem
       connection_password      = null
       connection_port          = local.lx_port
       connection_timeout       = local.lx_timeout_connection
@@ -125,7 +126,6 @@ locals {
       format_str_userdata      = local.lx_format_str_userdata
       instance_type            = var.lx_instance_type
       key                      = "lx"
-      private_key              = tls_private_key.gen_key.private_key_pem
       test_template            = local.lx_test_template
       userdata_template        = local.lx_userdata_template
     }
@@ -329,7 +329,7 @@ resource "aws_instance" "builder" {
           build_os    = each.key
           build_type  = local.build_type_builder
           build_label = format(local.format_str_build_label, local.build_type_builder, each.key)
-          rm_pass     = random_string.password.result
+          password    = local.build_info[each.key].platform.connection_password
         }
       )
     )
@@ -348,13 +348,13 @@ resource "aws_instance" "builder" {
   }
 
   connection {
-    host        = self.public_ip
-    password    = local.build_info[each.key].platform.connection_password
-    port        = local.build_info[each.key].platform.connection_port
-    private_key = local.build_info[each.key].platform.private_key
-    timeout     = local.build_info[each.key].platform.connection_timeout
     type        = local.build_info[each.key].platform.connection_type
+    host        = self.public_ip
     user        = local.build_info[each.key].platform.connection_user_builder
+    password    = local.build_info[each.key].platform.connection_password
+    timeout     = local.build_info[each.key].platform.connection_timeout
+    port        = local.build_info[each.key].platform.connection_port
+    private_key = local.build_info[each.key].platform.connection_key
   }
 
   provisioner "file" {
@@ -419,7 +419,7 @@ resource "aws_instance" "standalone_build" {
           build_os    = each.key
           build_type  = local.build_type_standalone
           build_label = format(local.format_str_build_label, local.build_type_standalone, each.key)
-          rm_pass     = random_string.password.result
+          password    = local.build_info[each.key].platform.connection_password
         }
       )
     )
@@ -443,7 +443,7 @@ resource "aws_instance" "standalone_build" {
     type        = local.build_info[each.key].platform.connection_type
     host        = self.public_ip
     user        = local.build_info[each.key].platform.connection_user
-    private_key = local.build_info[each.key].platform.private_key
+    private_key = local.build_info[each.key].platform.connection_key
     port        = local.build_info[each.key].platform.connection_port
     timeout     = local.build_info[each.key].platform.connection_timeout
     password    = local.build_info[each.key].platform.connection_password
@@ -511,7 +511,7 @@ resource "aws_instance" "source_build" {
           build_os    = each.key
           build_type  = local.build_type_source
           build_label = format(local.format_str_build_label, local.build_type_source, each.key)
-          rm_pass     = random_string.password.result
+          password    = local.build_info[each.key].platform.connection_password
         }
       )
     )
@@ -533,7 +533,7 @@ resource "aws_instance" "source_build" {
     type        = local.build_info[each.key].platform.connection_type
     host        = self.public_ip
     user        = local.build_info[each.key].platform.connection_user
-    private_key = local.build_info[each.key].platform.private_key
+    private_key = local.build_info[each.key].platform.connection_key
     port        = local.build_info[each.key].platform.connection_port
     timeout     = local.build_info[each.key].platform.connection_timeout
     password    = local.build_info[each.key].platform.connection_password

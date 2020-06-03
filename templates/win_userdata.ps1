@@ -6,19 +6,19 @@ $BuildTypeStandalone = "${build_type_standalone}"
 
 # global vars
 $BuildSlug = "${build_slug}"
-$StandaloneErrorSignalFile = "${win_standalone_error_signal_file}"
-$WinUser = "${win_user}"
+$StandaloneErrorSignalFile = "${standalone_error_signal_file}"
+$WinUser = "${user}"
 $PypiUrl = "${url_pypi}"
 $DebugMode = "${debug}"
 
 # log file
-$UserdataLogFile = "${win_userdata_log}"
+$UserdataLogFile = "${userdata_log}"
 if (-not (Test-Path "$UserdataLogFile")) {
   New-Item "$UserdataLogFile" -ItemType "file" -Force
 }
 
 # directory needed by logs and for various other purposes
-$TempDir = "${win_temp_dir}"
+$TempDir = "${temp_dir}"
 if (-not (Test-Path "$TempDir")) {
   New-Item "$TempDir" -ItemType "directory" -Force
 }
@@ -159,7 +159,7 @@ function Write-UserdataStatus {
   )
 
   # write the status to a file for reading by test script
-  $UserdataStatus | Out-File "${win_userdata_status_file}"
+  $UserdataStatus | Out-File "${userdata_status_file}"
   Write-Tfi "Write userdata status file" $?
 }
 
@@ -250,8 +250,8 @@ function Invoke-CmdScript {
 function Install-PythonGit {
   ## Use the Watchmaker bootstrap to install Python and Git.
   $BootstrapUrl = "${url_bootstrap}"
-  $PythonUrl = "${win_url_python}"
-  $GitUrl = "${win_url_git}"
+  $PythonUrl = "${url_python}"
+  $GitUrl = "${url_git}"
 
   # Download bootstrap file
   $Stage = "download bootstrap"
@@ -323,7 +323,7 @@ $ErrorActionPreference = "Stop"
 
 Write-Tfi "----------------------------- $BuildLabel ---------------------"
 
-Set-Password -User "Administrator" -Pass "${rm_pass}"
+Set-Password -User "Administrator" -Pass "${password}"
 Close-Firewall
 
 # declare an array to hold the status (number and message)
@@ -368,7 +368,7 @@ try {
     if ($env:GB_ENV_STAGING_DIR) {
       Remove-Item ".\$env:GB_ENV_STAGING_DIR\0*" -Recurse
       Write-S3Object -BucketName "$BuildSlug" -KeyPrefix "${release_prefix}" -Folder ".\$env:GB_ENV_STAGING_DIR" -Recurse
-      Test-DisplayResult "Copy standalone to $ArtifactDest" $?
+      Test-DisplayResult "Copied standalone to $BuildSlug/${release_prefix}" $?
     }
 
     # ----------  end of wam standalone package build ----------
@@ -397,7 +397,7 @@ try {
   $UserdataStatus=@($ErrCode,"Error at: " + $Stage + " [$ErrorMessage]")
 }
 
-Rename-User -From "Administrator" -To "$RMUser"
+Rename-User -From "Administrator" -To "$WinUser"
 Open-WinRM
 Write-UserdataStatus -UserdataStatus $UserdataStatus
 Open-Firewall
@@ -417,7 +417,7 @@ try {
     Write-Tfi "Installing Watchmaker from standalone executable package............."
 
     $SleepTime = 20
-    $Standalone = "${win_executable}"
+    $Standalone = "${executable}"
     $ErrorKey = $StandaloneErrorSignalFile
 
     Write-Tfi "Looking for standalone executable at $BuildSlug/$Standalone"
@@ -461,9 +461,9 @@ try {
     } # end of while($true)
 
     #Invoke-Expression -Command "mkdir C:\scripts" -ErrorAction SilentlyContinue
-    $DownloadDir = "${win_download_dir}"
+    $DownloadDir = "${download_dir}"
     Read-S3Object -BucketName "$BuildSlug" -Key $Standalone -File "$DownloadDir\watchmaker.exe"
-    Test-Command "$DownloadDir\watchmaker.exe ${win_args}"
+    Test-Command "$DownloadDir\watchmaker.exe ${args}"
   } else {
     # ---------- begin of wam install ----------
     Write-Tfi "Installing Watchmaker from source...................................."
@@ -473,7 +473,7 @@ try {
 
     # Run watchmaker
     $Stage = "run wam"
-    Test-Command "watchmaker ${win_args}"
+    Test-Command "watchmaker ${args}"
     # ----------  end of wam install ----------
   }
 
@@ -493,7 +493,7 @@ try {
 }
 
 # in case wam didn't change admin account name, winrm won't be able to log in so make sure
-Rename-User -From "Administrator" -To "$RMUser"
+Rename-User -From "Administrator" -To "$WinUser"
 
 # Open-WinRM won't work if lgpo is blocking, but we'll have salt in that case
 Open-WinRM
