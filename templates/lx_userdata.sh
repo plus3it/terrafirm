@@ -5,13 +5,14 @@ export LANG=en_US.UTF-8
 
 build_os="${build_os}"
 build_type="${build_type}"
-build_label="lx_$build_type-$build_os"
+build_label="${build_label}"
+build_type_standalone="${build_type_standalone}"
 
-exec &> "${userdata_log}"
+exec &> "${lx_userdata_log}"
 
 build_slug="${build_slug}"
-standalone_error_signal_file="${standalone_error_signal_file}"
-temp_dir="${temp_dir}"
+standalone_error_signal_file="${lx_standalone_error_signal_file}"
+temp_dir="${lx_temp_dir}"
 export AWS_REGION="${aws_region}"
 debug_mode="${debug}"
 
@@ -26,7 +27,7 @@ debug-2s3() {
   debug_file="$temp_dir/debug.log"
   echo "$msg" >> "$debug_file"
   aws s3 cp "$debug_file" "s3://$build_slug/$build_label/" > /dev/null 2>&1 || true
-  aws s3 cp "${userdata_log}" "s3://$build_slug/$build_label/" > /dev/null 2>&1 || true
+  aws s3 cp "${lx_userdata_log}" "s3://$build_slug/$build_label/" > /dev/null 2>&1 || true
 }
 
 check-metadata-availability() {
@@ -172,7 +173,7 @@ publish-artifacts() {
 
   # move logs to s3
   artifact_dest="s3://$build_slug/$build_label"
-  cp "${userdata_log}" "$artifact_dir"
+  cp "${lx_userdata_log}" "$artifact_dir"
   aws s3 cp "$artifact_dir" "$artifact_dest" --recursive || true
   write-tfi "Uploaded logs to $artifact_dest" --result $?
 
@@ -189,8 +190,8 @@ finally() {
   end=$(date +%s)
   runtime=$((end-start))
   write-tfi "WAM install took $runtime seconds."
-  
-  printf "%s\n" "$${userdata_status[@]}" > "${userdata_status_file}"
+
+  printf "%s\n" "$${userdata_status[@]}" > "${lx_userdata_status_file}"
 
   open-ssh
   publish-artifacts
@@ -253,7 +254,7 @@ start=$(date +%s)
 # declare an array to hold the status (number and message)
 userdata_status=(0 "Passed")
 
-%{ if build_type == "builder" }
+%{ if build_type == build_type_builder }
 
 # BUILDER INPUT -------------------------------------------
 export DEBIAN_FRONTEND=noninteractive
@@ -360,8 +361,8 @@ check-metadata-availability
 set -e
 trap 'catch $? $LINENO' EXIT
 
-if [ "$build_type" == "standalone" ]; then
-  standalone_location="s3://$build_slug/${executable}"
+if [ "$build_type" == "$build_type_standalone" ]; then
+  standalone_location="s3://$build_slug/${lx_executable}"
   error_location="s3://$build_slug/$standalone_error_signal_file"
   sleep_time=20
   nonexistent_code="nonexistent"
@@ -403,7 +404,7 @@ if [ "$build_type" == "standalone" ]; then
   try_cmd 1 aws s3 cp "$standalone_location" "$standalone_dest/watchmaker"
   chmod +x "$standalone_dest/watchmaker"
 
-  try_cmd 1 "$standalone_dest"/watchmaker ${common_args} ${lx_args}
+  try_cmd 1 "$standalone_dest"/watchmaker ${lx_args}
 
 else
   # test install from source
@@ -415,7 +416,7 @@ else
   install-watchmaker
 
   # Run watchmaker
-  try_cmd 1 watchmaker ${common_args} ${lx_args}
+  try_cmd 1 watchmaker ${lx_args}
 
   # ----------  end of wam install  ----------
 fi

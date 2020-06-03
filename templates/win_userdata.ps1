@@ -1,23 +1,24 @@
 
 $BuildOS = "${build_os}"
 $BuildType = "${build_type}"
-$BuildLabel = "win_$BuildType-$BuildOS"
+$BuildLabel = "${build_label}"
+$BuildTypeStandalone = "${build_type_standalone}"
 
 # global vars
 $BuildSlug = "${build_slug}"
-$StandaloneErrorSignalFile = "${standalone_error_signal_file}"
+$StandaloneErrorSignalFile = "${win_standalone_error_signal_file}"
 $RMUser = "${rm_user}"
 $PypiUrl = "${pypi_url}"
 $DebugMode = "${debug}"
 
 # log file
-$UserdataLogFile = "${userdata_log}"
+$UserdataLogFile = "${win_userdata_log}"
 if (-not (Test-Path "$UserdataLogFile")) {
   New-Item "$UserdataLogFile" -ItemType "file" -Force
 }
 
 # directory needed by logs and for various other purposes
-$TempDir = "${temp_dir}"
+$TempDir = "${win_temp_dir}"
 if (-not (Test-Path "$TempDir")) {
   New-Item "$TempDir" -ItemType "directory" -Force
 }
@@ -158,7 +159,7 @@ function Write-UserdataStatus {
   )
 
   # write the status to a file for reading by test script
-  $UserdataStatus | Out-File "${userdata_status_file}"
+  $UserdataStatus | Out-File "${win_userdata_status_file}"
   Write-Tfi "Write userdata status file" $?
 }
 
@@ -249,8 +250,8 @@ function Invoke-CmdScript {
 function Install-PythonGit {
   ## Use the Watchmaker bootstrap to install Python and Git.
   $BootstrapUrl = "${bootstrap_url}"
-  $PythonUrl = "${python_url}"
-  $GitUrl = "${git_url}"
+  $PythonUrl = "${win_python_url}"
+  $GitUrl = "${win_git_url}"
 
   # Download bootstrap file
   $Stage = "download bootstrap"
@@ -332,46 +333,46 @@ $UserdataStatus=@(1,"Error: Build not completed (should never see this error)")
 [Net.ServicePointManager]::SecurityProtocol = "Ssl3, Tls, Tls11, Tls12"
 
 # install 7-zip for use with artifacts - download fails after wam install, fyi
-(New-Object System.Net.WebClient).DownloadFile("${seven_zip_url}", "$TempDir\7z-install.exe")
+(New-Object System.Net.WebClient).DownloadFile("${win_7zip_url}", "$TempDir\7z-install.exe")
 Invoke-Expression -Command "$TempDir\7z-install.exe /S /D='C:\Program Files\7-Zip'" -ErrorAction Continue
 
-%{ if build_type == "builder" }
+%{ if build_type == build_type_builder }
 
 try {
     Write-Tfi "Start build"
-  
+
     # time wam install
     $StartDate=Get-Date
-  
+
     # ---------- begin of wam standalone package build ----------
     Install-PythonGit
-  
+
     Install-Watchmaker -UseVenv $true
-  
+
     # Install prereqs
     $Stage = "install build prerequisites"
-    
+
     python -m pip install --index-url="$PypiUrl" -r requirements\pip.txt
     Test-DisplayResult "Install pip" $?
-  
+
     pip install --index-url="$PypiUrl" -r requirements\build.txt
     Test-DisplayResult "Install build prerequisites" $?
-  
+
     # create standalone application
     gravitybee --src-dir src --sha file --with-latest --extra-data static --extra-pkgs boto3 --extra-modules boto3
     Test-DisplayResult "Run gravitybee (build standalone)" $?
-  
+
     Invoke-CmdScript .\.gravitybee\gravitybee-environs.bat
     Test-DisplayResult "Set environment variables" $?
-  
+
     if ($env:GB_ENV_STAGING_DIR) {
       Remove-Item ".\$env:GB_ENV_STAGING_DIR\0*" -Recurse
       Write-S3Object -BucketName "$BuildSlug" -KeyPrefix "${release_prefix}" -Folder ".\$env:GB_ENV_STAGING_DIR" -Recurse
       Test-DisplayResult "Copy standalone to $ArtifactDest" $?
     }
-  
+
     # ----------  end of wam standalone package build ----------
-  
+
     $EndDate = Get-Date
     Write-Tfi("WAM standalone build took {0} seconds." -f [math]::Round(($EndDate - $StartDate).TotalSeconds))
     Write-Tfi("End build")
@@ -381,7 +382,7 @@ try {
   Write-Tfi ("*** ERROR caught ($Stage) ***")
   Write-Tfi $ErrorMessage
   Debug-2S3 $ErrorMessage
-  
+
   # signal any builds waiting to test this standalone that the build failed
   if (-not (Test-Path "$StandaloneErrorSignalFile")) {
       New-Item "$StandaloneErrorSignalFile" -ItemType "file" -Force
@@ -390,7 +391,7 @@ try {
   "$(Get-Date): $Msg" | Out-File "$StandaloneErrorSignalFile" -Append -Encoding utf8
   Write-S3Object -BucketName "$BuildSlug/${release_prefix}" -File $StandaloneErrorSignalFile
   Write-Tfi "Signal error to S3" $?
-  
+
   # setup userdata status for passing to the test script via a file
   $ErrCode = 1  # trying to set this to $lastExitCode does not work (always get 0)
   $UserdataStatus=@($ErrCode,"Error at: " + $Stage + " [$ErrorMessage]")
@@ -412,11 +413,11 @@ try {
   # time wam install
   $StartDate=Get-Date
 
-  if ($BuildType -eq "standalone") {
+  if ($BuildType -eq $BuildTypeStandalone) {
     Write-Tfi "Installing Watchmaker from standalone executable package............."
 
     $SleepTime = 20
-    $Standalone = "${executable}"
+    $Standalone = "${win_executable}"
     $ErrorKey = $StandaloneErrorSignalFile
 
     Write-Tfi "Looking for standalone executable at $BuildSlug/$Standalone"
@@ -460,9 +461,9 @@ try {
     } # end of while($true)
 
     #Invoke-Expression -Command "mkdir C:\scripts" -ErrorAction SilentlyContinue
-    $DownloadDir = "${download_dir}"
+    $DownloadDir = "${win_download_dir}"
     Read-S3Object -BucketName "$BuildSlug" -Key $Standalone -File "$DownloadDir\watchmaker.exe"
-    Test-Command "$DownloadDir\watchmaker.exe ${common_args} ${win_args}"
+    Test-Command "$DownloadDir\watchmaker.exe ${win_args}"
   } else {
     # ---------- begin of wam install ----------
     Write-Tfi "Installing Watchmaker from source...................................."
@@ -472,7 +473,7 @@ try {
 
     # Run watchmaker
     $Stage = "run wam"
-    Test-Command "watchmaker ${common_args} ${win_args}"
+    Test-Command "watchmaker ${win_args}"
     # ----------  end of wam install ----------
   }
 

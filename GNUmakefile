@@ -4,7 +4,7 @@ export TERRAFORM_PARALLELISM ?= 20
 
 default: again
 
-again:
+again: neat valid
 ifeq (,$(wildcard ./.terraform/))
 	@terraform init $(COLOR_OPTION)
 endif

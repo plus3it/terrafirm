@@ -1,17 +1,18 @@
 
 $BuildOS = "${build_os}"
 $BuildType = "${build_type}"
-$BuildLabel = "win_$BuildType-$BuildOS"
+$BuildLabel = "${build_label}"
+$BuildTypeBuilder = "${build_type_builder}"
+$BuildTypeStandalone = "${build_type_standalone}"
 
 Write-Host ("***************************************************************")
-$BuildTitle = (Get-Culture).TextInfo.ToTitleCase($BuildType)
-Write-Host ("Running Watchmaker $BuildTitle Build ($BuildLabel)")
+Write-Host ("Running Watchmaker Test: $BuildLabel")
 Write-Host ("***************************************************************")
 Write-Host ((Get-WmiObject -class Win32_OperatingSystem).Caption)
 
-$UdPath = "${userdata_status_file}"
+$UdPath = "${win_userdata_status_file}"
 
-if (Test-Path -Path $UdPath) {   
+if (Test-Path -Path $UdPath) {
     # file exists, read into variable
     $UserdataStatus=gc $UdPath
 } else {   # error, no userdata status found
@@ -21,7 +22,7 @@ if (Test-Path -Path $UdPath) {
 
 $TestStatus=@(0,"Not run")
 
-if ($BuildType -ne "builder" -and $UserdataStatus[0] -eq 0) {   
+if ($BuildType -ne $BuildTypeBuilder -and $UserdataStatus[0] -eq 0) {
     # userdata was successful so now TRY the watchmaker tests
 
     try {
@@ -30,8 +31,8 @@ if ($BuildType -ne "builder" -and $UserdataStatus[0] -eq 0) {
         # NOTE: if tests don't have an error action of "Stop," by default or explicitly set, won't be caught
         # NOTE: default erroraction in powershell is "Continue"
         # ------------------------------------------------------------ WAM TESTS BEGIN
-        if ( $BuildType -eq "standalone" ) {
-            Invoke-Expression -Command "${standalone_path}\watchmaker.exe --version"  -ErrorAction Stop
+        if ( $BuildType -eq $BuildTypeStandalone ) {
+            Invoke-Expression -Command "${win_download_dir}\watchmaker.exe --version"  -ErrorAction Stop
         } else {
             Invoke-Expression -Command "watchmaker --version"  -ErrorAction Stop
         }

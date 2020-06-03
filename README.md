@@ -8,8 +8,6 @@ Terrafirm can be run locally or with [AWS CodeBuild](https://aws.amazon.com/code
 
 * Previously, `pkg` was used in S3 prefixes, environment variables, and code to indicate something related to standalone packages. Now `standalone` is used for that purpose.
 * There are two separate input variables for source and standalone builds: `TF_VAR_source_builds` and `TF_VAR_standalone_builds`. See below for more information.
-* To create all possible test builds, set the `TF_VAR_run_all_builds` environment variable to `true`. If set to true, Terrafirm ignores `TF_VAR_source_builds` and `TF_VAR_standalone_builds`.
-* You can create multiples of the test builds by setting the `TF_VAR_build_multiplier` to a value greater than 1. See an example below of using the multiplier. **Caution**: This could result in many builds being created. For example, if all builds are chosen and you use a multiplier of 20, 282 instances would be created!
 * A GNUMakefile now provides shortcuts for Terrafirm tasks:
   - `make` (a/k/a `make again`) - using environment/Terraform variables or a .env file, apply the configuration (perform init if needed)
   - `make valid` - using environment/Terraform variables or a .env file, validate the configuration (perform init if needed)
@@ -23,15 +21,6 @@ Terrafirm can be run locally or with [AWS CodeBuild](https://aws.amazon.com/code
 ## Instance Test Options
 
 Several environment variables allow you to control what builds Terrafirm runs. Each of them is described in more detail in this section.
-
-### TF_VAR_run_all_builds
-
-Set the `TF_VAR_run_all_builds` environment variable to `true` to create all source and standalone test builds. (If set to true, Terrafirm ignores `TF_VAR_source_builds` and `TF_VAR_standalone_builds`.) For example, these values will cause Terrafirm to create all builds, not the three specified by `TF_VAR_source_builds`:
-
-```console
-export TF_VAR_run_all_builds=true
-export TF_VAR_source_builds='["rhel6","win12","win19"]'
-```
 
 ### TF_VAR_source_builds and TF_VAR_standalone_builds
 
@@ -54,36 +43,8 @@ export TF_VAR_source_builds='["rhel6","win12"]'
 You would expect Terraform's output to include lines like these if you run Terrafirm with these settings:
 
 ```console
-aws_instance.win_source["win12"]: Still creating... [1m10s elapsed]
-aws_instance.lx_source["rhel6"]: Still creating... [1m10s elapsed]
-```
-
-### TF_VAR_build_multiplier
-
-To create identical but separate builds for each build you request, set the `TF_VAR_build_multiplier` variable to a value greater than 1. Multiple identical builds can be handy in tracking down transient problems. Use `TF_VAR_build_multiplier` together with either `TF_VAR_source_builds` and `TF_VAR_standalone_builds`, or `TF_VAR_run_all_builds`.
-
-***Caution***: *This could result in many builds being created. For example, if all builds are chosen and you use a multiplier of 20, 282 builds would be created!*
-
-For example, to run two separate identical builds for each build requested, you would use these settings:
-
-```console
-export TF_VAR_build_multiplier=2'
-export TF_VAR_source_builds='["rhel6","centos6"]'
-export TF_VAR_standalone_builds='["win12"]'
-```
-
-As a result, seven builds will be created: four source test builds on Linux, two standalone package test builds on Windows, and the Windows standalone package builder.
-
-You would expect Terraform's output to include lines like these if you run Terrafirm with these settings:
-
-```console
-aws_instance.lx_source["rhel6-01"]: Still creating... [1m10s elapsed]
-aws_instance.lx_source["rhel6-02"]: Still creating... [1m10s elapsed]
-aws_instance.lx_source["centos6-01"]: Still creating... [1m10s elapsed]
-aws_instance.lx_source["centos6-02"]: Still creating... [1m10s elapsed]
-aws_instance.win_builder["win12"]: Creation complete after 9m29s [id=i-0dde78507ce9cfe35]
-aws_instance.win_standalone["win12-01"]: Creating...
-aws_instance.win_standalone["win12-02"]: Creating...
+aws_instance.source_build["win12"]: Still creating... [1m10s elapsed]
+aws_instance.source_build["rhel6"]: Still creating... [1m10s elapsed]
 ```
 
 ## TERRAFIRM ENVIRONMENT VARIABLES
@@ -92,10 +53,8 @@ Variable | Default | Req/Opt (in CodeBuild) | Description
 --- | --- | --- | ---
 `TF_VAR_availability_zone` | us-east-1c | optional | availability_zone to use for builds.
 `TF_VAR_subnet_id` | [empty] | optional | Subnet to use. CodeBuild instance must be able to access.
-`TF_VAR_run_all_builds` | false | optional | If true, runs source and standalone builds on all OSs (`TF_VAR_source_builds` and `TF_VAR_standalone_builds` are ignored).
 `TF_VAR_source_builds` | [empty] | optional | See above for details on setting this variable.
 `TF_VAR_standalone_builds` | [empty] | optional | See above for details on setting this variable.
-`TF_VAR_build_multiplier` | 1 | optional | Number of each instance type to create.
 `TF_VAR_rm_user` | Administrator | optional | Username to use when connecting via WinRM to Windows builds
 `TF_VAR_ssh_user` | root | optional | Username to use when connecting via SSH to Linux builds.
 `TF_VAR_instance_profile` | [empty] | optional | IAM instance profile to be used in provisioning resources.

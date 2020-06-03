@@ -5,7 +5,9 @@ export LANG=en_US.UTF-8
 
 build_os="${build_os}"
 build_type="${build_type}"
-build_label="lx_$build_type-$build_os"
+build_label="${build_label}"
+build_type_builder="${build_type_builder}"
+build_type_standalone="${build_type_standalone}"
 
 finally() {
   local exit_code=0
@@ -37,8 +39,7 @@ catch() {
 trap 'catch $? $LINENO' ERR
 
 echo "***************************************************************"
-build_title=$${build_type^}
-echo "Running Watchmaker $test_title Build ($build_label)"
+echo "Running Watchmaker Test: $build_label"
 echo "***************************************************************"
 
 # everything below this is the TRY
@@ -49,7 +50,7 @@ else
   cat /etc/redhat-release
 fi
 
-ud_path="${userdata_status_file}"
+ud_path="${lx_userdata_status_file}"
 
 if [ -f "$ud_path" ] ; then
   readarray -t userdata_status < "$ud_path"
@@ -59,9 +60,9 @@ fi
 
 test_status=(0 "Not run")
 
-if [ "$build_type" != "builder" ] && [ "$${userdata_status[0]}" -eq 0 ]; then
+if [ "$build_type" != "$build_type_builder" ] && [ "$${userdata_status[0]}" -eq 0 ]; then
   # ------------------------------------------------------------ WAM TESTS BEGIN
-  if [ "$build_type" = "standalone" ]; then
+  if [ "$build_type" = "$build_type_standalone" ]; then
     ./watchmaker --version
   else
     watchmaker --version
