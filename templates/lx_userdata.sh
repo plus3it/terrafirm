@@ -121,7 +121,7 @@ try_cmd() {
 open-ssh() {
   # open firewall on rhel 6/7 and ubuntu, move ssh to non-standard
 
-  local new_ssh_port="${ssh_port}"
+  local new_lx_port="${lx_port}"
 
   if [ -f /etc/redhat-release ]; then
     ## CentOS / RedHat
@@ -132,15 +132,15 @@ open-ssh() {
     # open firewall (iptables for rhel/centos 6, firewalld for 7
 
     if systemctl status firewalld &> /dev/null ; then
-      try_cmd 1 firewall-cmd --zone=public --permanent --add-port="$new_ssh_port"/tcp
+      try_cmd 1 firewall-cmd --zone=public --permanent --add-port="$new_lx_port"/tcp
       try_cmd 1 firewall-cmd --reload
     else
-      try_cmd 1 iptables -A INPUT -p tcp --dport "$new_ssh_port" -j ACCEPT #open port $new_ssh_port
+      try_cmd 1 iptables -A INPUT -p tcp --dport "$new_lx_port" -j ACCEPT #open port $new_lx_port
       try_cmd 1 service iptables save
       try_cmd 1 service iptables restart
     fi
 
-    try_cmd 1 sed -i -e "5iPort $new_ssh_port" /etc/ssh/sshd_config
+    try_cmd 1 sed -i -e "5iPort $new_lx_port" /etc/ssh/sshd_config
     try_cmd 1 sed -i -e 's/Port 22/#Port 22/g' /etc/ssh/sshd_config
     try_cmd 1 service sshd restart
 
@@ -148,8 +148,8 @@ open-ssh() {
     ## Not CentOS / RedHat (i.e., Ubuntu)
 
     # open firewall/put ssh on a new port
-    try_cmd 1 ufw allow "$new_ssh_port"/tcp
-    try_cmd 1 sed -i "s/Port 22/Port $new_ssh_port/g" /etc/ssh/sshd_config
+    try_cmd 1 ufw allow "$new_lx_port"/tcp
+    try_cmd 1 sed -i "s/Port 22/Port $new_lx_port/g" /etc/ssh/sshd_config
     try_cmd 1 service ssh restart
   fi
 }
@@ -212,7 +212,7 @@ install-watchmaker() {
   GIT_REPO="${git_repo}"
   GIT_REF="${git_ref}"
 
-  PYPI_URL="${pypi_url}"
+  PYPI_URL="${url_pypi}"
 
   # Install pip
   try_cmd 2 python3 -m ensurepip --upgrade --default-pip

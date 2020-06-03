@@ -7,8 +7,8 @@ $BuildTypeStandalone = "${build_type_standalone}"
 # global vars
 $BuildSlug = "${build_slug}"
 $StandaloneErrorSignalFile = "${win_standalone_error_signal_file}"
-$RMUser = "${rm_user}"
-$PypiUrl = "${pypi_url}"
+$WinUser = "${win_user}"
+$PypiUrl = "${url_pypi}"
 $DebugMode = "${debug}"
 
 # log file
@@ -249,9 +249,9 @@ function Invoke-CmdScript {
 
 function Install-PythonGit {
   ## Use the Watchmaker bootstrap to install Python and Git.
-  $BootstrapUrl = "${bootstrap_url}"
-  $PythonUrl = "${win_python_url}"
-  $GitUrl = "${win_git_url}"
+  $BootstrapUrl = "${url_bootstrap}"
+  $PythonUrl = "${win_url_python}"
+  $GitUrl = "${win_url_git}"
 
   # Download bootstrap file
   $Stage = "download bootstrap"
@@ -333,7 +333,7 @@ $UserdataStatus=@(1,"Error: Build not completed (should never see this error)")
 [Net.ServicePointManager]::SecurityProtocol = "Ssl3, Tls, Tls11, Tls12"
 
 # install 7-zip for use with artifacts - download fails after wam install, fyi
-(New-Object System.Net.WebClient).DownloadFile("${win_7zip_url}", "$TempDir\7z-install.exe")
+(New-Object System.Net.WebClient).DownloadFile("${url_7zip}", "$TempDir\7z-install.exe")
 Invoke-Expression -Command "$TempDir\7z-install.exe /S /D='C:\Program Files\7-Zip'" -ErrorAction Continue
 
 %{ if build_type == build_type_builder }

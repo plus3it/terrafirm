@@ -5,9 +5,7 @@ locals {
   ami_owners                       = ["701759196663", "099720109477", "801119661308"]
   ami_virtualization_type          = "hvm"
   aws_region                       = var.aws_region
-  bootstrap_url                    = "https://raw.githubusercontent.com/plus3it/watchmaker/develop/docs/files/bootstrap/watchmaker-bootstrap.ps1"
   build_id                         = "${substr(element(split(":", local.full_build_id), 1), 0, 8)}${substr(element(split(":", local.full_build_id), 1), 9, 4)}" #extract node portion of uuid (last 6 octets) for brevity
-  build_multiply_format_str        = "%s-%02d"
   build_slug                       = "${var.s3_bucket}/${local.date_ymd}/${local.date_hm}-${local.build_id}"
   build_type_builder               = "builder"
   build_type_source                = "source_build"
@@ -21,10 +19,8 @@ locals {
   git_ref                          = var.git_ref
   git_repo                         = var.git_repo
   key_pair_name                    = "${local.resource_name}-key"
-  local_ip_url                     = "http://ipv4.icanhazip.com"
   lx_args                          = "${var.common_args} ${var.lx_args}"
   lx_builder_os                    = "xenial"
-  lx_builder_user                  = "ubuntu"
   lx_connection_type               = "ssh"
   lx_executable                    = "${local.release_prefix}/latest/watchmaker-latest-standalone-linux-x86_64"
   lx_format_str_destination        = "~/watchmaker-test-lx_%s-%s.sh"
@@ -32,24 +28,26 @@ locals {
   lx_format_str_inline_script      = "chmod +x ~/watchmaker-test-lx_%s-%s.sh\n~/watchmaker-test-lx_%[1]s-%[2]s.sh"
   lx_format_str_instance_name      = "${local.resource_name}-lx_%s-%s"
   lx_format_str_userdata           = "%s"
+  lx_port                          = 122
   lx_standalone_error_signal_file  = "${local.release_prefix}/lx_standalone_error_signal.log"
   lx_temp_dir                      = "/tmp"
   lx_test_template                 = "templates/lx_test.sh"
   lx_timeout_connection            = "40m"
   lx_timeout_create                = "50m"
+  lx_user                          = var.lx_user
+  lx_user_builder                  = "ubuntu"
   lx_userdata_log                  = var.lx_userdata_log
   lx_userdata_status_file          = "${local.lx_temp_dir}/userdata_status"
   lx_userdata_template             = "templates/lx_userdata.sh"
   name_prefix                      = "terrafirm"
   private_key_algorithm            = "RSA"
   private_key_rsa_bits             = "4096"
-  pypi_url                         = "https://pypi.org/simple"
   release_prefix                   = "release"
   resource_name                    = "${local.name_prefix}-${local.build_id}"
-  rm_user                          = var.rm_user
   security_group_description       = "Used by Terrafirm (${local.resource_name})"
-  ssh_port                         = 122
-  win_7zip_url                     = "https://www.7-zip.org/a/7z1900-x64.exe"
+  url_bootstrap                    = "https://raw.githubusercontent.com/plus3it/watchmaker/develop/docs/files/bootstrap/watchmaker-bootstrap.ps1"
+  url_local_ip                     = "http://ipv4.icanhazip.com"
+  url_pypi                         = "https://pypi.org/simple"
   win_args                         = "${var.common_args} ${var.win_args}"
   win_builder_os                   = "win12"
   win_connection_type              = "winrm"
@@ -60,16 +58,18 @@ locals {
   win_format_str_inline_script     = "powershell.exe -File C:\\scripts\\watchmaker-test-win_%s-%s.ps1"
   win_format_str_instance_name     = "${local.resource_name}-win_%s-%s"
   win_format_str_userdata          = "<powershell>%s</powershell>"
-  win_git_url                      = "https://github.com/git-for-windows/git/releases/download/v2.26.2.windows.1/Git-2.26.2-64-bit.exe"
   win_password_length              = 18
   win_password_override_special    = "()~!@#^*+=|{}[]:;,?"
   win_password_special             = true
-  win_python_url                   = "https://www.python.org/ftp/python/3.7.7/python-3.7.7-amd64.exe"
   win_standalone_error_signal_file = "${local.release_prefix}/win_standalone_error_signal.log"
   win_temp_dir                     = "C:\\Temp"
   win_test_template                = "templates/win_test.ps1"
   win_timeout_connection           = "75m"
   win_timeout_create               = "85m"
+  win_url_7zip                     = "https://www.7-zip.org/a/7z1900-x64.exe"
+  win_url_git                      = "https://github.com/git-for-windows/git/releases/download/v2.26.2.windows.1/Git-2.26.2-64-bit.exe"
+  win_url_python                   = "https://www.python.org/ftp/python/3.7.7/python-3.7.7-amd64.exe"
+  win_user                         = var.win_user
   win_userdata_log                 = var.win_userdata_log
   win_userdata_status_file         = "${local.win_temp_dir}\\userdata_status"
   win_userdata_template            = "templates/win_userdata.ps1"
@@ -81,130 +81,144 @@ locals {
       protocol  = "tcp"
     }
     ssh = {
-      from_port = local.ssh_port
-      to_port   = local.ssh_port
+      from_port = local.lx_port
+      to_port   = local.lx_port
       protocol  = "tcp"
     }
   }
 
-  win_platform_info = {
-    builder                  = local.win_builder_os
-    connection_password      = random_string.password.result
-    connection_port          = null
-    connection_timeout       = local.win_timeout_connection
-    connection_type          = local.win_connection_type
-    connection_user          = local.rm_user
-    create_timeout           = local.win_timeout_create
-    format_str_destination   = local.win_format_str_destination
-    format_str_inline_path   = local.win_format_str_inline_path
-    format_str_inline_script = local.win_format_str_inline_script
-    format_str_instance_name = local.win_format_str_instance_name
-    format_str_userdata      = local.win_format_str_userdata
-    instance_type            = var.win_instance_type
-    private_key              = null
-    test_template            = local.win_test_template
-    userdata_template        = local.win_userdata_template
-  }
+  platform_info = {
+    win = {
+      builder                  = local.win_builder_os
+      connection_password      = random_string.password.result
+      connection_port          = null
+      connection_timeout       = local.win_timeout_connection
+      connection_type          = local.win_connection_type
+      connection_user          = local.win_user
+      connection_user_builder  = local.win_user
+      create_timeout           = local.win_timeout_create
+      format_str_destination   = local.win_format_str_destination
+      format_str_inline_path   = local.win_format_str_inline_path
+      format_str_inline_script = local.win_format_str_inline_script
+      format_str_instance_name = local.win_format_str_instance_name
+      format_str_userdata      = local.win_format_str_userdata
+      instance_type            = var.win_instance_type
+      key                      = "win"
+      private_key              = null
+      test_template            = local.win_test_template
+      userdata_template        = local.win_userdata_template
+    }
 
-  lx_platform_info = {
-    builder                  = local.lx_builder_os
-    connection_password      = null
-    connection_port          = local.ssh_port
-    connection_timeout       = local.lx_timeout_connection
-    connection_type          = local.lx_connection_type
-    connection_user          = local.lx_builder_user
-    create_timeout           = local.lx_timeout_create
-    format_str_destination   = local.lx_format_str_destination
-    format_str_inline_path   = local.lx_format_str_inline_path
-    format_str_inline_script = local.lx_format_str_inline_script
-    format_str_instance_name = local.lx_format_str_instance_name
-    format_str_userdata      = local.lx_format_str_userdata
-    instance_type            = var.lx_instance_type
-    private_key              = tls_private_key.gen_key.private_key_pem
-    test_template            = local.lx_test_template
-    userdata_template        = local.lx_userdata_template
+    lx = {
+      builder                  = local.lx_builder_os
+      connection_password      = null
+      connection_port          = local.lx_port
+      connection_timeout       = local.lx_timeout_connection
+      connection_type          = local.lx_connection_type
+      connection_user          = local.lx_user
+      connection_user_builder  = local.lx_user_builder
+      create_timeout           = local.lx_timeout_create
+      format_str_destination   = local.lx_format_str_destination
+      format_str_inline_path   = local.lx_format_str_inline_path
+      format_str_inline_script = local.lx_format_str_inline_script
+      format_str_instance_name = local.lx_format_str_instance_name
+      format_str_userdata      = local.lx_format_str_userdata
+      instance_type            = var.lx_instance_type
+      key                      = "lx"
+      private_key              = tls_private_key.gen_key.private_key_pem
+      test_template            = local.lx_test_template
+      userdata_template        = local.lx_userdata_template
+    }
   }
 
   build_info = {
     centos6 = {
       ami_regex  = "spel-minimal-centos-6-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
       ami_search = "spel-minimal-centos-6-hvm-*.x86_64-gp2"
-      platform   = local.lx_platform_info
+      platform   = local.platform_info.lx
     }
 
     centos7 = {
       ami_regex  = "spel-minimal-centos-7-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
       ami_search = "spel-minimal-centos-7-hvm-*.x86_64-gp2"
-      platform   = local.lx_platform_info
+      platform   = local.platform_info.lx
     }
 
     rhel6 = {
       ami_regex  = "spel-minimal-rhel-6-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
       ami_search = "spel-minimal-rhel-6-hvm-*.x86_64-gp2"
-      platform   = local.lx_platform_info
+      platform   = local.platform_info.lx
     }
 
     rhel7 = {
       ami_regex  = "spel-minimal-rhel-7-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
       ami_search = "spel-minimal-rhel-7-hvm-*.x86_64-gp2"
-      platform   = local.lx_platform_info
+      platform   = local.platform_info.lx
     }
 
     win12 = {
       ami_regex  = null
       ami_search = "Windows_Server-2012-R2_RTM-English-64Bit-Base*"
-      platform   = local.win_platform_info
+      platform   = local.platform_info.win
     }
 
     win16 = {
       ami_regex  = null
       ami_search = "Windows_Server-2016-English-Full-Base*"
-      platform   = local.win_platform_info
+      platform   = local.platform_info.win
     }
 
     win19 = {
       ami_regex  = null
       ami_search = "Windows_Server-2019-English-Full-Base*"
-      platform   = local.win_platform_info
+      platform   = local.platform_info.win
     }
 
     xenial = {
       ami_regex  = null
       ami_search = "ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server*"
-      platform   = local.lx_platform_info
+      platform   = local.platform_info.lx
     }
   }
 
   template_vars = {
-    aws_region                       = local.aws_region
-    bootstrap_url                    = local.bootstrap_url
-    build_slug                       = local.build_slug
-    build_type_builder               = local.build_type_builder
-    build_type_standalone            = local.build_type_standalone
-    debug                            = local.debug
-    docker_slug                      = local.docker_slug
-    git_ref                          = local.git_ref
-    git_repo                         = local.git_repo
-    lx_args                          = local.lx_args
-    lx_executable                    = local.lx_executable
-    lx_standalone_error_signal_file  = local.lx_standalone_error_signal_file
-    lx_temp_dir                      = local.lx_temp_dir
-    lx_userdata_log                  = local.lx_userdata_log
-    lx_userdata_status_file          = local.lx_userdata_status_file
-    pypi_url                         = local.pypi_url
-    release_prefix                   = local.release_prefix
-    rm_user                          = local.rm_user
-    ssh_port                         = local.ssh_port
-    win_7zip_url                     = local.win_7zip_url
-    win_args                         = local.win_args
-    win_download_dir                 = local.win_download_dir
-    win_executable                   = local.win_executable
-    win_git_url                      = local.win_git_url
-    win_python_url                   = local.win_python_url
-    win_standalone_error_signal_file = local.win_standalone_error_signal_file
-    win_temp_dir                     = local.win_temp_dir
-    win_userdata_log                 = local.win_userdata_log
-    win_userdata_status_file         = local.win_userdata_status_file
+    base = {
+      aws_region            = local.aws_region
+      build_slug            = local.build_slug
+      build_type_builder    = local.build_type_builder
+      build_type_standalone = local.build_type_standalone
+      debug                 = local.debug
+      docker_slug           = local.docker_slug
+      git_ref               = local.git_ref
+      git_repo              = local.git_repo
+      release_prefix        = local.release_prefix
+      url_bootstrap         = local.url_bootstrap
+      url_pypi              = local.url_pypi
+    }
+
+    lx = {
+      args                         = local.lx_args
+      executable                   = local.lx_executable
+      port                         = local.lx_port
+      standalone_error_signal_file = local.lx_standalone_error_signal_file
+      temp_dir                     = local.lx_temp_dir
+      userdata_log                 = local.lx_userdata_log
+      userdata_status_file         = local.lx_userdata_status_file
+    }
+
+    win = {
+      args                         = local.win_args
+      download_dir                 = local.win_download_dir
+      executable                   = local.win_executable
+      standalone_error_signal_file = local.win_standalone_error_signal_file
+      temp_dir                     = local.win_temp_dir
+      url_7zip                     = local.win_url_7zip
+      url_git                      = local.win_url_git
+      url_python                   = local.win_url_python
+      user                         = local.win_user
+      userdata_log                 = local.win_userdata_log
+      userdata_status_file         = local.win_userdata_status_file
+    }
   }
 
   standalone_builds    = toset(var.standalone_builds)
@@ -244,7 +258,7 @@ data "aws_subnet" "tfi" {
 }
 
 data "http" "ip" {
-  url = local.local_ip_url
+  url = local.url_local_ip
 }
 
 resource "aws_key_pair" "auth" {
@@ -309,7 +323,8 @@ resource "aws_instance" "builder" {
     templatefile(
       local.build_info[each.key].platform.userdata_template,
       merge(
-        local.template_vars,
+        local.template_vars.base,
+        local.template_vars[local.build_info[each.key].platform.key],
         {
           build_os    = each.key
           build_type  = local.build_type_builder
@@ -339,14 +354,15 @@ resource "aws_instance" "builder" {
     private_key = local.build_info[each.key].platform.private_key
     timeout     = local.build_info[each.key].platform.connection_timeout
     type        = local.build_info[each.key].platform.connection_type
-    user        = local.build_info[each.key].platform.connection_user
+    user        = local.build_info[each.key].platform.connection_user_builder
   }
 
   provisioner "file" {
     content = templatefile(
       local.build_info[each.key].platform.test_template,
       merge(
-        local.template_vars,
+        local.template_vars.base,
+        local.template_vars[local.build_info[each.key].platform.key],
         {
           build_os    = each.key
           build_type  = local.build_type_builder
@@ -397,7 +413,8 @@ resource "aws_instance" "standalone_build" {
     templatefile(
       local.build_info[each.key].platform.userdata_template,
       merge(
-        local.template_vars,
+        local.template_vars.base,
+        local.template_vars[local.build_info[each.key].platform.key],
         {
           build_os    = each.key
           build_type  = local.build_type_standalone
@@ -436,7 +453,8 @@ resource "aws_instance" "standalone_build" {
     content = templatefile(
       local.build_info[each.key].platform.test_template,
       merge(
-        local.template_vars,
+        local.template_vars.base,
+        local.template_vars[local.build_info[each.key].platform.key],
         {
           build_os    = each.key
           build_type  = local.build_type_standalone
@@ -487,7 +505,8 @@ resource "aws_instance" "source_build" {
     templatefile(
       local.build_info[each.key].platform.userdata_template,
       merge(
-        local.template_vars,
+        local.template_vars.base,
+        local.template_vars[local.build_info[each.key].platform.key],
         {
           build_os    = each.key
           build_type  = local.build_type_source
@@ -524,7 +543,8 @@ resource "aws_instance" "source_build" {
     content = templatefile(
       local.build_info[each.key].platform.test_template,
       merge(
-        local.template_vars,
+        local.template_vars.base,
+        local.template_vars[local.build_info[each.key].platform.key],
         {
           build_os    = each.key
           build_type  = local.build_type_source

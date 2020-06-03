@@ -18,22 +18,12 @@ variable "standalone_builds" {
   type    = list(string)
 }
 
-variable "run_all_builds" {
-  default = false
-  type    = bool
-}
-
-variable "build_multiplier" {
-  default = 1
-  type    = number
-}
-
-variable "rm_user" {
+variable "win_user" {
   default = "Administrator"
   type    = string
 }
 
-variable "ssh_user" {
+variable "lx_user" {
   default = "root"
   type    = string
 }
