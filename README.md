@@ -53,8 +53,8 @@ Variable | Default | Req/Opt (in CodeBuild) | Description
 --- | --- | --- | ---
 `TF_VAR_availability_zone` | us-east-1c | optional | availability_zone to use for builds.
 `TF_VAR_subnet_id` | [empty] | optional | Subnet to use. CodeBuild instance must be able to access.
-`TF_VAR_source_builds` | [empty] | optional | See above for details on setting this variable.
-`TF_VAR_standalone_builds` | [empty] | optional | See above for details on setting this variable.
+`TF_VAR_source_builds` | ["win12", "win16", "win19", "rhel6", "rhel7", "centos6", "centos7"] | optional | See above for details on setting this variable.
+`TF_VAR_standalone_builds` | ["win12", "win16", "win19", "rhel6", "rhel7", "centos6", "centos7"] | optional | See above for details on setting this variable.
 `TF_VAR_rm_user` | Administrator | optional | Username to use when connecting via WinRM to Windows builds
 `TF_VAR_ssh_user` | root | optional | Username to use when connecting via SSH to Linux builds.
 `TF_VAR_instance_profile` | [empty] | optional | IAM instance profile to be used in provisioning resources.
