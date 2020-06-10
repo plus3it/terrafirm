@@ -1,337 +1,581 @@
-# instance to build win standalone package
-resource "aws_instance" "win_builder" {
-  count = local.win_need_builder
-  ami   = local.ami_ids[local.ami_underlying[local.win_builder_ami_key]]
+locals {
+  ami_filter_name                  = "name"
+  ami_filter_virtualization_type   = "virtualization-type"
+  ami_most_recent                  = true
+  ami_owners                       = ["701759196663", "099720109477", "801119661308"]
+  ami_virtualization_type          = "hvm"
+  aws_region                       = var.aws_region
+  build_id                         = "${substr(element(split(":", local.full_build_id), 1), 0, 8)}${substr(element(split(":", local.full_build_id), 1), 9, 4)}" #extract node portion of uuid (last 6 octets) for brevity
+  build_slug                       = "${var.s3_bucket}/${local.date_ymd}/${local.date_hm}-${local.build_id}"
+  build_type_builder               = "builder"
+  build_type_source                = "source_build"
+  build_type_standalone            = "standalone_build"
+  date_hm                          = "${substr(data.null_data_source.start_time.inputs.timestamp, 11, 2)}${substr(data.null_data_source.start_time.inputs.timestamp, 14, 2)}"                                                                 #equivalent of $(date +'%H%M')
+  date_ymd                         = "${substr(data.null_data_source.start_time.inputs.timestamp, 0, 4)}${substr(data.null_data_source.start_time.inputs.timestamp, 5, 2)}${substr(data.null_data_source.start_time.inputs.timestamp, 8, 2)}" #equivalent of $(date +'%Y%m%d')
+  debug                            = var.debug
+  docker_slug                      = var.docker_slug
+  format_str_build_label           = "%s-%s"
+  full_build_id                    = var.codebuild_id == "" ? format("notcb:%s", uuid()) : var.codebuild_id #128-bit rfc 4122 v4 UUID
+  git_ref                          = var.git_ref
+  git_repo                         = var.git_repo
+  key_pair_name                    = "${local.resource_name}-key"
+  lx_args                          = "${var.common_args} ${var.lx_args}"
+  lx_builder_os                    = "xenial"
+  lx_connection_type               = "ssh"
+  lx_executable                    = "${local.release_prefix}/latest/watchmaker-latest-standalone-linux-x86_64"
+  lx_format_str_destination        = "~/watchmaker-test-%s-%s.sh"
+  lx_format_str_inline_path        = "~/inline-%s-%s.sh"
+  lx_format_str_inline_script      = "chmod +x ~/watchmaker-test-%s-%s.sh\n~/watchmaker-test-%[1]s-%[2]s.sh"
+  lx_format_str_instance_name      = "${local.resource_name}-%s-%s"
+  lx_format_str_userdata           = "%s"
+  lx_port                          = 122
+  lx_standalone_error_signal_file  = "${local.release_prefix}/lx_standalone_error_signal.log"
+  lx_temp_dir                      = "/tmp"
+  lx_test_template                 = "templates/lx_test.sh"
+  lx_timeout_connection            = "40m"
+  lx_timeout_create                = "50m"
+  lx_user                          = var.lx_user
+  lx_user_builder                  = "ubuntu"
+  lx_userdata_log                  = var.lx_userdata_log
+  lx_userdata_status_file          = "${local.lx_temp_dir}/userdata_status"
+  lx_userdata_template             = "templates/lx_userdata.sh"
+  name_prefix                      = "terrafirm"
+  private_key_algorithm            = "RSA"
+  private_key_rsa_bits             = "4096"
+  release_prefix                   = "release"
+  resource_name                    = "${local.name_prefix}-${local.build_id}"
+  security_group_description       = "Used by Terrafirm (${local.resource_name})"
+  url_bootstrap                    = "https://raw.githubusercontent.com/plus3it/watchmaker/develop/docs/files/bootstrap/watchmaker-bootstrap.ps1"
+  url_local_ip                     = "http://ipv4.icanhazip.com"
+  url_pypi                         = "https://pypi.org/simple"
+  win_args                         = "${var.common_args} ${var.win_args}"
+  win_builder_os                   = "win12"
+  win_connection_type              = "winrm"
+  win_download_dir                 = "C:\\Users\\Administrator\\Downloads"
+  win_executable                   = "${local.release_prefix}/latest/watchmaker-latest-standalone-windows-amd64.exe"
+  win_format_str_destination       = "C:\\scripts\\watchmaker-test-%s-%s.ps1"
+  win_format_str_inline_path       = "C:\\scripts\\inline-%s-%s.cmd"
+  win_format_str_inline_script     = "powershell.exe -File C:\\scripts\\watchmaker-test-%s-%s.ps1"
+  win_format_str_instance_name     = "${local.resource_name}-%s-%s"
+  win_format_str_userdata          = "<powershell>%s</powershell>"
+  win_password_length              = 18
+  win_password_override_special    = "()~!@#^*+=|{}[]:;,?"
+  win_password_special             = true
+  win_standalone_error_signal_file = "${local.release_prefix}/win_standalone_error_signal.log"
+  win_temp_dir                     = "C:\\Temp"
+  win_test_template                = "templates/win_test.ps1"
+  win_timeout_connection           = "75m"
+  win_timeout_create               = "85m"
+  win_url_7zip                     = "https://www.7-zip.org/a/7z1900-x64.exe"
+  win_url_git                      = "https://github.com/git-for-windows/git/releases/download/v2.26.2.windows.1/Git-2.26.2-64-bit.exe"
+  win_url_python                   = "https://www.python.org/ftp/python/3.7.7/python-3.7.7-amd64.exe"
+  win_user                         = var.win_user
+  win_userdata_log                 = var.win_userdata_log
+  win_userdata_status_file         = "${local.win_temp_dir}\\userdata_status"
+  win_userdata_template            = "templates/win_userdata.ps1"
 
-  associate_public_ip_address = var.tfi_assign_public_ip
-  iam_instance_profile        = var.tfi_instance_profile
-  instance_type               = local.win_builder_instance_type
-  key_name                    = aws_key_pair.auth.id
-  subnet_id                   = var.tfi_subnet_id
-  user_data                   = <<-HEREDOC
-    <powershell>
-    ${join("", data.template_file.win_builder_preface.*.rendered)}
-    ${join("", data.template_file.win_userdata_common.*.rendered)} ${join("", data.template_file.win_userdata_builder_specific.*.rendered)}
-    </powershell>
-    HEREDOC
-  vpc_security_group_ids      = [join("", aws_security_group.winrm_sg.*.id)]
-
-  tags = {
-    Name = "${local.resource_name}-builder-${local.ami_underlying[local.win_builder_ami_key]}"
+  security_group_ingress = {
+    winrm = {
+      from_port = 5985
+      to_port   = 5986
+      protocol  = "tcp"
+    }
+    ssh = {
+      from_port = local.lx_port
+      to_port   = local.lx_port
+      protocol  = "tcp"
+    }
   }
 
-  timeouts {
-    create = "30m"
+  platform_info = {
+    win = {
+      builder                  = local.win_builder_os
+      connection_key           = null
+      connection_password      = random_string.password.result
+      connection_port          = null
+      connection_timeout       = local.win_timeout_connection
+      connection_type          = local.win_connection_type
+      connection_user          = local.win_user
+      connection_user_builder  = local.win_user
+      create_timeout           = local.win_timeout_create
+      format_str_destination   = local.win_format_str_destination
+      format_str_inline_path   = local.win_format_str_inline_path
+      format_str_inline_script = local.win_format_str_inline_script
+      format_str_instance_name = local.win_format_str_instance_name
+      format_str_userdata      = local.win_format_str_userdata
+      instance_type            = var.win_instance_type
+      key                      = "win"
+      test_template            = local.win_test_template
+      userdata_template        = local.win_userdata_template
+    }
+
+    lx = {
+      builder                  = local.lx_builder_os
+      connection_key           = tls_private_key.gen_key.private_key_pem
+      connection_password      = null
+      connection_port          = local.lx_port
+      connection_timeout       = local.lx_timeout_connection
+      connection_type          = local.lx_connection_type
+      connection_user          = local.lx_user
+      connection_user_builder  = local.lx_user_builder
+      create_timeout           = local.lx_timeout_create
+      format_str_destination   = local.lx_format_str_destination
+      format_str_inline_path   = local.lx_format_str_inline_path
+      format_str_inline_script = local.lx_format_str_inline_script
+      format_str_instance_name = local.lx_format_str_instance_name
+      format_str_userdata      = local.lx_format_str_userdata
+      instance_type            = var.lx_instance_type
+      key                      = "lx"
+      test_template            = local.lx_test_template
+      userdata_template        = local.lx_userdata_template
+    }
   }
 
-  connection {
-    type     = "winrm"
-    host     = self.public_ip
-    user     = var.tfi_rm_user
-    password = join("", random_string.password.*.result)
-    timeout  = "30m"
+  build_info = {
+    centos6 = {
+      ami_regex  = "spel-minimal-centos-6-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
+      ami_search = "spel-minimal-centos-6-hvm-*.x86_64-gp2"
+      platform   = local.platform_info.lx
+    }
+
+    centos7 = {
+      ami_regex  = "spel-minimal-centos-7-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
+      ami_search = "spel-minimal-centos-7-hvm-*.x86_64-gp2"
+      platform   = local.platform_info.lx
+    }
+
+    rhel6 = {
+      ami_regex  = "spel-minimal-rhel-6-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
+      ami_search = "spel-minimal-rhel-6-hvm-*.x86_64-gp2"
+      platform   = local.platform_info.lx
+    }
+
+    rhel7 = {
+      ami_regex  = "spel-minimal-rhel-7-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
+      ami_search = "spel-minimal-rhel-7-hvm-*.x86_64-gp2"
+      platform   = local.platform_info.lx
+    }
+
+    win12 = {
+      ami_regex  = null
+      ami_search = "Windows_Server-2012-R2_RTM-English-64Bit-Base*"
+      platform   = local.platform_info.win
+    }
+
+    win16 = {
+      ami_regex  = null
+      ami_search = "Windows_Server-2016-English-Full-Base*"
+      platform   = local.platform_info.win
+    }
+
+    win19 = {
+      ami_regex  = null
+      ami_search = "Windows_Server-2019-English-Full-Base*"
+      platform   = local.platform_info.win
+    }
+
+    xenial = {
+      ami_regex  = null
+      ami_search = "ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server*"
+      platform   = local.platform_info.lx
+    }
   }
 
-  provisioner "file" {
-    content     = <<-HEREDOC
-      ${join("", data.template_file.win_builder_preface.*.rendered)}
-      ${join("", data.template_file.win_build_test.*.rendered)}
-      HEREDOC
-    destination = "C:\\scripts\\builder_test.ps1"
+  template_vars = {
+    base = {
+      aws_region            = local.aws_region
+      build_slug            = local.build_slug
+      build_type_builder    = local.build_type_builder
+      build_type_standalone = local.build_type_standalone
+      debug                 = local.debug
+      docker_slug           = local.docker_slug
+      git_ref               = local.git_ref
+      git_repo              = local.git_repo
+      release_prefix        = local.release_prefix
+      url_bootstrap         = local.url_bootstrap
+      url_pypi              = local.url_pypi
+    }
+
+    lx = {
+      args                         = local.lx_args
+      executable                   = local.lx_executable
+      port                         = local.lx_port
+      standalone_error_signal_file = local.lx_standalone_error_signal_file
+      temp_dir                     = local.lx_temp_dir
+      userdata_log                 = local.lx_userdata_log
+      userdata_status_file         = local.lx_userdata_status_file
+    }
+
+    win = {
+      args                         = local.win_args
+      download_dir                 = local.win_download_dir
+      executable                   = local.win_executable
+      standalone_error_signal_file = local.win_standalone_error_signal_file
+      temp_dir                     = local.win_temp_dir
+      url_7zip                     = local.win_url_7zip
+      url_git                      = local.win_url_git
+      url_python                   = local.win_url_python
+      user                         = local.win_user
+      userdata_log                 = local.win_userdata_log
+      userdata_status_file         = local.win_userdata_status_file
+    }
   }
 
-  provisioner "remote-exec" {
-    inline = [
-      "powershell.exe -File C:\\scripts\\builder_test.ps1",
-    ]
+  standalone_builds    = toset(var.standalone_builds)
+  source_builds        = toset(var.source_builds)
+  builders             = toset([for s in local.standalone_builds : local.build_info[s].platform.builder])
+  unique_builds_needed = setunion(local.standalone_builds, local.source_builds, local.builders)
+}
+
+data "null_data_source" "start_time" {
+  inputs = {
+    # necessary because if you just call timestamp in a local it re-evaluates it everytime that var is read
+    timestamp = timestamp()
   }
 }
 
-# instance to build lx standalone package
-resource "aws_instance" "lx_builder" {
-  count = local.lx_need_builder
-  ami   = local.ami_ids[local.ami_underlying[local.lx_builder_ami_key]]
+data "aws_ami" "amis" {
+  for_each    = local.unique_builds_needed
+  most_recent = local.ami_most_recent
 
-  associate_public_ip_address = var.tfi_assign_public_ip
-  iam_instance_profile        = var.tfi_instance_profile
-  instance_type               = local.lx_builder_instance_type
-  key_name                    = aws_key_pair.auth.id
-  subnet_id                   = var.tfi_subnet_id
-  user_data                   = <<-HEREDOC
-    ${join("", data.template_file.lx_builder_preface.*.rendered)}
-    ${join("", data.template_file.lx_userdata_common.*.rendered)}
-    ${join("", data.template_file.lx_userdata_builder_specific.*.rendered)}
-    HEREDOC
-  vpc_security_group_ids      = [join("", aws_security_group.ssh_sg.*.id)]
+  name_regex = local.build_info[each.key].ami_regex
+
+  filter {
+    name   = local.ami_filter_virtualization_type
+    values = [local.ami_virtualization_type]
+  }
+
+  filter {
+    name   = local.ami_filter_name
+    values = [local.build_info[each.key].ami_search]
+  }
+
+  owners = local.ami_owners
+}
+
+data "aws_subnet" "tfi" {
+  id = var.subnet_id == "" ? aws_default_subnet.tfi.id : var.subnet_id
+}
+
+data "http" "ip" {
+  url = local.url_local_ip
+}
+
+resource "aws_key_pair" "auth" {
+  key_name   = local.key_pair_name
+  public_key = tls_private_key.gen_key.public_key_openssh
+}
+
+resource "tls_private_key" "gen_key" {
+  algorithm = local.private_key_algorithm
+  rsa_bits  = local.private_key_rsa_bits
+}
+
+resource "random_string" "password" {
+  length           = local.win_password_length
+  special          = local.win_password_special
+  override_special = local.win_password_override_special
+}
+
+resource "aws_default_subnet" "tfi" {
+  availability_zone = var.availability_zone
+}
+
+resource "aws_security_group" "builds" {
+  name        = local.resource_name
+  description = local.security_group_description
+  vpc_id      = data.aws_subnet.tfi.vpc_id
 
   tags = {
-    Name = "${local.resource_name}-builder-${local.ami_underlying[local.lx_builder_ami_key]}"
+    Name = local.resource_name
+  }
+
+  dynamic "ingress" {
+    for_each = local.security_group_ingress
+    content {
+      from_port   = ingress.value["from_port"]
+      to_port     = ingress.value["to_port"]
+      protocol    = ingress.value["protocol"]
+      cidr_blocks = ["${chomp(data.http.ip.body)}/32"]
+    }
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_instance" "builder" {
+  for_each                    = local.builders
+  ami                         = data.aws_ami.amis[each.key].id
+  associate_public_ip_address = var.assign_public_ip
+  iam_instance_profile        = var.instance_profile
+  key_name                    = aws_key_pair.auth.id
+  subnet_id                   = var.subnet_id
+  vpc_security_group_ids      = [aws_security_group.builds.id]
+  instance_type               = local.build_info[each.key].platform.instance_type
+
+  user_data = format(
+    local.build_info[each.key].platform.format_str_userdata,
+    templatefile(
+      local.build_info[each.key].platform.userdata_template,
+      merge(
+        local.template_vars.base,
+        local.template_vars[local.build_info[each.key].platform.key],
+        {
+          build_os    = each.key
+          build_type  = local.build_type_builder
+          build_label = format(local.format_str_build_label, local.build_type_builder, each.key)
+          password    = local.build_info[each.key].platform.connection_password
+        }
+      )
+    )
+  )
+
+  tags = {
+    Name = format(
+      local.build_info[each.key].platform.format_str_instance_name,
+      local.build_type_builder,
+      each.key
+    )
   }
 
   timeouts {
-    create = "30m"
+    create = local.build_info[each.key].platform.create_timeout
   }
 
   connection {
-    type = "ssh"
-    #ssh connection to tier-2 instance
+    type        = local.build_info[each.key].platform.connection_type
     host        = self.public_ip
-    user        = local.lx_builder_user
-    private_key = tls_private_key.gen_key.private_key_pem
-    port        = local.ssh_port
-    timeout     = "30m"
+    user        = local.build_info[each.key].platform.connection_user_builder
+    password    = local.build_info[each.key].platform.connection_password
+    timeout     = local.build_info[each.key].platform.connection_timeout
+    port        = local.build_info[each.key].platform.connection_port
+    private_key = local.build_info[each.key].platform.connection_key
   }
 
   provisioner "file" {
-    content     = <<-HEREDOC
-      ${join("", data.template_file.lx_builder_preface.*.rendered)}
-      ${join("", data.template_file.lx_build_test.*.rendered)}
-      HEREDOC
-    destination = "~/builder_test.sh"
+    content = templatefile(
+      local.build_info[each.key].platform.test_template,
+      merge(
+        local.template_vars.base,
+        local.template_vars[local.build_info[each.key].platform.key],
+        {
+          build_os    = each.key
+          build_type  = local.build_type_builder
+          build_label = format(local.format_str_build_label, local.build_type_builder, each.key)
+        }
+      )
+    )
+    destination = format(
+      local.build_info[each.key].platform.format_str_destination,
+      local.build_type_builder,
+      each.key
+    )
   }
 
   provisioner "remote-exec" {
     inline = [
-      "chmod +x ~/builder_test.sh",
-      "~/builder_test.sh",
+      format(
+        local.build_info[each.key].platform.format_str_inline_script,
+        local.build_type_builder,
+        each.key
+      ),
     ]
 
     connection {
       host = coalesce(self.public_ip, self.private_ip)
-      type = "ssh"
-      # this is where terraform puts the above inline script
-      script_path = "~/inline.sh"
+      type = local.build_info[each.key].platform.connection_type
+      script_path = format(
+        local.build_info[each.key].platform.format_str_inline_path,
+        local.build_type_builder,
+        each.key
+      )
     }
   }
 }
 
-# bread & butter - provision/create windows instance
-resource "aws_instance" "win_src" {
-  count = local.win_src_count
-  ami   = local.ami_ids[element(local.win_src_requests, count.index)]
-
-  associate_public_ip_address = var.tfi_assign_public_ip
-  iam_instance_profile        = var.tfi_instance_profile
-  instance_type               = var.tfi_win_instance_type
+resource "aws_instance" "standalone_build" {
+  for_each                    = local.standalone_builds
+  ami                         = data.aws_ami.amis[each.key].id
+  associate_public_ip_address = var.assign_public_ip
+  iam_instance_profile        = var.instance_profile
   key_name                    = aws_key_pair.auth.id
-  subnet_id                   = var.tfi_subnet_id
-  user_data                   = <<-HEREDOC
-    <powershell>
-    ${element(data.template_file.win_src_script_preface.*.rendered, count.index)}
-    ${join("", data.template_file.win_userdata_common.*.rendered)} ${join("", data.template_file.win_userdata_specific.*.rendered)}
-    </powershell>
-    HEREDOC
-  vpc_security_group_ids      = [join("", aws_security_group.winrm_sg.*.id)]
+  subnet_id                   = var.subnet_id
+  vpc_security_group_ids      = [aws_security_group.builds.id]
+  instance_type               = local.build_info[each.key].platform.instance_type
+
+  user_data = format(
+    local.build_info[each.key].platform.format_str_userdata,
+    templatefile(
+      local.build_info[each.key].platform.userdata_template,
+      merge(
+        local.template_vars.base,
+        local.template_vars[local.build_info[each.key].platform.key],
+        {
+          build_os    = each.key
+          build_type  = local.build_type_standalone
+          build_label = format(local.format_str_build_label, local.build_type_standalone, each.key)
+          password    = local.build_info[each.key].platform.connection_password
+        }
+      )
+    )
+  )
 
   tags = {
-    Name      = "${local.resource_name}-${element(local.win_src_requests, count.index)}"
-    BuilderID = "None (from source)"
+    Name = format(
+      local.build_info[each.key].platform.format_str_instance_name,
+      local.build_type_standalone,
+      each.key
+    )
+
+    BuilderID = aws_instance.builder[local.build_info[each.key].platform.builder].id
   }
 
   timeouts {
-    create = "85m"
+    create = local.build_info[each.key].platform.create_timeout
   }
 
   connection {
-    type     = "winrm"
-    host     = self.public_ip
-    user     = var.tfi_rm_user
-    password = join("", random_string.password.*.result)
-    timeout  = "75m"
-  }
-
-  provisioner "file" {
-    content     = <<-HEREDOC
-      ${element(data.template_file.win_src_script_preface.*.rendered, count.index)}
-      ${join("", data.template_file.win_test.*.rendered)}
-      HEREDOC
-    destination = "C:\\scripts\\watchmaker-test-${element(local.win_src_requests, count.index)}.ps1"
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "powershell.exe -File C:\\scripts\\watchmaker-test-${element(local.win_src_requests, count.index)}.ps1",
-    ]
-
-    connection {
-      host = coalesce(self.public_ip, self.private_ip)
-      type = "winrm"
-      # this is where terraform puts the above inline script
-      script_path = "C:\\scripts\\inline-${element(local.win_src_requests, count.index)}-from-source.cmd"
-    }
-  }
-}
-
-# bread & butter - provision/create windows instance
-resource "aws_instance" "win_pkg" {
-  count = local.win_pkg_count
-  ami   = local.ami_ids[local.ami_underlying[element(local.win_pkg_requests, count.index)]]
-
-  associate_public_ip_address = var.tfi_assign_public_ip
-  iam_instance_profile        = var.tfi_instance_profile
-  instance_type               = var.tfi_win_instance_type
-  key_name                    = aws_key_pair.auth.id
-  subnet_id                   = var.tfi_subnet_id
-  user_data                   = <<-HEREDOC
-    <powershell>
-    ${element(data.template_file.win_pkg_script_preface.*.rendered, count.index)}
-    ${join("", data.template_file.win_userdata_common.*.rendered)} ${join("", data.template_file.win_userdata_specific.*.rendered)}
-    </powershell>
-    HEREDOC
-  vpc_security_group_ids      = [join("", aws_security_group.winrm_sg.*.id)]
-
-  tags = {
-    Name      = "${local.resource_name}-${element(local.win_pkg_requests, count.index)}"
-    BuilderID = aws_instance.win_builder[0].id
-  }
-
-  timeouts {
-    create = "85m"
-  }
-
-  connection {
-    type     = "winrm"
-    host     = self.public_ip
-    user     = var.tfi_rm_user
-    password = join("", random_string.password.*.result)
-    timeout  = "75m"
-  }
-
-  provisioner "file" {
-    content     = <<-HEREDOC
-      ${element(data.template_file.win_pkg_script_preface.*.rendered, count.index)}
-      ${join("", data.template_file.win_test.*.rendered)}
-      HEREDOC
-    destination = "C:\\scripts\\watchmaker-test-${element(local.win_pkg_requests, count.index)}.ps1"
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "powershell.exe -File C:\\scripts\\watchmaker-test-${element(local.win_pkg_requests, count.index)}.ps1",
-    ]
-
-    connection {
-      host = coalesce(self.public_ip, self.private_ip)
-      type = "winrm"
-      # this is where terraform puts the above inline script
-      script_path = "C:\\scripts\\inline-${element(local.win_pkg_requests, count.index)}.cmd"
-    }
-  }
-}
-
-# bread & butter - this tells TF to provision/create the actual instance
-resource "aws_instance" "lx_src" {
-  count = local.lx_src_count
-  ami   = local.ami_ids[element(local.lx_src_requests, count.index)]
-
-  associate_public_ip_address = var.tfi_assign_public_ip
-  iam_instance_profile        = var.tfi_instance_profile
-  instance_type               = var.tfi_lx_instance_type
-  key_name                    = aws_key_pair.auth.id
-  subnet_id                   = var.tfi_subnet_id
-  user_data                   = <<-HEREDOC
-    ${element(data.template_file.lx_src_script_preface.*.rendered, count.index)}
-    ${join("", data.template_file.lx_userdata_common.*.rendered)}
-    ${join("", data.template_file.lx_userdata_specific.*.rendered)}
-    HEREDOC
-  vpc_security_group_ids      = [join("", aws_security_group.ssh_sg.*.id)]
-
-  tags = {
-    Name      = "${local.resource_name}-${element(local.lx_src_requests, count.index)}"
-    BuilderID = "None (from source)"
-  }
-
-  timeouts {
-    create = "50m"
-  }
-
-  connection {
-    type = "ssh"
-    #ssh connection to tier-2 instance
+    type        = local.build_info[each.key].platform.connection_type
     host        = self.public_ip
-    user        = var.tfi_ssh_user
-    private_key = tls_private_key.gen_key.private_key_pem
-    port        = local.ssh_port
-    timeout     = "40m"
+    user        = local.build_info[each.key].platform.connection_user
+    private_key = local.build_info[each.key].platform.connection_key
+    port        = local.build_info[each.key].platform.connection_port
+    timeout     = local.build_info[each.key].platform.connection_timeout
+    password    = local.build_info[each.key].platform.connection_password
   }
 
   provisioner "file" {
-    content     = <<-HEREDOC
-      ${element(data.template_file.lx_src_script_preface.*.rendered, count.index)}
-      ${join("", data.template_file.lx_test.*.rendered)}
-      HEREDOC
-    destination = "~/watchmaker-test-${element(local.lx_src_requests, count.index)}.sh"
+    content = templatefile(
+      local.build_info[each.key].platform.test_template,
+      merge(
+        local.template_vars.base,
+        local.template_vars[local.build_info[each.key].platform.key],
+        {
+          build_os    = each.key
+          build_type  = local.build_type_standalone
+          build_label = format(local.format_str_build_label, local.build_type_standalone, each.key)
+        }
+      )
+    )
+    destination = format(
+      local.build_info[each.key].platform.format_str_destination,
+      local.build_type_standalone,
+      each.key
+    )
   }
 
   provisioner "remote-exec" {
     inline = [
-      "chmod +x ~/watchmaker-test-${element(local.lx_src_requests, count.index)}.sh",
-      "~/watchmaker-test-${element(local.lx_src_requests, count.index)}.sh",
+      format(
+        local.build_info[each.key].platform.format_str_inline_script,
+        local.build_type_standalone,
+        each.key
+      ),
     ]
 
     connection {
       host = coalesce(self.public_ip, self.private_ip)
-      type = "ssh"
-      # this is where terraform puts the above inline script
-      script_path = "~/inline-${element(local.lx_src_requests, count.index)}-from-source.sh"
+      type = local.build_info[each.key].platform.connection_type
+      script_path = format(
+        local.build_info[each.key].platform.format_str_inline_path,
+        local.build_type_standalone,
+        each.key
+      )
     }
   }
 }
 
-resource "aws_instance" "lx_pkg" {
-  count = local.lx_pkg_count
-  ami   = local.ami_ids[local.ami_underlying[element(local.lx_pkg_requests, count.index)]]
-
-  associate_public_ip_address = var.tfi_assign_public_ip
-  iam_instance_profile        = var.tfi_instance_profile
-  instance_type               = var.tfi_lx_instance_type
+resource "aws_instance" "source_build" {
+  for_each                    = local.source_builds
+  ami                         = data.aws_ami.amis[each.key].id
+  associate_public_ip_address = var.assign_public_ip
+  iam_instance_profile        = var.instance_profile
   key_name                    = aws_key_pair.auth.id
-  subnet_id                   = var.tfi_subnet_id
-  user_data                   = <<-HEREDOC
-    ${element(data.template_file.lx_pkg_script_preface.*.rendered, count.index)}
-    ${join("", data.template_file.lx_userdata_common.*.rendered)}
-    ${join("", data.template_file.lx_userdata_specific.*.rendered)}
-    HEREDOC
-  vpc_security_group_ids      = [join("", aws_security_group.ssh_sg.*.id)]
+  subnet_id                   = var.subnet_id
+  vpc_security_group_ids      = [aws_security_group.builds.id]
+  instance_type               = local.build_info[each.key].platform.instance_type
+
+  user_data = format(
+    local.build_info[each.key].platform.format_str_userdata,
+    templatefile(
+      local.build_info[each.key].platform.userdata_template,
+      merge(
+        local.template_vars.base,
+        local.template_vars[local.build_info[each.key].platform.key],
+        {
+          build_os    = each.key
+          build_type  = local.build_type_source
+          build_label = format(local.format_str_build_label, local.build_type_source, each.key)
+          password    = local.build_info[each.key].platform.connection_password
+        }
+      )
+    )
+  )
 
   tags = {
-    Name      = "${local.resource_name}-${element(local.lx_pkg_requests, count.index)}"
-    BuilderID = aws_instance.lx_builder[0].id
+    Name = format(
+      local.build_info[each.key].platform.format_str_instance_name,
+      local.build_type_source,
+      each.key
+    )
   }
 
   timeouts {
-    create = "50m"
+    create = local.build_info[each.key].platform.create_timeout
   }
 
   connection {
-    type = "ssh"
-    #ssh connection to tier-2 instance
+    type        = local.build_info[each.key].platform.connection_type
     host        = self.public_ip
-    user        = var.tfi_ssh_user
-    private_key = tls_private_key.gen_key.private_key_pem
-    port        = local.ssh_port
-    timeout     = "40m"
+    user        = local.build_info[each.key].platform.connection_user
+    private_key = local.build_info[each.key].platform.connection_key
+    port        = local.build_info[each.key].platform.connection_port
+    timeout     = local.build_info[each.key].platform.connection_timeout
+    password    = local.build_info[each.key].platform.connection_password
   }
 
   provisioner "file" {
-    content     = <<-HEREDOC
-      ${element(data.template_file.lx_pkg_script_preface.*.rendered, count.index)}
-      ${join("", data.template_file.lx_test.*.rendered)}
-      HEREDOC
-    destination = "~/watchmaker-test-${element(local.lx_pkg_requests, count.index)}.sh"
+    content = templatefile(
+      local.build_info[each.key].platform.test_template,
+      merge(
+        local.template_vars.base,
+        local.template_vars[local.build_info[each.key].platform.key],
+        {
+          build_os    = each.key
+          build_type  = local.build_type_source
+          build_label = format(local.format_str_build_label, local.build_type_source, each.key)
+        }
+      )
+    )
+    destination = format(
+      local.build_info[each.key].platform.format_str_destination,
+      local.build_type_source,
+      each.key
+    )
   }
 
   provisioner "remote-exec" {
     inline = [
-      "chmod +x ~/watchmaker-test-${element(local.lx_pkg_requests, count.index)}.sh",
-      "~/watchmaker-test-${element(local.lx_pkg_requests, count.index)}.sh",
+      format(
+        local.build_info[each.key].platform.format_str_inline_script,
+        local.build_type_source,
+        each.key
+      ),
     ]
 
     connection {
       host = coalesce(self.public_ip, self.private_ip)
-      type = "ssh"
-      # this is where terraform puts the above inline script
-      script_path = "~/inline-${element(local.lx_pkg_requests, count.index)}.sh"
+      type = local.build_info[each.key].platform.connection_type
+      script_path = format(
+        local.build_info[each.key].platform.format_str_inline_path,
+        local.build_type_source,
+        each.key
+      )
     }
   }
 }

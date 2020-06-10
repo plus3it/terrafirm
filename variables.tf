@@ -1,85 +1,109 @@
-variable "tfi_availability_zone" {
+variable "availability_zone" {
   default = "us-east-1c"
+  type    = string
 }
 
-variable "tfi_subnet_id" {
+variable "subnet_id" {
   default = ""
+  type    = string
 }
 
-variable "tfi_instances" {
-  default = []
+variable "source_builds" {
+  default = ["win12", "win16", "win19", "rhel6", "rhel7", "centos6", "centos7"]
   type    = list(string)
 }
 
-variable "tfi_rm_user" {
+variable "standalone_builds" {
+  default = ["win12", "win16", "win19", "rhel6", "rhel7", "centos6", "centos7"]
+  type    = list(string)
+}
+
+variable "win_user" {
   default = "Administrator"
+  type    = string
 }
 
-variable "tfi_ssh_user" {
+variable "lx_user" {
   default = "root"
+  type    = string
 }
 
-variable "tfi_instance_profile" {
+variable "instance_profile" {
   default = ""
+  type    = string
 }
 
-variable "tfi_assign_public_ip" {
-  default = "false"
+variable "assign_public_ip" {
+  default = false
+  type    = bool
 }
 
-variable "tfi_win_instance_type" {
+variable "win_instance_type" {
   default = "t2.large"
+  type    = string
 }
 
-variable "tfi_lx_instance_type" {
+variable "lx_instance_type" {
   default = "t2.medium"
+  type    = string
 }
 
-variable "tfi_git_repo" {
+variable "git_repo" {
   default = "https://github.com/plus3it/watchmaker.git"
+  type    = string
 }
 
-variable "tfi_git_ref" {
-  default = "master"
+variable "git_ref" {
+  default = "develop"
+  type    = string
 }
 
-variable "tfi_common_args" {
+variable "common_args" {
   default = "-n --log-level debug"
+  type    = string
 }
 
-variable "tfi_win_args" {
+variable "win_args" {
   default = "--log-dir=C:\\Watchmaker\\Logs"
+  type    = string
 }
 
-variable "tfi_lx_args" {
+variable "lx_args" {
   default = "--log-dir=/var/log/watchmaker"
+  type    = string
 }
 
-variable "tfi_win_userdata_log" {
+variable "win_userdata_log" {
   default = "C:\\Temp\\userdata.log"
+  type    = string
 }
 
-variable "tfi_lx_userdata_log" {
+variable "lx_userdata_log" {
   default = "/var/log/userdata.log"
+  type    = string
 }
 
-variable "tfi_s3_bucket" {
+variable "s3_bucket" {
   default = "mybucket"
+  type    = string
 }
 
-variable "tfi_codebuild_id" {
+variable "codebuild_id" {
   default = ""
+  type    = string
 }
 
-variable "tfi_docker_slug" {
+variable "docker_slug" {
   default = ""
+  type    = string
 }
 
-variable "tfi_aws_region" {
+variable "aws_region" {
   default = "us-east-1"
+  type    = string
 }
 
-variable "tfi_debug" {
-  default = "1"
+variable "debug" {
+  default = true
+  type    = bool
 }
-
