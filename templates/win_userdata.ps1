@@ -127,9 +127,9 @@ function Publish-Artifacts {
   Get-ChildItem Env: | Out-File "$ArtifactDir\cloud\environment_variables.log" -Append -Encoding utf8
 
   # copy artifacts to s3
-  Write-Tfi "Writing logs to $BuildSlug/$BuildLabel"
   Copy-Item $UserdataLogFile -Destination "$ArtifactDir" -Force
   Write-S3Object -BucketName "$BuildSlug" -KeyPrefix "$BuildLabel" -Folder "$ArtifactDir" -Recurse
+  Write-Tfi "Wrote logs to s3://$BuildSlug/$BuildLabel" $?
 
   # creates compressed archive to upload to s3
   $BuildSlugZipName = "$BuildSlug" -replace '/','-'
@@ -137,6 +137,16 @@ function Publish-Artifacts {
   cd 'C:\Program Files\7-Zip'
   Test-Command ".\7z a -y -tzip $ZipFile -r $ArtifactDir\*"
   Write-S3Object -BucketName "$BuildSlug" -File $ZipFile
+}
+
+function Publish-SCAP-Scan {
+  Write-Tfi "Writing SCAP scan to s3://${scan_slug}/$BuildOS..."
+  $ErrorActionPreference = "Continue"
+  $ScanDir = "$TempDir\terrafirm\scan"
+  Invoke-Expression -Command "mkdir $ScanDir" -ErrorAction SilentlyContinue
+  Copy-Item "C:\Watchmaker\SCAP" -Destination "$ScanDir" -Recurse -Force
+  Write-S3Object -BucketName "${scan_slug}" -KeyPrefix "$BuildOS" -Folder "$ScanDir\SCAP\Sessions" -Recurse
+  Write-Tfi "Wrote SCAP scan to s3://${scan_slug}/$BuildOS" $?
 }
 
 function Test-DisplayResult {
@@ -164,30 +174,36 @@ function Write-UserdataStatus {
 }
 
 function Open-WinRM {
-  ## Open WinRM for access by, for example, a Terraform remote-exec provisioner.
-  # initial winrm setup
-  Start-Process -FilePath "winrm" -ArgumentList "quickconfig -q"
-  Write-Tfi "WinRM quickconfig" $?
-  Start-Process -FilePath "winrm" -ArgumentList "set winrm/config/service @{AllowUnencrypted=`"true`"}" -Wait
-  Write-Tfi "Open winrm/unencrypted" $?
-  Start-Process -FilePath "winrm" -ArgumentList "set winrm/config/service/auth @{Basic=`"true`"}" -Wait
-  Write-Tfi "Open winrm/auth/basic" $?
-  Start-Process -FilePath "winrm" -ArgumentList "set winrm/config @{MaxTimeoutms=`"1900000`"}"
-  Write-Tfi "Set winrm timeout" $?
+  ## Open WinRM for access
+  Test-Command "Start-Process -FilePath `"winrm`" -ArgumentList `"quickconfig -q`""
+  Test-Command "Start-Process -FilePath `"winrm`" -ArgumentList `"set winrm/config/service @{AllowUnencrypted=```"true```"}`" -Wait"
+  Test-Command "Start-Process -FilePath `"winrm`" -ArgumentList `"set winrm/config/service/auth @{Basic=```"true```"}`" -Wait"
+  Test-Command "Start-Process -FilePath `"winrm`" -ArgumentList `"set winrm/config @{MaxTimeoutms=```"1900000```"}`""
+
+  if (Test-Path -path "C:\salt\salt-call.bat") {
+    # fix the lgpos to allow winrm
+    C:\salt\salt-call --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value `
+        key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowBasic' `
+        value='1' `
+        vtype='REG_DWORD'
+    Write-Tfi "Command [salt-call --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value key='AllowBasic'...]" $?
+
+    C:\salt\salt-call --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value `
+        key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowUnencryptedTraffic' `
+        value='1' `
+        vtype='REG_DWORD'
+    Write-Tfi "Command [salt-call --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value key='AllowUnencryptedTraffic'...]" $?
+  }
 }
 
 function Close-Firewall {
-  ## Close the local firewall to WinRM traffic.
-  # close the firewall
-  netsh advfirewall firewall add rule name="WinRM in" protocol=tcp dir=in profile=any localport=5985 remoteip=any localip=any action=block
-  Write-Tfi "Close firewall" $?
+  ## Close the local firewall to WinRM
+  Test-Command "netsh advfirewall firewall add rule name=`"WinRM in`" protocol=tcp dir=in profile=any localport=5985 remoteip=any localip=any action=block"
 }
 
 function Open-Firewall {
-  ## Open the local firewall to WinRM traffic.
-  # open firewall for winrm - rule was added previously, now we modify it with "set"
-  netsh advfirewall firewall set rule name="WinRM in" new action=allow
-  Write-Tfi "Open firewall" $?
+  ## Open the local firewall to WinRM
+  Test-Command "netsh advfirewall firewall set rule name=`"WinRM in`" new action=allow"
 }
 
 function Rename-User {
@@ -223,7 +239,6 @@ function Set-Password {
 function Invoke-CmdScript {
   ## Invoke the specified batch file with params, and propagate env var changes back to
   ## PowerShell environment that called it.
-  ##
   ## Recipe from "Windows PowerShell Cookbook by Lee Holmes"
   param (
     [string] $script,
@@ -254,17 +269,14 @@ function Install-PythonGit {
   $GitUrl = "${url_git}"
 
   # Download bootstrap file
-  $Stage = "download bootstrap"
   $BootstrapFile = "$${Env:Temp}\$($${BootstrapUrl}.split("/")[-1])"
   (New-Object System.Net.WebClient).DownloadFile($BootstrapUrl, $BootstrapFile)
 
-  # Install python and git
-  $Stage = "install python/git"
   & "$BootstrapFile" `
-      -PythonUrl "$PythonUrl" `
-      -GitUrl "$GitUrl" `
-      -Verbose -ErrorAction Stop
-  Test-DisplayResult "Install Python/Git" $?
+    -PythonUrl "$PythonUrl" `
+    -GitUrl "$GitUrl" `
+    -Verbose -ErrorAction Stop
+  Test-DisplayResult "Install Python/Git [$BootstrapFile -PythonUrl $PythonUrl -GitUrl $GitUrl -Verbose -ErrorAction Stop]" $?
 }
 
 function Install-Watchmaker {
@@ -275,33 +287,24 @@ function Install-Watchmaker {
   $GitRepo = "${git_repo}"
   $GitRef = "${git_ref}"
 
-  # Upgrade pip and setuptools
-  $Stage = "upgrade pip setuptools boto3"
   Test-Command "python -m pip install --index-url=`"$PypiUrl`" --upgrade pip setuptools" -Tries 2
   Test-Command "pip install --index-url=`"$PypiUrl`" --upgrade boto3" -Tries 2
 
   if ($UseVenv) {
-    $Stage = "install virtualenv wheel"
     Test-Command "pip install virtualenv wheel"
 
-    # ----- build the standalone binary
-    # use a virtual env
-    $Stage = "virtualenv"
     $VirtualEnvDir = "C:\venv"
-    mkdir $VirtualEnvDir
-    Test-DisplayResult "Create virtualenv directory" $?
+    Test-Command "mkdir $VirtualEnvDir"
+    # Test-DisplayResult "Create virtualenv directory" $?
 
     Test-Command "virtualenv $VirtualEnvDir"
     Invoke-CmdScript "$VirtualEnvDir\Scripts\activate.bat"
-    Test-DisplayResult "Activate virtualenv" $?
+    Test-DisplayResult "Activate $VirtualEnvDir\Scripts\activate.bat" $?
   }
 
-  # Clone watchmaker
-  $Stage = "git"
   Test-Command "git clone `"$GitRepo`" --recursive" -Tries 2
   cd watchmaker
   if ($GitRef) {
-    # decide whether to switch to pull request or branch
     if ($GitRef -match "^[0-9]+$") {
       Test-Command "git fetch origin pull/$GitRef/head:pr-$GitRef" -Tries 2
       Test-Command "git checkout pr-$GitRef"
@@ -310,12 +313,7 @@ function Install-Watchmaker {
     }
   }
 
-  # Update submodule refs
-  $Stage = "update submodules"
   Test-Command "git submodule update"
-
-  # Install watchmaker
-  $Stage = "install wam"
   Test-Command "pip install --upgrade --index-url `"$PypiUrl`" --editable ."
 }
 
@@ -336,34 +334,22 @@ $UserdataStatus=@(1,"Error: Build not completed (should never see this error)")
 (New-Object System.Net.WebClient).DownloadFile("${url_7zip}", "$TempDir\7z-install.exe")
 Invoke-Expression -Command "$TempDir\7z-install.exe /S /D='C:\Program Files\7-Zip'" -ErrorAction Continue
 
+Check-Metadata-Availability
+Write-Tfi "Start Build ============"
+$StartDate=Get-Date
+
 %{ if build_type == build_type_builder }
-
 try {
-    Write-Tfi "Start build"
-
-    # time wam install
-    $StartDate=Get-Date
-
-    # ---------- begin of wam standalone package build ----------
     Install-PythonGit
-
     Install-Watchmaker -UseVenv $true
 
-    # Install prereqs
-    $Stage = "install build prerequisites"
+    Test-Command "python -m pip install --index-url=`"$PypiUrl`" -r requirements\pip.txt" -Tries 2
+    Test-Command "pip install --index-url=`"$PypiUrl`" -r requirements\build.txt" -Tries 2
+    Test-Command "gravitybee --src-dir src --sha file --with-latest --extra-data static --extra-pkgs boto3 --extra-modules boto3"
 
-    python -m pip install --index-url="$PypiUrl" -r requirements\pip.txt
-    Test-DisplayResult "Install pip" $?
-
-    pip install --index-url="$PypiUrl" -r requirements\build.txt
-    Test-DisplayResult "Install build prerequisites" $?
-
-    # create standalone application
-    gravitybee --src-dir src --sha file --with-latest --extra-data static --extra-pkgs boto3 --extra-modules boto3
-    Test-DisplayResult "Run gravitybee (build standalone)" $?
-
-    Invoke-CmdScript .\.gravitybee\gravitybee-environs.bat
-    Test-DisplayResult "Set environment variables" $?
+    $Script = ".\.gravitybee\gravitybee-environs.bat"
+    Invoke-CmdScript $Script
+    Test-DisplayResult "Set environment variables ($Script)" $?
 
     if ($env:GB_ENV_STAGING_DIR) {
       Remove-Item ".\$env:GB_ENV_STAGING_DIR\0*" -Recurse
@@ -373,15 +359,11 @@ try {
 
     # ----------  end of wam standalone package build ----------
 
-    $EndDate = Get-Date
-    Write-Tfi("WAM standalone build took {0} seconds." -f [math]::Round(($EndDate - $StartDate).TotalSeconds))
-    Write-Tfi("End build")
     $UserdataStatus=@(0,"Success") # made it this far, it's a success
 } catch {
   $ErrorMessage = [String]$_.Exception + "Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
-  Write-Tfi ("*** ERROR caught ($Stage) ***")
+  Write-Tfi "*** ERROR caught ***"
   Write-Tfi $ErrorMessage
-  Debug-2S3 $ErrorMessage
 
   # signal any builds waiting to test this standalone that the build failed
   if (-not (Test-Path "$StandaloneErrorSignalFile")) {
@@ -391,130 +373,105 @@ try {
   "$(Get-Date): $Msg" | Out-File "$StandaloneErrorSignalFile" -Append -Encoding utf8
   Write-S3Object -BucketName "$BuildSlug/${release_prefix}" -File $StandaloneErrorSignalFile
   Write-Tfi "Signal error to S3" $?
-
-  # setup userdata status for passing to the test script via a file
-  $ErrCode = 1  # trying to set this to $lastExitCode does not work (always get 0)
-  $UserdataStatus=@($ErrCode,"Error at: " + $Stage + " [$ErrorMessage]")
+  $ErrCode = 1
+  $UserdataStatus=@($ErrCode,"Error [$ErrorMessage]")
 }
 
-Rename-User -From "Administrator" -To "$WinUser"
-Open-WinRM
-Write-UserdataStatus -UserdataStatus $UserdataStatus
-Open-Firewall
-Publish-Artifacts
-
 %{ else }
-
-Check-Metadata-Availability
+%{ if build_type == build_type_standalone }
 
 try {
-  Write-Tfi "Start install"
 
-  # time wam install
-  $StartDate=Get-Date
+  Write-Tfi "Installing Watchmaker from standalone executable............."
 
-  if ($BuildType -eq $BuildTypeStandalone) {
-    Write-Tfi "Installing Watchmaker from standalone executable package............."
+  $SleepTime = 20
+  $Standalone = "${executable}"
+  $ErrorKey = $StandaloneErrorSignalFile
 
-    $SleepTime = 20
-    $Standalone = "${executable}"
-    $ErrorKey = $StandaloneErrorSignalFile
+  Write-Tfi "Looking for standalone executable at $BuildSlug/$Standalone"
+  Write-Tfi "Looking for error signal at $BuildSlug/$ErrorKey"
 
-    Write-Tfi "Looking for standalone executable at $BuildSlug/$Standalone"
-    Write-Tfi "Looking for error signal at $BuildSlug/$ErrorKey"
+  #block until executable exists, an error, or timeout
+  while ($true) {
+    # find out what's happening with the builder
+    $Exists = $true
+    $SignaledError = $true
 
-    #block until executable exists, an error, or timeout
-    while ($true) {
-      # find out what's happening with the builder
-      $Exists = $true
-      $SignaledError = $true
+    # see if the standalone is ready yet
+    try {
+      Get-S3ObjectMetadata -BucketName "$BuildSlug" -Key "$Standalone"
+    } catch {
+      $Exists = $false
+    }
 
-      # see if the standalone is ready yet
-      try {
-        Get-S3ObjectMetadata -BucketName "$BuildSlug" -Key "$Standalone"
-      } catch {
-        $Exists = $false
-      }
+    # see if the builder encountered an error
+    try {
+      Get-S3ObjectMetadata -BucketName "$BuildSlug" -Key "$ErrorKey"
+    } catch {
+      $SignaledError = $false
+    }
 
-      # see if the builder encountered an error
-      try {
-        Get-S3ObjectMetadata -BucketName "$BuildSlug" -Key "$ErrorKey"
-      } catch {
-        $SignaledError = $false
-      }
-
-      if ($SignaledError) {
-        # error signaled by the builder
-        $ErrorMsg = "Error signaled by the builder (Error file found at $BuildSlug/$ErrorKey)"
-        Write-Tfi $ErrorMsg
-        throw $ErrorMsg
+    if ($SignaledError) {
+      # error signaled by the builder
+      $ErrorMsg = "Error signaled by the builder (Error file found at $BuildSlug/$ErrorKey)"
+      Write-Tfi $ErrorMsg
+      throw $ErrorMsg
+      break
+    } else {
+      if ($Exists) {
+        Write-Tfi "The standalone executable was found!"
         break
       } else {
-        if ($Exists) {
-          Write-Tfi "The standalone executable was found!"
-          break
-        } else {
-          Write-Tfi "The standalone executable was not found. Trying again in $SleepTime s..."
-          Start-Sleep -Seconds $SleepTime
-        }
+        Write-Tfi "The standalone executable was not found. Trying again in $SleepTime s..."
+        Start-Sleep -Seconds $SleepTime
       }
-    } # end of while($true)
+    }
+  } # end of while($true)
 
-    #Invoke-Expression -Command "mkdir C:\scripts" -ErrorAction SilentlyContinue
-    $DownloadDir = "${download_dir}"
-    Read-S3Object -BucketName "$BuildSlug" -Key $Standalone -File "$DownloadDir\watchmaker.exe"
-    Test-Command "$DownloadDir\watchmaker.exe ${args}"
-  } else {
-    # ---------- begin of wam install ----------
-    Write-Tfi "Installing Watchmaker from source...................................."
-
-    Install-PythonGit
-    Install-Watchmaker
-
-    # Run watchmaker
-    $Stage = "run wam"
-    Test-Command "watchmaker ${args}"
-    # ----------  end of wam install ----------
-  }
-
-  $EndDate = Get-Date
-  Write-Tfi ("WAM install took {0} seconds." -f [math]::Round(($EndDate - $StartDate).TotalSeconds))
-  Write-Tfi "End install"
+  #Invoke-Expression -Command "mkdir C:\scripts" -ErrorAction SilentlyContinue
+  $DownloadDir = "${download_dir}"
+  Read-S3Object -BucketName "$BuildSlug" -Key $Standalone -File "$DownloadDir\watchmaker.exe"
+  Test-Command "$DownloadDir\watchmaker.exe ${args}"
   $UserdataStatus=@(0,"Success") # made it this far, it's a success
 } catch {
   $ErrorMessage = [String]$_.Exception + "Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
-  Write-Tfi ("*** ERROR caught ($Stage) ***")
+  Write-Tfi "*** ERROR caught ***"
   Write-Tfi $ErrorMessage
-  Debug-2S3 $ErrorMessage
-
-  # setup userdata status for passing to the test script via a file
   $ErrCode = 1  # trying to set this to $lastExitCode does not work (always get 0)
-  $UserdataStatus=@($ErrCode,"Error at: " + $Stage + " [$ErrorMessage]")
+  $UserdataStatus=@($ErrCode,"Error [$ErrorMessage]")
 }
 
-# in case wam didn't change admin account name, winrm won't be able to log in so make sure
+%{ else }
+
+try {
+  # ---------- begin of wam install ----------
+  Write-Tfi "Installing Watchmaker from source...................................."
+  Install-PythonGit
+  Install-Watchmaker
+  Test-Command "watchmaker ${args}"
+  # ----------  end of wam install ----------
+
+  $UserdataStatus=@(0,"Success") # made it this far, it's a success
+} catch {
+  $ErrorMessage = [String]$_.Exception + "Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
+  Write-Tfi "*** ERROR caught ***"
+  Write-Tfi $ErrorMessage
+  $ErrCode = 1
+  $UserdataStatus=@($ErrCode,"Error [$ErrorMessage]")
+}
+
+%{ endif }
+%{ endif }
+$EndDate = Get-Date
+Write-Tfi "End Build =============="
+Write-Tfi ("Build took {0} seconds." -f [math]::Round(($EndDate - $StartDate).TotalSeconds))
+
 Rename-User -From "Administrator" -To "$WinUser"
-
-# Open-WinRM won't work if lgpo is blocking, but we'll have salt in that case
 Open-WinRM
-
-if (Test-Path -path "C:\salt\salt-call.bat") {
-  # fix the lgpos to allow winrm
-  C:\salt\salt-call --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value `
-      key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowBasic' `
-      value='1' `
-      vtype='REG_DWORD'
-  Write-Tfi "Salt modify lgpo, allow basic" $?
-
-  C:\salt\salt-call --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value `
-      key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowUnencryptedTraffic' `
-      value='1' `
-      vtype='REG_DWORD'
-  Write-Tfi "Salt modify lgpo, unencrypted" $?
-}
-
 Write-UserdataStatus -UserdataStatus $UserdataStatus
 Open-Firewall
 Publish-Artifacts
 
-%{ endif }
+if (($BuildType -eq $BuildTypeStandalone) -and ("${wam_version}" -ne "")) {
+  Publish-SCAP-Scan
+}

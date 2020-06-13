@@ -44,10 +44,12 @@ locals {
   private_key_rsa_bits             = "4096"
   release_prefix                   = "release"
   resource_name                    = "${local.name_prefix}-${local.build_id}"
+  scan_slug                        = "${var.s3_scan_bucket}/${local.wam_version}"
   security_group_description       = "Used by Terrafirm (${local.resource_name})"
   url_bootstrap                    = "https://raw.githubusercontent.com/plus3it/watchmaker/develop/docs/files/bootstrap/watchmaker-bootstrap.ps1"
   url_local_ip                     = "http://ipv4.icanhazip.com"
   url_pypi                         = "https://pypi.org/simple"
+  wam_version                      = var.wam_version
   win_args                         = "${var.common_args} ${var.win_args}"
   win_builder_os                   = "win12"
   win_connection_type              = "winrm"
@@ -192,8 +194,10 @@ locals {
       git_ref               = local.git_ref
       git_repo              = local.git_repo
       release_prefix        = local.release_prefix
+      scan_slug             = local.scan_slug
       url_bootstrap         = local.url_bootstrap
       url_pypi              = local.url_pypi
+      wam_version           = local.wam_version
     }
 
     lx = {

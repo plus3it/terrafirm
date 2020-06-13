@@ -88,6 +88,11 @@ variable "s3_bucket" {
   type    = string
 }
 
+variable "s3_scan_bucket" {
+  default = "mybucket"
+  type    = string
+}
+
 variable "codebuild_id" {
   default = ""
   type    = string
@@ -106,4 +111,9 @@ variable "aws_region" {
 variable "debug" {
   default = true
   type    = bool
+}
+
+variable "wam_version" {
+  default = ""
+  type    = string
 }

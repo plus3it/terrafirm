@@ -185,6 +185,18 @@ publish-artifacts() {
   write-tfi "Uploaded artifact zip to S3" --result $?
 }
 
+publish-scap-scan() {
+  # create a directory with scap scan output
+  scan_dir="$temp_dir/terrafirm/scan"
+  mkdir -p "$scan_dir"
+  cp -R /root/scap/output/* "$scan_dir" || true
+
+  # move scan output to s3
+  scan_dest="s3://${scan_slug}/$build_os"
+  aws s3 cp "$scan_dir" "$scan_dest" --recursive || true
+  write-tfi "Uploaded scap scan to $scan_dest" --result $?
+}
+
 finally() {
   # time it took to install
   end=$(date +%s)
@@ -195,6 +207,9 @@ finally() {
 
   open-ssh
   publish-artifacts
+  if [ "$build_type" == "$build_type_standalone" ] && [ "${wam_version}" != "" ]; then
+    publish-scap-scan
+  fi
 
   exit "$${userdata_status[0]}"
 }
