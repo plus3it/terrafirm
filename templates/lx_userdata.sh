@@ -13,7 +13,7 @@ exec &> "${userdata_log}"
 build_slug="${build_slug}"
 standalone_error_signal_file="${standalone_error_signal_file}"
 temp_dir="${temp_dir}"
-export AWS_REGION="${aws_region}"
+export AWS_DEFAULT_REGION="${aws_region}"
 debug_mode="${debug}"
 
 echo "------------------------------- $build_label ---------------------"
