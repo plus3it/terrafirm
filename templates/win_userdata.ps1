@@ -11,6 +11,10 @@ $WinUser = "${user}"
 $PypiUrl = "${url_pypi}"
 $DebugMode = "${debug}"
 
+# set default AWS region for Powershell and API calls
+Set-DefaultAWSRegion -Region "${aws_region}"
+$Env:AWS_DEFAULT_REGION="${aws_region}"
+
 # log file
 $UserdataLogFile = "${userdata_log}"
 if (-not (Test-Path "$UserdataLogFile")) {
