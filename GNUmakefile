@@ -1,5 +1,5 @@
 export SHELL = /bin/bash
-export AWS_REGION ?= us-east-1
+export AWS_DEFAULT_REGION ?= us-east-1
 export TERRAFORM_PARALLELISM ?= 20
 
 default: again

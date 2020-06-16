@@ -9,7 +9,7 @@ phases:
   pre_build:
     commands:
       - export TF_VAR_codebuild_id="${CODEBUILD_BUILD_ID}"
-      - export TF_VAR_aws_region="${AWS_REGION}"
+      - export TF_VAR_aws_region="${AWS_DEFAULT_REGION}"
       - terraform init -no-color -input=false                                 # init terraform
       - terraform plan -no-color -out=tfplan -input=false                     # plan terraform
   build:
