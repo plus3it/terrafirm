@@ -134,12 +134,6 @@ locals {
   }
 
   build_info = {
-    centos6 = {
-      ami_regex  = "spel-minimal-centos-6-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
-      ami_search = "spel-minimal-centos-6-hvm-*.x86_64-gp2"
-      platform   = local.platform_info.lx
-    }
-
     centos7 = {
       ami_regex  = "spel-minimal-centos-7-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
       ami_search = "spel-minimal-centos-7-hvm-*.x86_64-gp2"
