@@ -283,28 +283,9 @@ function Install-PythonGit {
   Test-DisplayResult "Install Python/Git [$BootstrapFile -PythonUrl $PythonUrl -GitUrl $GitUrl -Verbose -ErrorAction Stop]" $?
 }
 
-function Install-Watchmaker {
-  param (
-    [Parameter(Mandatory=$false)][bool]$UseVenv=$false
-  )
-
+function Clone-Watchmaker {
   $GitRepo = "${git_repo}"
   $GitRef = "${git_ref}"
-
-  Test-Command "python -m pip install --index-url=`"$PypiUrl`" --upgrade pip setuptools" -Tries 2
-  Test-Command "pip install --index-url=`"$PypiUrl`" --upgrade boto3" -Tries 2
-
-  if ($UseVenv) {
-    Test-Command "pip install virtualenv wheel"
-
-    $VirtualEnvDir = "C:\venv"
-    Test-Command "mkdir $VirtualEnvDir"
-    # Test-DisplayResult "Create virtualenv directory" $?
-
-    Test-Command "virtualenv $VirtualEnvDir"
-    Invoke-CmdScript "$VirtualEnvDir\Scripts\activate.bat"
-    Test-DisplayResult "Activate $VirtualEnvDir\Scripts\activate.bat" $?
-  }
 
   Test-Command "git clone `"$GitRepo`" --recursive" -Tries 2
   cd watchmaker
@@ -318,7 +299,14 @@ function Install-Watchmaker {
   }
 
   Test-Command "git submodule update"
-  Test-Command "pip install --upgrade --index-url `"$PypiUrl`" --editable ."
+}
+
+function Install-Watchmaker {
+  Test-Command "python -m pip install --index-url=`"$PypiUrl`" -r requirements\pip.txt" -Tries 2
+  Test-Command "python -m pip install --index-url=`"$PypiUrl`" -r requirements\basics.txt" -Tries 2
+  Test-Command "python -m pip install --index-url=`"$PypiUrl`" --upgrade boto3" -Tries 2
+
+  Test-Command "python -m pip install --index-url `"$PypiUrl`" --editable ." -Tries 2
 }
 
 $ErrorActionPreference = "Stop"
@@ -345,11 +333,17 @@ $StartDate=Get-Date
 %{ if build_type == build_type_builder }
 try {
     Install-PythonGit
-    Install-Watchmaker -UseVenv $true
+    Clone-Watchmaker
 
     Test-Command "python -m pip install --index-url=`"$PypiUrl`" -r requirements\pip.txt" -Tries 2
-    Test-Command "pip install --index-url=`"$PypiUrl`" -r requirements\build.txt" -Tries 2
-    Test-Command "gravitybee --src-dir src --sha file --with-latest --extra-data static --extra-pkgs boto3 --extra-modules boto3"
+    Test-Command "python -m pip install --index-url=`"$PypiUrl`" -r requirements\basics.txt" -Tries 2
+
+    $VirtualEnvDir = "C:\venv"
+    Test-Command "virtualenv $VirtualEnvDir"
+    Invoke-CmdScript "$VirtualEnvDir\Scripts\activate.bat"
+    Test-DisplayResult "Activate $VirtualEnvDir\Scripts\activate.bat" $?
+
+    Test-Command "cmd /c ci\build.cmd" -Tries 2
 
     $Script = ".\.gravitybee\gravitybee-environs.bat"
     Invoke-CmdScript $Script
@@ -451,6 +445,7 @@ try {
   # ---------- begin of wam install ----------
   Write-Tfi "Installing Watchmaker from source...................................."
   Install-PythonGit
+  Clone-Watchmaker
   Install-Watchmaker
   Test-Command "watchmaker ${args}"
   # ----------  end of wam install ----------
