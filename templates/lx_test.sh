@@ -12,7 +12,7 @@ build_type_standalone="${build_type_standalone}"
 finally() {
   local exit_code=0
 
-  if [ "$${userdata_status[0]}" -ne 0 ] || [ "$${test_status[0]}" -ne 0 ] ; then
+  if [ $${userdata_status[0]} -ne 0 ] || [ $${test_status[0]} -ne 0 ] ; then
     echo "........................................................FAILED!"
     echo "Userdata Status: ($${userdata_status[0]}) $${userdata_status[1]}"
     echo "Test Status    : ($${test_status[0]}) $${test_status[1]}"
@@ -43,11 +43,11 @@ echo "Running Watchmaker Test: $build_label"
 echo "***************************************************************"
 
 # everything below this is the TRY
-if [ "$build_os" = "xenial" ]; then
-  lsb_release -a
-else
+if [ -f "/etc/redhat-release" ]; then
   # this will only work for redhat and centos
   cat /etc/redhat-release
+else
+  lsb_release -a
 fi
 
 ud_path="${userdata_status_file}"

@@ -20,7 +20,7 @@ locals {
   git_repo                         = var.git_repo
   key_pair_name                    = "${local.resource_name}-key"
   lx_args                          = "${var.common_args} ${var.lx_args}"
-  lx_builder_os                    = "xenial"
+  lx_builder_os                    = "focal"
   lx_connection_type               = "ssh"
   lx_executable                    = "${local.release_prefix}/latest/watchmaker-latest-standalone-linux-x86_64"
   lx_format_str_destination        = "~/watchmaker-test-%s-%s.sh"
@@ -173,6 +173,12 @@ locals {
     xenial = {
       ami_regex  = null
       ami_search = "ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server*"
+      platform   = local.platform_info.lx
+    }
+
+    focal = {
+      ami_regex  = null
+      ami_search = "ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server*"
       platform   = local.platform_info.lx
     }
   }

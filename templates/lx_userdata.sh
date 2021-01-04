@@ -149,7 +149,7 @@ open-ssh() {
 
     # open firewall/put ssh on a new port
     try_cmd 1 ufw allow "$new_lx_port"/tcp
-    try_cmd 1 sed -i "s/Port 22/Port $new_lx_port/g" /etc/ssh/sshd_config
+    try_cmd 1 sed -i "s/^[#]*Port .*/Port $new_lx_port/g" /etc/ssh/sshd_config
     try_cmd 1 service ssh restart
   fi
 }
@@ -311,20 +311,19 @@ fi
 
 try_cmd 1 echo "ARRAY <ignore> devices=/dev/sda" >> /etc/mdadm/mdadm.conf
 
-try_cmd 1 UCF_FORCE_CONFFNEW=1 \
-  apt-get -y \
+export UCF_FORCE_CONFFNEW=1
+try_cmd 1 apt-get -y \
   -o Dpkg::Options::="--force-confdef" \
   -o Dpkg::Options::="--force-confnew" \
   upgrade
 
 # install prerequisites
 try_cmd 1 apt-get -y install \
-  python-virtualenv \
   apt-transport-https \
   ca-certificates \
   curl \
   software-properties-common \
-  python3 \
+  python3-virtualenv \
   python3-venv \
   python3-pip \
   git
