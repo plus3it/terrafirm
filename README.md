@@ -26,9 +26,7 @@ Several environment variables allow you to control what builds Terrafirm runs. E
 
 To pick specific operating system builds, set the `TF_VAR_source_builds` and `TF_VAR_standalone_builds` environment variables to one or more the following operating system values. In the variable names, `standalone`/`source` refers to the standalone package test or the from source test.
 
-* `centos6`
 * `centos7`
-* `rhel6`
 * `rhel7`
 * `win12`
 * `win16`
@@ -37,14 +35,14 @@ To pick specific operating system builds, set the `TF_VAR_source_builds` and `TF
 For example, to set the `TF_VAR_source_builds` environment variable in Bash-like shells, use this syntax:
 
 ```console
-export TF_VAR_source_builds='["rhel6","win12"]'
+export TF_VAR_source_builds='["centos7","win12"]'
 ```
 
 You would expect Terraform's output to include lines like these if you run Terrafirm with these settings:
 
 ```console
 aws_instance.source_build["win12"]: Still creating... [1m10s elapsed]
-aws_instance.source_build["rhel6"]: Still creating... [1m10s elapsed]
+aws_instance.source_build["centos7"]: Still creating... [1m10s elapsed]
 ```
 
 ## TERRAFIRM ENVIRONMENT VARIABLES
@@ -66,9 +64,9 @@ Variable | Default | Req/Opt (in CodeBuild) | Description
 `TF_VAR_lx_userdata_log` | /var/log/userdata.log | optional | File path for Watchmaker log on Linux.
 `TF_VAR_s3_bucket` | mybucket | optional | S3 bucket to place logs from installs and output.
 `TF_VAR_s3_scan_bucket` | mybucket | optional | S3 bucket where SCAP scans are published if `wam_version` exists.
-`TF_VAR_source_builds` | ["win12", "win16", "win19", "rhel6", "rhel7", "centos6", "centos7"] | optional | See above for details on setting this variable.
+`TF_VAR_source_builds` | ["win12", "win16", "win19", "rhel7", "centos7"] | optional | See above for details on setting this variable.
 `TF_VAR_lx_user` | root | optional | Username to use when connecting via SSH to Linux builds.
-`TF_VAR_standalone_builds` | ["win12", "win16", "win19", "rhel6", "rhel7", "centos6", "centos7"] | optional | See above for details on setting this variable.
+`TF_VAR_standalone_builds` | ["win12", "win16", "win19", "rhel7", "centos7"] | optional | See above for details on setting this variable.
 `TF_VAR_subnet_id` | [empty] | optional | Subnet to use. CodeBuild instance must be able to access.
 `TF_VAR_wam_version` | [empty] | optional | If provided, SCAP scan results will be copied to the S3 bucket under this version number.
 `TF_VAR_win_args` | --log-dir=C:\\Watchmaker\\Logs | optional | Command line arguments used when installing Watchmaker on Windows.

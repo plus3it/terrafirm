@@ -140,12 +140,6 @@ locals {
       platform   = local.platform_info.lx
     }
 
-    rhel6 = {
-      ami_regex  = "spel-minimal-rhel-6-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
-      ami_search = "spel-minimal-rhel-6-hvm-*.x86_64-gp2"
-      platform   = local.platform_info.lx
-    }
-
     rhel7 = {
       ami_regex  = "spel-minimal-rhel-7-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
       ami_search = "spel-minimal-rhel-7-hvm-*.x86_64-gp2"
@@ -168,12 +162,6 @@ locals {
       ami_regex  = null
       ami_search = "Windows_Server-2019-English-Full-Base*"
       platform   = local.platform_info.win
-    }
-
-    xenial = {
-      ami_regex  = null
-      ami_search = "ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server*"
-      platform   = local.platform_info.lx
     }
 
     focal = {
