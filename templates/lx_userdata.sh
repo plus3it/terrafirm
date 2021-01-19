@@ -35,13 +35,6 @@ check-metadata-availability() {
   try_cmd 50 curl -sSL $metadata_loopback_az
 }
 
-enable-yum-repo() {
-  if [[ "$build_os" == rhel6* ]] ; then
-    try_cmd 10 yum-config-manager --enable rhui-REGION-rhel-server-releases-optional
-    try_cmd 10 yum -y update
-  fi
-}
-
 write-tfi() {
   local msg=""
   local result=""
@@ -421,8 +414,7 @@ if [ "$build_type" == "$build_type_standalone" ]; then
   try_cmd 1 "$standalone_dest"/watchmaker ${args}
 
 else
-  # test install from source
-  enable-yum-repo
+  # Install from source
 
   # Install git
   try_cmd 5 yum -y install git
