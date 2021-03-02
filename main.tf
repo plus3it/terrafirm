@@ -10,8 +10,8 @@ locals {
   build_type_builder               = "builder"
   build_type_source                = "source_build"
   build_type_standalone            = "standalone_build"
-  date_hm                          = "${substr(data.null_data_source.start_time.inputs.timestamp, 11, 2)}${substr(data.null_data_source.start_time.inputs.timestamp, 14, 2)}"                                                                 #equivalent of $(date +'%H%M')
-  date_ymd                         = "${substr(data.null_data_source.start_time.inputs.timestamp, 0, 4)}${substr(data.null_data_source.start_time.inputs.timestamp, 5, 2)}${substr(data.null_data_source.start_time.inputs.timestamp, 8, 2)}" #equivalent of $(date +'%Y%m%d')
+  date_hm                          = "${substr(local.timestamp, 11, 2)}${substr(local.timestamp, 14, 2)}"                               #equivalent of $(date +'%H%M')
+  date_ymd                         = "${substr(local.timestamp, 0, 4)}${substr(local.timestamp, 5, 2)}${substr(local.timestamp, 8, 2)}" #equivalent of $(date +'%Y%m%d')
   debug                            = var.debug
   docker_slug                      = var.docker_slug
   format_str_build_label           = "%s-%s"
@@ -46,6 +46,7 @@ locals {
   resource_name                    = "${local.name_prefix}-${local.build_id}"
   scan_slug                        = "${var.s3_scan_bucket}/${local.wam_version}"
   security_group_description       = "Used by Terrafirm (${local.resource_name})"
+  timestamp                        = timestamp()
   url_bootstrap                    = "https://raw.githubusercontent.com/plus3it/watchmaker/develop/docs/files/bootstrap/watchmaker-bootstrap.ps1"
   url_local_ip                     = "http://ipv4.icanhazip.com"
   url_pypi                         = "https://pypi.org/simple"
@@ -217,13 +218,6 @@ locals {
   source_builds        = toset(var.source_builds)
   builders             = toset([for s in local.standalone_builds : local.build_info[s].platform.builder])
   unique_builds_needed = setunion(local.standalone_builds, local.source_builds, local.builders)
-}
-
-data "null_data_source" "start_time" {
-  inputs = {
-    # necessary because if you just call timestamp in a local it re-evaluates it everytime that var is read
-    timestamp = timestamp()
-  }
 }
 
 data "aws_ami" "amis" {

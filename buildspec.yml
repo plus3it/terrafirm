@@ -17,7 +17,7 @@ phases:
       - terraform apply -no-color -parallelism=16 -input=false tfplan                         # apply terraform
   post_build:
     commands:
-      - ARTIFACT_PATH="$(terraform output build_slug)"
+      - ARTIFACT_PATH="$(terraform output -raw build_slug)"
       - echo "ARTIFACT_LOCATION=https://s3.console.aws.amazon.com/s3/buckets/${ARTIFACT_PATH}/"
       - terraform output -no-color | aws s3 cp - "s3://${ARTIFACT_PATH}/terraform_output.log" || true
       - test -r $TF_LOG_PATH && aws s3 cp $TF_LOG_PATH "s3://${ARTIFACT_PATH}/terraform.log" || true
