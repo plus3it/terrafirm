@@ -2,6 +2,10 @@
 tfplan*
 .env
 
+# tardigrade-ci
+.tardigrade-ci
+tardigrade-ci/
+
 # Local .terraform directories
 **/.terraform/*
 

@@ -2,7 +2,9 @@ export SHELL = /bin/bash
 export AWS_DEFAULT_REGION ?= us-east-1
 export TERRAFORM_PARALLELISM ?= 20
 
-default: again
+include $(shell test -f .tardigrade-ci || curl -sSL -o .tardigrade-ci "https://raw.githubusercontent.com/plus3it/tardigrade-ci/master/bootstrap/Makefile.bootstrap"; echo .tardigrade-ci)
+
+default:: again
 
 again: neat valid
 ifeq (,$(wildcard ./.terraform/))
@@ -32,7 +34,7 @@ else
 	@terraform validate $(COLOR_OPTION)
 endif
 
-clean:
+clean::
 	@terraform destroy \
 		-input=false $(COLOR_OPTION) \
 		-auto-approve
