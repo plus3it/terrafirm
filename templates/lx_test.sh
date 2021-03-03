@@ -12,7 +12,8 @@ build_type_standalone="${build_type_standalone}"
 finally() {
   local exit_code=0
 
-  if [ $${userdata_status[0]} -ne 0 ] || [ $${test_status[0]} -ne 0 ] ; then
+  # shellcheck disable=SC2170
+  if [ "$${userdata_status[0]}" -ne 0 ] || [ "$${test_status[0]}" -ne 0 ] ; then
     echo "........................................................FAILED!"
     echo "Userdata Status: ($${userdata_status[0]}) $${userdata_status[1]}"
     echo "Test Status    : ($${test_status[0]}) $${test_status[1]}"
@@ -50,6 +51,7 @@ else
   lsb_release -a
 fi
 
+# shellcheck disable=SC2154
 ud_path="${userdata_status_file}"
 
 if [ -f "$ud_path" ] ; then
@@ -60,6 +62,7 @@ fi
 
 test_status=(0 "Not run")
 
+# shellcheck disable=SC2170
 if [ "$build_type" != "$build_type_builder" ] && [ "$${userdata_status[0]}" -eq 0 ]; then
   # ------------------------------------------------------------ WAM TESTS BEGIN
   if [ "$build_type" = "$build_type_standalone" ]; then

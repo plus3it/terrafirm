@@ -8,12 +8,15 @@ build_type="${build_type}"
 build_label="${build_label}"
 build_type_standalone="${build_type_standalone}"
 
+# shellcheck disable=SC2154
 exec &> "${userdata_log}"
 
 build_slug="${build_slug}"
 standalone_error_signal_file="${standalone_error_signal_file}"
 temp_dir="${temp_dir}"
+# shellcheck disable=SC2154
 export AWS_DEFAULT_REGION="${aws_region}"
+# shellcheck disable=SC2154
 debug_mode="${debug}"
 
 echo "------------------------------- $build_label ---------------------"
@@ -82,7 +85,7 @@ try_cmd() {
   shift 1
 
   if [ "$try" -gt 1 ]; then
-    write-tfi "Will try $try time(s) :: $@"
+    write-tfi "Will try $try time(s) :: $*"
   fi
 
   if [[ "$SHELLOPTS" == *":errexit:"* ]]; then
@@ -92,15 +95,15 @@ try_cmd() {
 
   until [[ $n -ge $try ]]; do
     sleep $n
-    command_output=`"$@" 2>&1`
+    command_output=$("$@" 2>&1)
     result=$?
-    write-tfi "$@ :: code $result :: output: $command_output" --result $result
+    write-tfi "$* :: code $result :: output: $command_output" --result $result
     if [[ $result -eq 0 ]]; then
       break
     else
       ((n++))
-      write-tfi "Attempt $n, command failed :: $@"
-      fail_snippet="Command ($@) failed :: code $result :: output: $command_output"
+      write-tfi "Attempt $n, command failed :: $*"
+      fail_snippet="Command ($*) failed :: code $result :: output: $command_output"
     fi
   done
 
@@ -114,6 +117,7 @@ try_cmd() {
 open-ssh() {
   # open firewall on rhel 6/7 and ubuntu, move ssh to non-standard
 
+  # shellcheck disable=SC2154
   local new_lx_port="${port}"
 
   if [ -f /etc/redhat-release ]; then
@@ -185,6 +189,7 @@ publish-scap-scan() {
   cp -R /root/scap/output/* "$scan_dir" || true
 
   # move scan output to s3
+  # shellcheck disable=SC2154
   scan_dest="s3://${scan_slug}/$build_os"
   aws s3 cp "$scan_dir" "$scan_dest" --recursive || true
   write-tfi "Uploaded scap scan to $scan_dest" --result $?
@@ -196,14 +201,17 @@ finally() {
   runtime=$((end-start))
   write-tfi "WAM install took $runtime seconds."
 
+  # shellcheck disable=SC2154
   printf "%s\n" "$${userdata_status[@]}" > "${userdata_status_file}"
 
   open-ssh
   publish-artifacts
+  # shellcheck disable=SC2154
   if [ "$build_type" == "$build_type_standalone" ] && [ "${wam_version}" != "" ]; then
     publish-scap-scan
   fi
 
+  # shellcheck disable=SC2242
   exit "$${userdata_status[0]}"
 }
 
@@ -217,9 +225,11 @@ catch() {
 install-watchmaker() {
   # install watchmaker from source
 
+  # shellcheck disable=SC2154
   GIT_REPO="${git_repo}"
+  # shellcheck disable=SC2154
   GIT_REF="${git_ref}"
-
+  # shellcheck disable=SC2154
   PYPI_URL="${url_pypi}"
 
   # Install pip
@@ -261,8 +271,10 @@ install-watchmaker() {
 start=$(date +%s)
 
 # declare an array to hold the status (number and message)
+# shellcheck disable=SC2034
 userdata_status=(0 "Passed")
 
+# shellcheck disable=SC1083
 %{ if build_type == build_type_builder }
 
 # BUILDER INPUT -------------------------------------------
@@ -296,8 +308,8 @@ try_cmd 1 apt-get -y update && apt-get -y install awscli
 host_ip=$(hostname)
 if [[ $host_ip =~ ^[a-z]*-[0-9]{1,3}-[0-9]{1,3}-[0-9]{1,3}-[0-9]{1,3}$ ]]; then
   # hostname is ip
-  ip=$${host_ip#*-}
-  ip=$${ip//-/.}
+  ip="$${host_ip#*-}"
+  ip="$${ip//-/.}"
   try_cmd 1 echo "$ip $host_ip" >> /etc/hosts
 else
   try_cmd 1 echo "127.0.1.1 $host_ip" >> /etc/hosts
@@ -334,16 +346,19 @@ try_cmd 1 ufw allow ssh
 mkdir -p "$virtualenv_path"
 cd "$virtualenv_base"
 try_cmd 1 virtualenv --python=/usr/bin/python3 "$virtualenv_path"
+# shellcheck disable=SC1090
 source "$virtualenv_activate_script"
 
 install-watchmaker
 
 # Launch docker and build watchmaker
+# shellcheck disable=SC2154
 export DOCKER_SLUG="${docker_slug}"
 try_cmd 1 chmod +x ci/prep_docker.sh && ci/prep_docker.sh
 
 # ----------  begin of wam deploy  -------------------------------------------
 
+# shellcheck disable=SC1091
 source .gravitybee/gravitybee-environs.sh
 
 if [ -n "$GB_ENV_STAGING_DIR" ] ; then
@@ -352,6 +367,7 @@ if [ -n "$GB_ENV_STAGING_DIR" ] ; then
   rm -rf "$GB_ENV_STAGING_DIR"/0*
   write-tfi "Remove versioned standalone (keeping 'latest')" --result $?
 
+  # shellcheck disable=SC2154
   artifact_dest="s3://$build_slug/${release_prefix}/"
   try_cmd 1 aws s3 cp "$GB_ENV_STAGING_DIR" "$artifact_dest" --recursive
 
@@ -359,6 +375,7 @@ fi
 
 # ----------  end of wam deploy  ---------------------------------------------
 
+# shellcheck disable=SC1083
 %{ else }
 
 # setup error trap to go to catch function
@@ -370,6 +387,7 @@ set -e
 trap 'catch $? $LINENO' EXIT
 
 if [ "$build_type" == "$build_type_standalone" ]; then
+  # shellcheck disable=SC2154
   standalone_location="s3://$build_slug/${executable}"
   error_location="s3://$build_slug/$standalone_error_signal_file"
   sleep_time=20
@@ -412,6 +430,7 @@ if [ "$build_type" == "$build_type_standalone" ]; then
   try_cmd 1 aws s3 cp "$standalone_location" "$standalone_dest/watchmaker"
   chmod +x "$standalone_dest/watchmaker"
 
+  # shellcheck disable=SC2154,SC2086
   try_cmd 1 "$standalone_dest"/watchmaker ${args}
 
 else
@@ -423,10 +442,12 @@ else
   install-watchmaker
 
   # Run watchmaker
+  # shellcheck disable=SC2086
   try_cmd 1 watchmaker ${args}
 
   # ----------  end of wam install  ----------
 fi
+# shellcheck disable=SC1083
 %{ endif }
 
 finally

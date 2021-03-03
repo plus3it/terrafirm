@@ -1,20 +1,13 @@
 language: bash
-sudo: false
+dist: bionic
 
-before_install:
-  - echo 'before_install'
+stages:
+  - lint
 
-install:
-  - echo 'install'
+if: branch = master OR type = pull_request
 
 jobs:
   include:
-    - stage: test
-      env:
-        - JOB="Terraform Format Verification"
-      before_script:
-        - git clone https://github.com/plus3it/terraform-bootstrap.git
-        - cd terraform-bootstrap && ./install.sh
-        - terraform -v
-      script:
-        - terraform fmt -check=true
+    - stage: lint
+      name: Project Syntax Verification
+      script: make docker/run target=lint
