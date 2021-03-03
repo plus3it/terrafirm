@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
@@ -67,6 +67,9 @@ if [ "$build_type" != "$build_type_builder" ] && [ "$${userdata_status[0]}" -eq 
   else
     watchmaker --version
   fi
+
+  # Test sudo is functional
+  sudo --non-interactive --list
   # ------------------------------------------------------------ WAM TESTS END
 fi
 
