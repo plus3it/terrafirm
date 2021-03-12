@@ -54,7 +54,7 @@ variable "git_repo" {
 }
 
 variable "git_ref" {
-  default = "develop"
+  default = "main"
   type    = string
 }
 

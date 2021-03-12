@@ -56,7 +56,7 @@ Variable | Default | Req/Opt (in CodeBuild) | Description
 `TF_VAR_common_args` | -n --log-level debug | optional | Command line arguments used when installing Watchmaker on Windows and Linux.
 `TF_VAR_debug` | false | optional | Whether or not to debug.
 `TF_VAR_docker_slug` | none | optional | Docker container to use in building standalones.
-`TF_VAR_git_ref` | develop | optional | Branch or pull request number to use in getting watchmaker code.
+`TF_VAR_git_ref` | main | optional | Branch or pull request number to use in getting watchmaker code.
 `TF_VAR_git_repo` | https://github.com/plus3it/watchmaker.git | optional | Git repository to use in getting watchmaker code.
 `TF_VAR_instance_profile` | [empty] | optional | IAM instance profile to be used in provisioning resources.
 `TF_VAR_lx_args` | --log-dir=/var/log/watchmaker | optional | Command line arguments used when installing Watchmaker on Linux.
