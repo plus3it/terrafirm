@@ -27,11 +27,13 @@ output "build_id" {
 }
 
 output "winrm_pass" {
-  value = local.platform_info.win.connection_password
+  value     = local.platform_info.win.connection_password
+  sensitive = true
 }
 
 output "private_key" {
-  value = tls_private_key.gen_key.private_key_pem
+  value     = tls_private_key.gen_key.private_key_pem
+  sensitive = true
 }
 
 output "public_key" {
