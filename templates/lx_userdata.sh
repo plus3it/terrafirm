@@ -331,7 +331,7 @@ fi
 
 try_cmd 1 echo "ARRAY <ignore> devices=/dev/sda" >> /etc/mdadm/mdadm.conf
 
-export UCF_FORCE_CONFFNEW=1
+export DEBIAN_FRONTEND=noninteractive
 try_cmd 1 apt-get -y \
   -o Dpkg::Options::="--force-confdef" \
   -o Dpkg::Options::="--force-confnew" \
