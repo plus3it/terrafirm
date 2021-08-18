@@ -144,13 +144,13 @@ function Publish-Artifacts {
 }
 
 function Publish-SCAP-Scan {
-  Write-Tfi "Writing SCAP scan to s3://${scan_slug}/$BuildOS..."
+  Write-Tfi "Writing SCAP scan to ${scan_slug}/$BuildOS..."
   $ErrorActionPreference = "Continue"
   $ScanDir = "$TempDir\terrafirm\scan"
   Invoke-Expression -Command "mkdir $ScanDir" -ErrorAction SilentlyContinue
   Copy-Item "C:\Watchmaker\SCAP" -Destination "$ScanDir" -Recurse -Force
-  Write-S3Object -BucketName "${scan_slug}" -KeyPrefix "$BuildOS" -Folder "$ScanDir\SCAP\Sessions" -Recurse
-  Write-Tfi "Wrote SCAP scan to s3://${scan_slug}/$BuildOS" $?
+  Write-S3Object -BucketName "${scan_slug}".trimstart("s3://") -KeyPrefix "$BuildOS" -Folder "$ScanDir\SCAP\Sessions" -Recurse
+  Write-Tfi "Wrote SCAP scan to ${scan_slug}/$BuildOS" $?
 }
 
 function Test-DisplayResult {
@@ -471,6 +471,6 @@ Write-UserdataStatus -UserdataStatus $UserdataStatus
 Open-Firewall
 Publish-Artifacts
 
-if (($BuildType -eq $BuildTypeStandalone) -and ("${wam_version}" -ne "")) {
+if (($BuildType -eq $BuildTypeStandalone) -and ("${scan_slug}" -ne "")) {
   Publish-SCAP-Scan
 }
