@@ -191,7 +191,7 @@ publish-scap-scan() {
 
   # move scan output to s3
   # shellcheck disable=SC2154
-  scan_dest="s3://${scan_slug}/$build_os"
+  scan_dest="${scan_slug}/$build_os"
   aws s3 cp "$scan_dir" "$scan_dest" --recursive || true
   write-tfi "Uploaded scap scan to $scan_dest" --result $?
 }
@@ -208,7 +208,7 @@ finally() {
   open-ssh
   publish-artifacts
   # shellcheck disable=SC2154
-  if [ "$build_type" == "$build_type_standalone" ] && [ "${wam_version}" != "" ]; then
+  if [ "$build_type" == "$build_type_standalone" ] && [ "${scan_slug}" != "" ]; then
     publish-scap-scan
   fi
 

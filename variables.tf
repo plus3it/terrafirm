@@ -88,9 +88,14 @@ variable "s3_bucket" {
   type    = string
 }
 
-variable "s3_scan_bucket" {
-  default = "mybucket"
+variable "scan_s3_url" {
+  default = ""
   type    = string
+
+  validation {
+    condition     = can(regex("^$|^s3://(.*)$", var.scan_s3_url))
+    error_message = "The scan_s3_url value can be blank or must be in the form s3://<bucket-name>/<prefix>."
+  }
 }
 
 variable "codebuild_id" {
@@ -111,9 +116,4 @@ variable "aws_region" {
 variable "debug" {
   default = true
   type    = bool
-}
-
-variable "wam_version" {
-  default = ""
-  type    = string
 }
