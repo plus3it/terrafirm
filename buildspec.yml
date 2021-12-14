@@ -4,8 +4,7 @@ version: 0.2
 phases:
   install:
     commands:
-      - git clone https://github.com/plus3it/terraform-bootstrap.git && chmod +x terraform-bootstrap/install.sh
-      - terraform-bootstrap/install.sh
+      - make terraform/install
   pre_build:
     commands:
       - export TF_VAR_codebuild_id="${CODEBUILD_BUILD_ID}"
