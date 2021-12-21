@@ -7,10 +7,33 @@ pull_request_rules:
       review:
         type: APPROVE
 
-  - name: automatic merge dependabot pull requests
+  # For Dockerfile updates, trigger codebuild, merge on codebuild status
+  - name: write issue comment to start codebuild job
+    conditions:
+      - author~=dependabot\[bot\]|dependabot-preview\[bot\]
+      - files=Dockerfile
+      - "#approved-reviews-by>=1"
+    actions:
+      comment:
+        message: go codebuild go
+
+  - name: automatic merge for tardigrade-ci updates
+    conditions:
+      - author~=dependabot\[bot\]|dependabot-preview\[bot\]
+      - files=Dockerfile
+      - status-success=codebuild/pr
+      - status-success=codebuild/default/pr
+      - "#approved-reviews-by>=1"
+    actions:
+      merge:
+        method: merge
+
+  # For regular dependabot pr, automatically merge on approve
+  - name: automatic merge for dependabot pull requests
     conditions:
       - author~=dependabot\[bot\]|dependabot-preview\[bot\]
       - "#approved-reviews-by>=1"
+      - files!=Dockerfile
     actions:
       merge:
         method: merge
