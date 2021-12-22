@@ -23,9 +23,9 @@ locals {
   lx_builder_os                    = "focal"
   lx_connection_type               = "ssh"
   lx_executable                    = "${local.release_prefix}/latest/watchmaker-latest-standalone-linux-x86_64"
-  lx_format_str_destination        = "~/watchmaker-test-%s-%s.sh"
-  lx_format_str_inline_path        = "~/inline-%s-%s.sh"
-  lx_format_str_inline_script      = "chmod +x ~/watchmaker-test-%s-%s.sh\n~/watchmaker-test-%[1]s-%[2]s.sh"
+  lx_format_str_destination        = "/home/%s/watchmaker-test-%s-%s.sh"
+  lx_format_str_inline_path        = "/home/%s/inline-%s-%s.sh"
+  lx_format_str_inline_script      = "chmod +x /home/%s/watchmaker-test-%s-%s.sh\n/home/%[1]s/watchmaker-test-%[2]s-%[3]s.sh"
   lx_format_str_instance_name      = "${local.resource_name}-%s-%s"
   lx_format_str_userdata           = "%s"
   lx_port                          = 122
@@ -55,9 +55,9 @@ locals {
   win_connection_type              = "winrm"
   win_download_dir                 = "C:\\Users\\Administrator\\Downloads"
   win_executable                   = "${local.release_prefix}/latest/watchmaker-latest-standalone-windows-amd64.exe"
-  win_format_str_destination       = "C:\\scripts\\watchmaker-test-%s-%s.ps1"
-  win_format_str_inline_path       = "C:\\scripts\\inline-%s-%s.cmd"
-  win_format_str_inline_script     = "powershell.exe -File C:\\scripts\\watchmaker-test-%s-%s.ps1"
+  win_format_str_destination       = "C:\\scripts\\watchmaker-test-%s-%s-%s.ps1"
+  win_format_str_inline_path       = "C:\\scripts\\inline-%s-%s-%s.cmd"
+  win_format_str_inline_script     = "powershell.exe -File C:\\scripts\\watchmaker-test-%s-%s-%s.ps1"
   win_format_str_instance_name     = "${local.resource_name}-%s-%s"
   win_format_str_userdata          = "<powershell>%s</powershell>"
   win_password_length              = 18
@@ -356,6 +356,7 @@ resource "aws_instance" "builder" {
     )
     destination = format(
       local.build_info[each.key].platform.format_str_destination,
+      local.build_info[each.key].platform.connection_user_builder,
       local.build_type_builder,
       each.key
     )
@@ -365,6 +366,7 @@ resource "aws_instance" "builder" {
     inline = [
       format(
         local.build_info[each.key].platform.format_str_inline_script,
+        local.build_info[each.key].platform.connection_user_builder,
         local.build_type_builder,
         each.key
       ),
@@ -375,6 +377,7 @@ resource "aws_instance" "builder" {
       type = local.build_info[each.key].platform.connection_type
       script_path = format(
         local.build_info[each.key].platform.format_str_inline_path,
+        local.build_info[each.key].platform.connection_user_builder,
         local.build_type_builder,
         each.key
       )
@@ -448,6 +451,7 @@ resource "aws_instance" "standalone_build" {
     )
     destination = format(
       local.build_info[each.key].platform.format_str_destination,
+      local.build_info[each.key].platform.connection_user,
       local.build_type_standalone,
       each.key
     )
@@ -457,6 +461,7 @@ resource "aws_instance" "standalone_build" {
     inline = [
       format(
         local.build_info[each.key].platform.format_str_inline_script,
+        local.build_info[each.key].platform.connection_user,
         local.build_type_standalone,
         each.key
       ),
@@ -467,6 +472,7 @@ resource "aws_instance" "standalone_build" {
       type = local.build_info[each.key].platform.connection_type
       script_path = format(
         local.build_info[each.key].platform.format_str_inline_path,
+        local.build_info[each.key].platform.connection_user,
         local.build_type_standalone,
         each.key
       )
@@ -538,6 +544,7 @@ resource "aws_instance" "source_build" {
     )
     destination = format(
       local.build_info[each.key].platform.format_str_destination,
+      local.build_info[each.key].platform.connection_user,
       local.build_type_source,
       each.key
     )
@@ -547,6 +554,7 @@ resource "aws_instance" "source_build" {
     inline = [
       format(
         local.build_info[each.key].platform.format_str_inline_script,
+        local.build_info[each.key].platform.connection_user,
         local.build_type_source,
         each.key
       ),
@@ -557,6 +565,7 @@ resource "aws_instance" "source_build" {
       type = local.build_info[each.key].platform.connection_type
       script_path = format(
         local.build_info[each.key].platform.format_str_inline_path,
+        local.build_info[each.key].platform.connection_user,
         local.build_type_source,
         each.key
       )

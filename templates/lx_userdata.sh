@@ -289,7 +289,7 @@ start=$(date +%s)
 # shellcheck disable=SC2034
 userdata_status=(0 "Passed")
 
-# shellcheck disable=SC1083
+# shellcheck disable=SC1083,SC2288
 %{ if build_type == build_type_builder }
 
 # BUILDER INPUT -------------------------------------------
@@ -393,7 +393,7 @@ fi
 
 # ----------  end of wam deploy  ---------------------------------------------
 
-# shellcheck disable=SC1083
+# shellcheck disable=SC1083,SC2288
 %{ else }
 
 # setup error trap to go to catch function
@@ -465,7 +465,7 @@ else
 
   # ----------  end of wam install  ----------
 fi
-# shellcheck disable=SC1083
+# shellcheck disable=SC1083,SC2288
 %{ endif }
 
 finally
