@@ -238,7 +238,7 @@ data "aws_ami" "amis" {
 }
 
 data "aws_subnet" "tfi" {
-  id = var.subnet_id == "" ? aws_default_subnet.tfi.id : var.subnet_id
+  id = var.subnet_id
 }
 
 data "http" "ip" {
@@ -259,10 +259,6 @@ resource "random_string" "password" {
   length           = local.win_password_length
   special          = local.win_password_special
   override_special = local.win_password_override_special
-}
-
-resource "aws_default_subnet" "tfi" {
-  availability_zone = var.availability_zone
 }
 
 resource "aws_security_group" "builds" {
