@@ -45,34 +45,80 @@ aws_instance.source_build["win12"]: Still creating... [1m10s elapsed]
 aws_instance.source_build["centos7"]: Still creating... [1m10s elapsed]
 ```
 
+<!-- BEGIN TFDOCS -->
+## Requirements
+
+| Name | Version |
+|------|---------|
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 0.12 |
+
+## Providers
+
+| Name | Version |
+|------|---------|
+| <a name="provider_aws"></a> [aws](#provider\_aws) | n/a |
+| <a name="provider_http"></a> [http](#provider\_http) | n/a |
+| <a name="provider_random"></a> [random](#provider\_random) | n/a |
+| <a name="provider_tls"></a> [tls](#provider\_tls) | n/a |
+
+## Resources
+
+| Name | Type |
+|------|------|
+| [aws_ami.amis](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ami) | data source |
+| [aws_subnet.tfi](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/subnet) | data source |
+| [http_http.ip](https://registry.terraform.io/providers/hashicorp/http/latest/docs/data-sources/http) | data source |
+
+## Inputs
+
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| <a name="input_assign_public_ip"></a> [assign\_public\_ip](#input\_assign\_public\_ip) | n/a | `bool` | `false` | no |
+| <a name="input_availability_zone"></a> [availability\_zone](#input\_availability\_zone) | n/a | `string` | `"us-east-1c"` | no |
+| <a name="input_aws_region"></a> [aws\_region](#input\_aws\_region) | n/a | `string` | `"us-east-1"` | no |
+| <a name="input_codebuild_id"></a> [codebuild\_id](#input\_codebuild\_id) | n/a | `string` | `""` | no |
+| <a name="input_common_args"></a> [common\_args](#input\_common\_args) | n/a | `string` | `"-n --log-level debug"` | no |
+| <a name="input_debug"></a> [debug](#input\_debug) | n/a | `bool` | `true` | no |
+| <a name="input_docker_slug"></a> [docker\_slug](#input\_docker\_slug) | n/a | `string` | `""` | no |
+| <a name="input_git_ref"></a> [git\_ref](#input\_git\_ref) | n/a | `string` | `"main"` | no |
+| <a name="input_git_repo"></a> [git\_repo](#input\_git\_repo) | n/a | `string` | `"https://github.com/plus3it/watchmaker.git"` | no |
+| <a name="input_instance_profile"></a> [instance\_profile](#input\_instance\_profile) | n/a | `string` | `""` | no |
+| <a name="input_lx_args"></a> [lx\_args](#input\_lx\_args) | n/a | `string` | `"--log-dir=/var/log/watchmaker"` | no |
+| <a name="input_lx_instance_type"></a> [lx\_instance\_type](#input\_lx\_instance\_type) | n/a | `string` | `"t2.medium"` | no |
+| <a name="input_lx_user"></a> [lx\_user](#input\_lx\_user) | n/a | `string` | `"root"` | no |
+| <a name="input_lx_userdata_log"></a> [lx\_userdata\_log](#input\_lx\_userdata\_log) | n/a | `string` | `"/var/log/userdata.log"` | no |
+| <a name="input_s3_bucket"></a> [s3\_bucket](#input\_s3\_bucket) | n/a | `string` | `"mybucket"` | no |
+| <a name="input_scan_s3_url"></a> [scan\_s3\_url](#input\_scan\_s3\_url) | n/a | `string` | `""` | no |
+| <a name="input_source_builds"></a> [source\_builds](#input\_source\_builds) | n/a | `list(string)` | <pre>[<br>  "win12",<br>  "win16",<br>  "win19",<br>  "rhel7",<br>  "centos7"<br>]</pre> | no |
+| <a name="input_standalone_builds"></a> [standalone\_builds](#input\_standalone\_builds) | n/a | `list(string)` | <pre>[<br>  "win12",<br>  "win16",<br>  "win19",<br>  "rhel7",<br>  "centos7"<br>]</pre> | no |
+| <a name="input_subnet_id"></a> [subnet\_id](#input\_subnet\_id) | n/a | `string` | `""` | no |
+| <a name="input_win_args"></a> [win\_args](#input\_win\_args) | n/a | `string` | `"--log-dir=C:\\Watchmaker\\Logs"` | no |
+| <a name="input_win_instance_type"></a> [win\_instance\_type](#input\_win\_instance\_type) | n/a | `string` | `"t2.large"` | no |
+| <a name="input_win_user"></a> [win\_user](#input\_win\_user) | n/a | `string` | `"Administrator"` | no |
+| <a name="input_win_userdata_log"></a> [win\_userdata\_log](#input\_win\_userdata\_log) | n/a | `string` | `"C:\\Temp\\userdata.log"` | no |
+
+## Outputs
+
+| Name | Description |
+|------|-------------|
+| <a name="output_build_date_hm"></a> [build\_date\_hm](#output\_build\_date\_hm) | n/a |
+| <a name="output_build_date_ymd"></a> [build\_date\_ymd](#output\_build\_date\_ymd) | n/a |
+| <a name="output_build_id"></a> [build\_id](#output\_build\_id) | n/a |
+| <a name="output_build_slug"></a> [build\_slug](#output\_build\_slug) | n/a |
+| <a name="output_builders"></a> [builders](#output\_builders) | n/a |
+| <a name="output_private_key"></a> [private\_key](#output\_private\_key) | n/a |
+| <a name="output_public_key"></a> [public\_key](#output\_public\_key) | n/a |
+| <a name="output_source_builds"></a> [source\_builds](#output\_source\_builds) | n/a |
+| <a name="output_standalone_builds"></a> [standalone\_builds](#output\_standalone\_builds) | n/a |
+| <a name="output_unique_builds_needed"></a> [unique\_builds\_needed](#output\_unique\_builds\_needed) | n/a |
+| <a name="output_winrm_pass"></a> [winrm\_pass](#output\_winrm\_pass) | n/a |
+
+<!-- END TFDOCS -->
+
 ## TERRAFIRM ENVIRONMENT VARIABLES
 
 Variable | Default | Req/Opt (in CodeBuild) | Description
 --- | --- | --- | ---
-`TF_VAR_assign_public_ip` | false | optional | Whether or not to assign a public IP to the builds.
-`TF_VAR_availability_zone` | us-east-1c | optional | availability_zone to use for builds.
-`TF_VAR_aws_region` | us-east-1 | optional | Region where builds should be performed.
-`TF_VAR_codebuild_id` | none | optional | CodeBuild build ID (helpful in identifying jobs).
-`TF_VAR_common_args` | -n --log-level debug | optional | Command line arguments used when installing Watchmaker on Windows and Linux.
-`TF_VAR_debug` | false | optional | Whether or not to debug.
-`TF_VAR_docker_slug` | none | optional | Docker container to use in building standalones.
-`TF_VAR_git_ref` | main | optional | Branch or pull request number to use in getting watchmaker code.
-`TF_VAR_git_repo` | https://github.com/plus3it/watchmaker.git | optional | Git repository to use in getting watchmaker code.
-`TF_VAR_instance_profile` | [empty] | optional | IAM instance profile to be used in provisioning resources.
-`TF_VAR_lx_args` | --log-dir=/var/log/watchmaker | optional | Command line arguments used when installing Watchmaker on Linux.
-`TF_VAR_lx_instance_type` | t2.medium | optional | AWS instance type for Linux builds.
-`TF_VAR_lx_userdata_log` | /var/log/userdata.log | optional | File path for Watchmaker log on Linux.
-`TF_VAR_s3_bucket` | mybucket | optional | S3 bucket to place logs from installs and output.
-`TF_VAR_s3_scan_bucket` | mybucket | optional | S3 bucket where SCAP scans are published if `wam_version` exists.
-`TF_VAR_source_builds` | ["win12", "win16", "win19", "rhel7", "centos7"] | optional | See above for details on setting this variable.
-`TF_VAR_lx_user` | root | optional | Username to use when connecting via SSH to Linux builds.
-`TF_VAR_standalone_builds` | ["win12", "win16", "win19", "rhel7", "centos7"] | optional | See above for details on setting this variable.
-`TF_VAR_subnet_id` | [empty] | optional | Subnet to use. CodeBuild instance must be able to access.
-`TF_VAR_wam_version` | [empty] | optional | If provided, SCAP scan results will be copied to the S3 bucket under this version number.
-`TF_VAR_win_args` | --log-dir=C:\\Watchmaker\\Logs | optional | Command line arguments used when installing Watchmaker on Windows.
-`TF_VAR_win_instance_type` | t2.large | optional | AWS instance type for Windows builds.
-`TF_VAR_win_user` | Administrator | optional | Username to use when connecting via WinRM to Windows builds
-`TF_VAR_win_userdata_log` | C:\\Temp\\userdata.log | optional | File path for Watchmaker log on Windows.
 `TF_DESTROY_AFTER_TEST` | true | optional | (CodeBuild only) Whether or not to destroy all resources created after the test. (WARNING: Depending on failure, Terraform may not always be able to destroy provisioned resources.)
 
 ## Development Paths
