@@ -73,6 +73,7 @@ aws_instance.source_build["centos7"]: Still creating... [1m10s elapsed]
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
+| <a name="input_subnet_id"></a> [subnet\_id](#input\_subnet\_id) | n/a | `string` | n/a | yes |
 | <a name="input_assign_public_ip"></a> [assign\_public\_ip](#input\_assign\_public\_ip) | n/a | `bool` | `false` | no |
 | <a name="input_availability_zone"></a> [availability\_zone](#input\_availability\_zone) | n/a | `string` | `"us-east-1c"` | no |
 | <a name="input_aws_region"></a> [aws\_region](#input\_aws\_region) | n/a | `string` | `"us-east-1"` | no |
@@ -91,7 +92,6 @@ aws_instance.source_build["centos7"]: Still creating... [1m10s elapsed]
 | <a name="input_scan_s3_url"></a> [scan\_s3\_url](#input\_scan\_s3\_url) | n/a | `string` | `""` | no |
 | <a name="input_source_builds"></a> [source\_builds](#input\_source\_builds) | n/a | `list(string)` | <pre>[<br>  "win12",<br>  "win16",<br>  "win19",<br>  "rhel7",<br>  "centos7"<br>]</pre> | no |
 | <a name="input_standalone_builds"></a> [standalone\_builds](#input\_standalone\_builds) | n/a | `list(string)` | <pre>[<br>  "win12",<br>  "win16",<br>  "win19",<br>  "rhel7",<br>  "centos7"<br>]</pre> | no |
-| <a name="input_subnet_id"></a> [subnet\_id](#input\_subnet\_id) | n/a | `string` | `""` | no |
 | <a name="input_win_args"></a> [win\_args](#input\_win\_args) | n/a | `string` | `"--log-dir=C:\\Watchmaker\\Logs"` | no |
 | <a name="input_win_instance_type"></a> [win\_instance\_type](#input\_win\_instance\_type) | n/a | `string` | `"t2.large"` | no |
 | <a name="input_win_user"></a> [win\_user](#input\_win\_user) | n/a | `string` | `"Administrator"` | no |

@@ -4,8 +4,7 @@ variable "availability_zone" {
 }
 
 variable "subnet_id" {
-  default = ""
-  type    = string
+  type = string
 }
 
 variable "source_builds" {
