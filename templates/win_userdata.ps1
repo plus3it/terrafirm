@@ -201,13 +201,13 @@ function Open-WinRM {
   }
   elseif (Test-Path -path "C:\Program Files\Salt Project\salt\salt-call.bat") {
     # fix the lgpos to allow winrm
-    "C:\Program Files\Salt Project\salt\salt-call" --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value `
+    & "C:\Program Files\Salt Project\salt\salt-call" --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value `
         key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowBasic' `
         value='1' `
         vtype='REG_DWORD'
     Write-Tfi "Command [salt-call --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value key='AllowBasic'...]" $?
 
-    "C:\Program Files\Salt Project\salt\salt-call" --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value `
+    & "C:\Program Files\Salt Project\salt\salt-call" --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value `
         key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowUnencryptedTraffic' `
         value='1' `
         vtype='REG_DWORD'
