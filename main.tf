@@ -329,7 +329,7 @@ resource "aws_instance" "builder" {
 
   connection {
     type        = local.build_info[each.key].platform.connection_type
-    host        = self.public_ip
+    host        = coalesce(self.public_ip, self.private_ip)
     user        = local.build_info[each.key].platform.connection_user_builder
     password    = local.build_info[each.key].platform.connection_password
     timeout     = local.build_info[each.key].platform.connection_timeout
@@ -424,7 +424,7 @@ resource "aws_instance" "standalone_build" {
 
   connection {
     type        = local.build_info[each.key].platform.connection_type
-    host        = self.public_ip
+    host        = coalesce(self.public_ip, self.private_ip)
     user        = local.build_info[each.key].platform.connection_user
     private_key = local.build_info[each.key].platform.connection_key
     port        = local.build_info[each.key].platform.connection_port
@@ -517,7 +517,7 @@ resource "aws_instance" "source_build" {
 
   connection {
     type        = local.build_info[each.key].platform.connection_type
-    host        = self.public_ip
+    host        = coalesce(self.public_ip, self.private_ip)
     user        = local.build_info[each.key].platform.connection_user
     private_key = local.build_info[each.key].platform.connection_key
     port        = local.build_info[each.key].platform.connection_port
