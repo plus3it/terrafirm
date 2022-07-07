@@ -241,6 +241,10 @@ data "aws_subnet" "tfi" {
   id = var.subnet_id
 }
 
+data "aws_vpc" "tfi" {
+  id = data.aws_subnet.tfi.vpc_id
+}
+
 data "http" "ip" {
   url = local.url_local_ip
 }
@@ -273,10 +277,13 @@ resource "aws_security_group" "builds" {
   dynamic "ingress" {
     for_each = local.security_group_ingress
     content {
-      from_port   = ingress.value["from_port"]
-      to_port     = ingress.value["to_port"]
-      protocol    = ingress.value["protocol"]
-      cidr_blocks = ["${chomp(data.http.ip.body)}/32"]
+      from_port = ingress.value["from_port"]
+      to_port   = ingress.value["to_port"]
+      protocol  = ingress.value["protocol"]
+      cidr_blocks = [
+        "${chomp(data.http.ip.body)}/32",
+        data.aws_vpc.tfi.cidr_block,
+      ]
     }
   }
 
@@ -329,7 +336,7 @@ resource "aws_instance" "builder" {
 
   connection {
     type        = local.build_info[each.key].platform.connection_type
-    host        = self.public_ip
+    host        = coalesce(self.public_ip, self.private_ip)
     user        = local.build_info[each.key].platform.connection_user_builder
     password    = local.build_info[each.key].platform.connection_password
     timeout     = local.build_info[each.key].platform.connection_timeout
@@ -424,7 +431,7 @@ resource "aws_instance" "standalone_build" {
 
   connection {
     type        = local.build_info[each.key].platform.connection_type
-    host        = self.public_ip
+    host        = coalesce(self.public_ip, self.private_ip)
     user        = local.build_info[each.key].platform.connection_user
     private_key = local.build_info[each.key].platform.connection_key
     port        = local.build_info[each.key].platform.connection_port
@@ -517,7 +524,7 @@ resource "aws_instance" "source_build" {
 
   connection {
     type        = local.build_info[each.key].platform.connection_type
-    host        = self.public_ip
+    host        = coalesce(self.public_ip, self.private_ip)
     user        = local.build_info[each.key].platform.connection_user
     private_key = local.build_info[each.key].platform.connection_key
     port        = local.build_info[each.key].platform.connection_port
