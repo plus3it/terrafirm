@@ -281,7 +281,7 @@ resource "aws_security_group" "builds" {
       to_port   = ingress.value["to_port"]
       protocol  = ingress.value["protocol"]
       cidr_blocks = [
-        "${chomp(data.http.ip.body)}/32",
+        "${chomp(data.http.ip.response_body)}/32",
         data.aws_vpc.tfi.cidr_block,
       ]
     }
