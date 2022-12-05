@@ -445,7 +445,7 @@ if [ "$build_type" == "$build_type_standalone" ]; then
   done
 
   standalone_dest=/home/maintuser
-  try_cmd 1 aws s3 cp "$standalone_location" "$standalone_dest/watchmaker"
+  try_cmd 5 aws s3 cp "$standalone_location" "$standalone_dest/watchmaker"
   chmod +x "$standalone_dest/watchmaker"
 
   # shellcheck disable=SC2154,SC2086
