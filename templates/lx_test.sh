@@ -10,6 +10,7 @@ build_label="${build_label}"
 build_type_builder="${build_type_builder}"
 build_type_standalone="${build_type_standalone}"
 
+# shellcheck disable=SC2317
 finally() {
   local exit_code=0
 
@@ -30,6 +31,7 @@ finally() {
   exit "$exit_code"
 }
 
+# shellcheck disable=SC2317
 catch() {
   local exit_code="$${1:-1}"
 

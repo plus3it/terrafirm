@@ -299,6 +299,7 @@ virtualenv_path="$virtualenv_base/venv"
 virtualenv_activate_script="$virtualenv_path/bin/activate"
 # ---------------------------------------------------------
 
+# shellcheck disable=SC2317
 handle_builder_exit() {
   if [ "$1" != "0" ] ; then
     echo "For more information on the error, see the lx_builder/userdata.log file." > "$temp_dir/error.log"
@@ -428,7 +429,6 @@ if [ "$build_type" == "$build_type_standalone" ]; then
       write-tfi "Error signaled by the builder"
       write-tfi "Error file found at $error_location"
       catch 1 "$LINENO"
-      break
     else
       # no builder errors signaled
       if [ "$exists" = "$nonexistent_code"  ]; then
