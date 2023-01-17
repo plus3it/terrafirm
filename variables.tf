@@ -3,8 +3,8 @@ variable "availability_zone" {
   type    = string
 }
 
-variable "subnet_id" {
-  type = string
+variable "subnet_ids" {
+  type = list(string)
 }
 
 variable "source_builds" {
