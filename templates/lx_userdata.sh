@@ -254,8 +254,8 @@ install-watchmaker() {
   try_cmd 2 python3 -m pip install --index-url="$PYPI_URL" --upgrade pip setuptools
   try_cmd 1 python3 -m pip --version
 
-  # Install boto3
-  try_cmd 1 python3 -m pip install --index-url="$PYPI_URL" --upgrade boto3
+  # Install boto3 and requests
+  try_cmd 1 python3 -m pip install --index-url="$PYPI_URL" --upgrade boto3 requests
 
   # Clone watchmaker
   try_cmd 1 git clone "$GIT_REPO" --recursive
