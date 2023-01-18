@@ -134,6 +134,24 @@ locals {
   }
 
   build_info = {
+    ol8 = {
+      ami_regex  = "spel-minimal-ol-8-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
+      ami_search = "spel-minimal-ol-8-hvm-*.x86_64-gp2"
+      platform   = local.platform_info.lx
+    }
+
+    rhel8 = {
+      ami_regex  = "spel-minimal-rhel-8-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
+      ami_search = "spel-minimal-rhel-8-hvm-*.x86_64-gp2"
+      platform   = local.platform_info.lx
+    }
+
+    centos8stream = {
+      ami_regex  = "spel-minimal-centos-8stream-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
+      ami_search = "spel-minimal-centos-8stream-hvm-*.x86_64-gp2"
+      platform   = local.platform_info.lx
+    }
+
     centos7 = {
       ami_regex  = "spel-minimal-centos-7-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
       ami_search = "spel-minimal-centos-7-hvm-*.x86_64-gp2"
