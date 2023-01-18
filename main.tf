@@ -238,7 +238,7 @@ data "aws_ami" "amis" {
 }
 
 data "aws_subnet" "tfi" {
-  id = var.subnet_id
+  id = var.subnet_ids[0]
 }
 
 data "aws_vpc" "tfi" {
@@ -247,6 +247,10 @@ data "aws_vpc" "tfi" {
 
 data "http" "ip" {
   url = local.url_local_ip
+}
+
+resource "random_shuffle" "subnet_ids" {
+  input = var.subnet_ids
 }
 
 resource "aws_key_pair" "auth" {
@@ -268,7 +272,7 @@ resource "random_string" "password" {
 resource "aws_security_group" "builds" {
   name        = local.resource_name
   description = local.security_group_description
-  vpc_id      = data.aws_subnet.tfi.vpc_id
+  vpc_id      = data.aws_vpc.tfi.id
 
   tags = {
     Name = local.resource_name
@@ -296,12 +300,13 @@ resource "aws_security_group" "builds" {
 }
 
 resource "aws_instance" "builder" {
-  for_each                    = local.builders
+  for_each = local.builders
+
   ami                         = data.aws_ami.amis[each.key].id
   associate_public_ip_address = var.assign_public_ip
   iam_instance_profile        = var.instance_profile
   key_name                    = aws_key_pair.auth.id
-  subnet_id                   = var.subnet_id
+  subnet_id                   = element(random_shuffle.subnet_ids.result, index(sort(local.unique_builds_needed), each.key))
   vpc_security_group_ids      = [aws_security_group.builds.id]
   instance_type               = local.build_info[each.key].platform.instance_type
 
@@ -389,12 +394,13 @@ resource "aws_instance" "builder" {
 }
 
 resource "aws_instance" "standalone_build" {
-  for_each                    = local.standalone_builds
+  for_each = local.standalone_builds
+
   ami                         = data.aws_ami.amis[each.key].id
   associate_public_ip_address = var.assign_public_ip
   iam_instance_profile        = var.instance_profile
   key_name                    = aws_key_pair.auth.id
-  subnet_id                   = var.subnet_id
+  subnet_id                   = element(random_shuffle.subnet_ids.result, index(sort(local.unique_builds_needed), each.key))
   vpc_security_group_ids      = [aws_security_group.builds.id]
   instance_type               = local.build_info[each.key].platform.instance_type
 
@@ -484,12 +490,13 @@ resource "aws_instance" "standalone_build" {
 }
 
 resource "aws_instance" "source_build" {
-  for_each                    = local.source_builds
+  for_each = local.source_builds
+
   ami                         = data.aws_ami.amis[each.key].id
   associate_public_ip_address = var.assign_public_ip
   iam_instance_profile        = var.instance_profile
   key_name                    = aws_key_pair.auth.id
-  subnet_id                   = var.subnet_id
+  subnet_id                   = element(random_shuffle.subnet_ids.result, index(sort(local.unique_builds_needed), each.key))
   vpc_security_group_ids      = [aws_security_group.builds.id]
   instance_type               = local.build_info[each.key].platform.instance_type
 
