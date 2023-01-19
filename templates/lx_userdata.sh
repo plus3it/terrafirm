@@ -133,6 +133,9 @@ open-ssh() {
     try_cmd 1 sed -i -e 's/Port 22/#Port 22/g' /etc/ssh/sshd_config
     try_cmd 1 systemctl restart sshd
 
+    # remount /home so remote-exec works
+    try_cmd 1 mount -o remount,exec /home
+
   else
     ## Not CentOS / RedHat (i.e., Ubuntu)
 
