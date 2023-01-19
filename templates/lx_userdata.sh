@@ -116,31 +116,22 @@ try_cmd() {
 }  # ----------  end of function try_cmd  ----------
 
 open-ssh() {
-  # open firewall on rhel 6/7 and ubuntu, move ssh to non-standard
+  # open firewall on rhel 7/8 and ubuntu, move ssh to non-standard
 
   # shellcheck disable=SC2154
   local new_lx_port="${port}"
 
   if [ -f /etc/redhat-release ]; then
-    ## CentOS / RedHat
+    ## CentOS / RedHat / Oracle Linux
 
     # allow ssh to be on non-standard port (SEL-enforced rule)
     try_cmd 1 setenforce 0
 
-    # open firewall (iptables for rhel/centos 6, firewalld for 7
-
-    if systemctl status firewalld &> /dev/null ; then
-      try_cmd 1 firewall-cmd --zone=public --permanent --add-port="$new_lx_port"/tcp
-      try_cmd 1 firewall-cmd --reload
-    else
-      try_cmd 1 iptables -A INPUT -p tcp --dport "$new_lx_port" -j ACCEPT #open port $new_lx_port
-      try_cmd 1 service iptables save
-      try_cmd 1 service iptables restart
-    fi
+    try_cmd 1 firewall-cmd --add-port="$new_lx_port"/tcp
 
     try_cmd 1 sed -i -e "5iPort $new_lx_port" /etc/ssh/sshd_config
     try_cmd 1 sed -i -e 's/Port 22/#Port 22/g' /etc/ssh/sshd_config
-    try_cmd 1 service sshd restart
+    try_cmd 1 systemctl restart sshd
 
   else
     ## Not CentOS / RedHat (i.e., Ubuntu)
