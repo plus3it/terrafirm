@@ -8,12 +8,12 @@ variable "subnet_ids" {
 }
 
 variable "source_builds" {
-  default = ["win12", "win16", "win19", "rhel7", "centos7"]
+  default = ["win12", "win16", "win19", "rhel7", "centos7", "rhel8", "centos8stream", "ol8"]
   type    = list(string)
 }
 
 variable "standalone_builds" {
-  default = ["win12", "win16", "win19", "rhel7", "centos7"]
+  default = ["win12", "win16", "win19", "rhel7", "centos7", "rhel8", "centos8stream", "ol8"]
   type    = list(string)
 }
 

@@ -69,9 +69,9 @@ test_status=(0 "Not run")
 if [ "$build_type" != "$build_type_builder" ] && [ "$${userdata_status[0]}" -eq 0 ]; then
   # ------------------------------------------------------------ WAM TESTS BEGIN
   if [ "$build_type" = "$build_type_standalone" ]; then
-    ./watchmaker --version
+    sudo env PATH="$PATH" ./watchmaker --version
   else
-    watchmaker --version
+    sudo env PATH="$PATH" watchmaker --version
   fi
 
   # Test sudo is functional
