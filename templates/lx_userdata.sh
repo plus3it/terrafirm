@@ -371,18 +371,23 @@ try_cmd 1 chmod +x ci/prep_docker.sh && ci/prep_docker.sh
 
 # ----------  begin of wam deploy  -------------------------------------------
 
-# shellcheck disable=SC1091
-source .gravitybee/gravitybee-environs.sh
+STAGING_DIR=dist
 
-if [ -n "$GB_ENV_STAGING_DIR" ] ; then
+# shellcheck disable=SC1091
+if [ -f .gravitybee/gravitybee-environs.sh ] ; then
+  source .gravitybee/gravitybee-environs.sh
+  STAGING_DIR="$GB_ENV_STAGING_DIR"
+fi
+
+if [ -n "$STAGING_DIR" ] ; then
 
   # only using "latest" so versioned copy is just wasted space
-  rm -rf "$GB_ENV_STAGING_DIR"/0*
+  rm -rf "$STAGING_DIR"/0*
   write-tfi "Remove versioned standalone (keeping 'latest')" --result $?
 
   # shellcheck disable=SC2154
   artifact_dest="s3://$build_slug/${release_prefix}/"
-  try_cmd 1 aws s3 cp "$GB_ENV_STAGING_DIR" "$artifact_dest" --recursive
+  try_cmd 1 aws s3 cp "$STAGING_DIR" "$artifact_dest" --recursive
 
 fi
 
