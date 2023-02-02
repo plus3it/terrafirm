@@ -347,20 +347,13 @@ try {
 
     $VirtualEnvDir = "C:\venv"
     Test-Command "virtualenv $VirtualEnvDir"
-    Invoke-CmdScript "$VirtualEnvDir\Scripts\activate.bat"
-    Test-DisplayResult "Activate $VirtualEnvDir\Scripts\activate.bat" $?
+    Test-Command "$${VirtualEnvDir}\Scripts\activate"
+    Test-Command "ci\build.ps1" -Tries 2
 
-    Test-Command "cmd /c ci\build.cmd" -Tries 2
-
-    $Script = ".\.gravitybee\gravitybee-environs.bat"
-    Invoke-CmdScript $Script
-    Test-DisplayResult "Set environment variables ($Script)" $?
-
-    if ($env:GB_ENV_STAGING_DIR) {
-      Remove-Item ".\$env:GB_ENV_STAGING_DIR\0*" -Recurse
-      Write-S3Object -BucketName "$BuildSlug" -KeyPrefix "${release_prefix}" -Folder ".\$env:GB_ENV_STAGING_DIR" -Recurse
-      Test-DisplayResult "Copied standalone to $BuildSlug/${release_prefix}" $?
-    }
+    $STAGING_DIR = ".pyinstaller\dist"
+    Remove-Item ".\$STAGING_DIR\0*" -Recurse
+    Write-S3Object -BucketName "$BuildSlug" -KeyPrefix "${release_prefix}" -Folder ".\STAGING_DIR" -Recurse
+    Test-DisplayResult "Copied standalone to $BuildSlug/${release_prefix}" $?
 
     # ----------  end of wam standalone package build ----------
 
