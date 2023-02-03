@@ -359,7 +359,7 @@ try {
 
     $STAGING_DIR = ".pyinstaller\dist"
     Remove-Item ".\$STAGING_DIR\0*" -Recurse
-    Write-S3Object -BucketName "$BuildSlug" -KeyPrefix "${release_prefix}" -Folder ".\STAGING_DIR" -Recurse
+    Write-S3Object -BucketName "$BuildSlug" -KeyPrefix "${release_prefix}" -Folder ".\$STAGING_DIR" -Recurse
     Test-DisplayResult "Copied standalone to $BuildSlug/${release_prefix}" $?
 
     # ----------  end of wam standalone package build ----------
