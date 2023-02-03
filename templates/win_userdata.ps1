@@ -345,7 +345,7 @@ try {
     Test-Command "python -m pip install --index-url=`"$PypiUrl`" -r requirements\pip.txt" -Tries 2
     Test-Command "python -m pip install --index-url=`"$PypiUrl`" -r requirements\basics.txt" -Tries 2
 
-    $VirtualEnvDir = "C:\venv"
+    $VirtualEnvDir = ".\venv"
     Test-Command "virtualenv $VirtualEnvDir"
     Test-Command "$${VirtualEnvDir}\Scripts\activate"
     Test-Command "ci\build.ps1" -Tries 2
