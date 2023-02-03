@@ -339,6 +339,13 @@ $StartDate=Get-Date
 
 %{ if build_type == build_type_builder }
 try {
+    # Install choco
+    Set-ExecutionPolicy Bypass -Scope Process -Force
+    Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+    # Install jq
+    choco install jq -y --force
+
     Install-PythonGit
     Clone-Watchmaker
 
