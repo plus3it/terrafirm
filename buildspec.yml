@@ -14,11 +14,19 @@ phases:
       - terraform plan -no-color -out=tfplan -input=false                     # plan terraform
   build:
     commands:
-      - terraform apply -no-color -parallelism=16 -input=false tfplan                         # apply terraform
+      - terraform apply -no-color -parallelism=16 -input=false tfplan         # apply terraform
   post_build:
     commands:
       - ARTIFACT_PATH="$(terraform output -raw build_slug)"
-      - echo "ARTIFACT_LOCATION=https://s3.console.aws.amazon.com/s3/buckets/${ARTIFACT_PATH}/"
+      - >  # YAML folding syntax avoids interpreting the : as a map value
+        PARTITION="$(aws sts get-caller-identity --query Arn --out text | cut -d: -f2)"
+      - |
+        if [ "$PARTITION" = "aws-us-gov" ]; then
+          ARTIFACT_LOCATION="https://${AWS_DEFAULT_REGION}.console.amazonaws-us-gov.com/s3/buckets/${ARTIFACT_PATH}/"
+        else
+          ARTIFACT_LOCATION="https://s3.console.aws.amazon.com/s3/buckets/${ARTIFACT_PATH}/"
+        fi
+      - echo "ARTIFACT_LOCATION=${ARTIFACT_LOCATION}"
       - terraform output -no-color | aws s3 cp - "s3://${ARTIFACT_PATH}/terraform_output.log" || true
       - test -r $TF_LOG_PATH && aws s3 cp $TF_LOG_PATH "s3://${ARTIFACT_PATH}/terraform.log" || true
       - test -r terraform.tfstate && aws s3 cp terraform.tfstate "s3://${ARTIFACT_PATH}/terraform.tfstate" || true
@@ -26,4 +34,4 @@ phases:
         if [ "${TF_DESTROY_AFTER_TEST}" = "true" ]; then                       # destroy resources
           terraform destroy -no-color -input=false -auto-approve
         fi
-      - echo "ARTIFACT_LOCATION=https://s3.console.aws.amazon.com/s3/buckets/${ARTIFACT_PATH}/"
+      - echo "ARTIFACT_LOCATION=${ARTIFACT_LOCATION}"
