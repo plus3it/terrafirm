@@ -346,6 +346,9 @@ try {
     # Install jq
     choco install jq -y --force
 
+    # install pwsh
+    choco install pwsh -y --force
+
     Install-PythonGit
     Clone-Watchmaker
 
@@ -355,7 +358,7 @@ try {
     $VirtualEnvDir = ".\venv"
     Test-Command "virtualenv $VirtualEnvDir"
     Test-Command "$${VirtualEnvDir}\Scripts\activate"
-    Test-Command "ci\build.ps1" -Tries 2
+    Test-Command "pwsh ci\build.ps1" -Tries 2
 
     $STAGING_DIR = ".pyinstaller\dist"
     Remove-Item ".\$STAGING_DIR\0*" -Recurse
