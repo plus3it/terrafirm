@@ -3,6 +3,7 @@ $BuildOS = "${build_os}"
 $BuildType = "${build_type}"
 $BuildLabel = "${build_label}"
 $BuildTypeStandalone = "${build_type_standalone}"
+$BuildTypeSource = "${build_type_source}"
 
 # global vars
 $BuildSlug = "${build_slug}"
@@ -481,6 +482,6 @@ Write-UserdataStatus -UserdataStatus $UserdataStatus
 Open-Firewall
 Publish-Artifacts
 
-if (($BuildType -eq $BuildTypeStandalone) -and ("${scan_slug}" -ne "")) {
+if (($BuildType -eq $BuildTypeSource) -and ("${scan_slug}" -ne "")) {
   Publish-SCAP-Scan
 }

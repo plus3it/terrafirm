@@ -7,6 +7,7 @@ export LANG=en_US.UTF-8
 build_os="${build_os}"
 build_type="${build_type}"
 build_label="${build_label}"
+build_type_source="${build_type_source}"
 build_type_standalone="${build_type_standalone}"
 
 # shellcheck disable=SC2154
@@ -202,7 +203,7 @@ finally() {
   open-ssh
   publish-artifacts
   # shellcheck disable=SC2154
-  if [ "$build_type" == "$build_type_standalone" ] && [ "${scan_slug}" != "" ]; then
+  if [ "$build_type" == "$build_type_source" ] && [ "${scan_slug}" != "" ]; then
     publish-scap-scan
   fi
 
