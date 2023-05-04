@@ -167,14 +167,14 @@ publish-artifacts() {
   # move logs to s3
   artifact_dest="s3://$build_slug/$build_label"
   cp "${userdata_log}" "$artifact_dir"
-  aws s3 cp "$artifact_dir" "$artifact_dest" --recursive || true
+  aws s3 cp "$artifact_dir" "$artifact_dest" --recursive
   write-tfi "Uploaded logs to $artifact_dest" --result $?
 
   # creates compressed archive to upload to s3
   zip_file="$artifact_base/$${build_slug//\//-}-$build_label.tgz"
   cd "$artifact_dir"
   tar -cvzf "$zip_file" .
-  aws s3 cp "$zip_file" "s3://$build_slug/" || true
+  aws s3 cp "$zip_file" "s3://$build_slug/"
   write-tfi "Uploaded artifact zip to S3" --result $?
 }
 
@@ -187,7 +187,7 @@ publish-scap-scan() {
   # move scan output to s3
   # shellcheck disable=SC2154
   scan_dest="${scan_slug}/$build_os"
-  aws s3 cp "$scan_dir" "$scan_dest" --recursive || true
+  aws s3 cp "$scan_dir" "$scan_dest" --recursive
   write-tfi "Uploaded scap scan to $scan_dest" --result $?
 }
 
