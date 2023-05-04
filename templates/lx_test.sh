@@ -49,7 +49,7 @@ echo "***************************************************************"
 # everything below this is the TRY
 if [ -f "/etc/redhat-release" ]; then
   # this will only work for redhat and centos
-  cat /etc/redhat-release
+  cat /etc/os-release
 else
   lsb_release -a
 fi

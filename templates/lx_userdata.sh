@@ -7,6 +7,7 @@ export LANG=en_US.UTF-8
 build_os="${build_os}"
 build_type="${build_type}"
 build_label="${build_label}"
+build_type_source="${build_type_source}"
 build_type_standalone="${build_type_standalone}"
 
 # shellcheck disable=SC2154
@@ -166,14 +167,14 @@ publish-artifacts() {
   # move logs to s3
   artifact_dest="s3://$build_slug/$build_label"
   cp "${userdata_log}" "$artifact_dir"
-  aws s3 cp "$artifact_dir" "$artifact_dest" --recursive || true
+  aws s3 cp "$artifact_dir" "$artifact_dest" --recursive
   write-tfi "Uploaded logs to $artifact_dest" --result $?
 
   # creates compressed archive to upload to s3
   zip_file="$artifact_base/$${build_slug//\//-}-$build_label.tgz"
   cd "$artifact_dir"
   tar -cvzf "$zip_file" .
-  aws s3 cp "$zip_file" "s3://$build_slug/" || true
+  aws s3 cp "$zip_file" "s3://$build_slug/"
   write-tfi "Uploaded artifact zip to S3" --result $?
 }
 
@@ -186,7 +187,7 @@ publish-scap-scan() {
   # move scan output to s3
   # shellcheck disable=SC2154
   scan_dest="${scan_slug}/$build_os"
-  aws s3 cp "$scan_dir" "$scan_dest" --recursive || true
+  aws s3 cp "$scan_dir" "$scan_dest" --recursive
   write-tfi "Uploaded scap scan to $scan_dest" --result $?
 }
 
@@ -199,10 +200,15 @@ finally() {
   # shellcheck disable=SC2154
   printf "%s\n" "$${userdata_status[@]}" > "${userdata_status_file}"
 
+  # disable fapolicyd so it can't block aws-cli
+  if systemctl is-active --quiet fapolicyd; then
+    systemctl stop fapolicyd
+  fi
+
   open-ssh
   publish-artifacts
   # shellcheck disable=SC2154
-  if [ "$build_type" == "$build_type_standalone" ] && [ "${scan_slug}" != "" ]; then
+  if [ "$build_type" == "$build_type_source" ] && [ "${scan_slug}" != "" ]; then
     publish-scap-scan
   fi
 

@@ -194,6 +194,7 @@ locals {
       aws_region            = local.aws_region
       build_slug            = local.build_slug
       build_type_builder    = local.build_type_builder
+      build_type_source     = local.build_type_source
       build_type_standalone = local.build_type_standalone
       debug                 = local.debug
       docker_slug           = local.docker_slug
