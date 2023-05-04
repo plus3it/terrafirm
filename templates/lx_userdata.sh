@@ -200,6 +200,11 @@ finally() {
   # shellcheck disable=SC2154
   printf "%s\n" "$${userdata_status[@]}" > "${userdata_status_file}"
 
+  # disable fapolicyd so it can't block aws-cli
+  if systemctl is-active --quiet fapolicyd; then
+    systemctl stop fapolicyd
+  fi
+
   open-ssh
   publish-artifacts
   # shellcheck disable=SC2154
