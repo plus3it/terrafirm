@@ -185,11 +185,14 @@ function Open-WinRM {
   Test-Command "Start-Process -FilePath `"winrm`" -ArgumentList `"set winrm/config/service/auth @{Basic=```"true```"}`" -Wait"
   Test-Command "Start-Process -FilePath `"winrm`" -ArgumentList `"set winrm/config @{MaxTimeoutms=```"1900000```"}`""
 
-  if (Test-Path -path "C:\salt\salt-call.bat") {
-    $SaltCall = "C:\salt\salt-call.bat"
+  if (Test-Path -path "C:\Program Files\Salt Project\salt\salt-call.exe") {
+    $SaltCall = "C:\Program Files\Salt Project\salt\salt-call.exe"
   }
   elseif (Test-Path -path "C:\Program Files\Salt Project\salt\salt-call.bat") {
     $SaltCall = "C:\Program Files\Salt Project\salt\salt-call.bat"
+  }
+  elseif (Test-Path -path "C:\salt\salt-call.bat") {
+    $SaltCall = "C:\salt\salt-call.bat"
   }
 
   if ($SaltCall -ne $null) {
