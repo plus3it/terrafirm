@@ -185,17 +185,18 @@ function Open-WinRM {
   Test-Command "Start-Process -FilePath `"winrm`" -ArgumentList `"set winrm/config/service/auth @{Basic=```"true```"}`" -Wait"
   Test-Command "Start-Process -FilePath `"winrm`" -ArgumentList `"set winrm/config @{MaxTimeoutms=```"1900000```"}`""
 
-  if (Test-Path -path "C:\Program Files\Salt Project\salt\salt-call.exe") {
-    $SaltCall = "C:\Program Files\Salt Project\salt\salt-call.exe"
-  }
-  elseif (Test-Path -path "C:\Program Files\Salt Project\salt\salt-call.bat") {
+  # Sets default location for salt-call executable
+  $SaltCall = "C:\Program Files\Salt Project\salt\salt-call.exe"
+
+  # Sets salt-call executable based on salt version
+  if (Test-Path -path "C:\Program Files\Salt Project\salt\salt-call.bat") {
     $SaltCall = "C:\Program Files\Salt Project\salt\salt-call.bat"
   }
   elseif (Test-Path -path "C:\salt\salt-call.bat") {
     $SaltCall = "C:\salt\salt-call.bat"
   }
 
-  if ($SaltCall -ne $null) {
+  if ($BuildType -ne "builder") {
     # fix the lgpos to allow winrm
     & $SaltCall --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value `
         key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowBasic' `
