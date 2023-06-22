@@ -7,6 +7,9 @@ $BuildTypeSource = "${build_type_source}"
 
 # global vars
 $BuildSlug = "${build_slug}"
+$BuildSlugParts = $BuildSlug -Split "/"
+$BuildBucket = $BuildSlugParts[0]
+$BuildKeyPrefix = $BuildSlugParts[1..($BuildSlugParts.Length - 1)] -Join "/"
 $StandaloneErrorSignalFile = "${standalone_error_signal_file}"
 $WinUser = "${user}"
 $PypiUrl = "${url_pypi}"
@@ -14,10 +17,11 @@ $DebugMode = "${debug}"
 
 # set default AWS region for Powershell and API calls
 Set-DefaultAWSRegion -Region "${aws_region}"
-$Env:AWS_DEFAULT_REGION="${aws_region}"
+$Env:AWS_DEFAULT_REGION = "${aws_region}"
 
 # log file
 $UserdataLogFile = "${userdata_log}"
+$UserdataLogFileName = Split-Path $UserdataLogFile -Leaf
 if (-not (Test-Path "$UserdataLogFile")) {
   New-Item "$UserdataLogFile" -ItemType "file" -Force
 }
@@ -32,13 +36,14 @@ cd $TempDir
 function Debug-2S3 {
   ## Immediately upload the debug and log files to S3.
   param (
-    [Parameter(Mandatory=$false)][string]$Msg
+    [Parameter(Mandatory = $false)][string]$Msg
   )
 
-  $DebugFile = "$TempDir\debug.log"
+  $DebugFileName = "debug.log"
+  $DebugFile = "$TempDir\$DebugFileName"
   "$(Get-Date): $Msg" | Out-File $DebugFile -Append -Encoding utf8
-  Write-S3Object -BucketName "$BuildSlug/$BuildLabel" -File $DebugFile
-  Write-S3Object -BucketName "$BuildSlug/$BuildLabel" -File $UserdataLogFile
+  Write-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${BuildLabel}/$${DebugFileName}" -File "$DebugFile"
+  Write-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${BuildLabel}/$${UserdataLogFileName}" -File "$UserdataLogFile"
 }
 
 function Check-Metadata-Availability {
@@ -63,7 +68,8 @@ function Write-Tfi {
   if ( $Success -ne $null ) {
     if ($Success) {
       $OutResult = ": Succeeded"
-    } else {
+    }
+    else {
       $OutResult = ": Failed"
     }
   }
@@ -78,9 +84,9 @@ function Write-Tfi {
 function Test-Command {
   ## Tests commands and handles/retries errors that result.
   param (
-    [Parameter(Mandatory=$true)][string]$Test,
-    [Parameter(Mandatory=$false)][int]$Tries = 1,
-    [Parameter(Mandatory=$false)][int]$SecondsDelay = 2
+    [Parameter(Mandatory = $true)][string]$Test,
+    [Parameter(Mandatory = $false)][int]$Tries = 1,
+    [Parameter(Mandatory = $false)][int]$SecondsDelay = 2
   )
   $TryCount = 0
   $Completed = $false
@@ -91,14 +97,16 @@ function Test-Command {
     try {
       $Result = @{}
       # Invokes commands and in the same context captures the $? and $LastExitCode
-      Invoke-Expression -Command ($Test+';$Result = @{ Success = $?; ExitCode = $LastExitCode }')
+      Invoke-Expression -Command ($Test + ';$Result = @{ Success = $?; ExitCode = $LastExitCode }')
       if (($False -eq $Result.Success) -Or ((($Result.ExitCode) -ne $null) -And (0 -ne ($Result.ExitCode)) )) {
         throw $MsgFailed
-      } else {
+      }
+      else {
         Write-Tfi $MsgSucceeded
         $Completed = $true
       }
-    } catch {
+    }
+    catch {
       $TryCount++
       if ($TryCount -ge $Tries) {
         $Completed = $true
@@ -107,7 +115,8 @@ function Test-Command {
         Write-Tfi ("Command [{0}] failed the maximum number of {1} time(s)." -f $Test, $Tries)
         Write-Tfi ("Error code (if available): {0}" -f ($Result.ExitCode))
         throw ("Command [{0}] failed" -f $Test)
-      } else {
+      }
+      else {
         Write-Tfi ("Command [{0}] failed. Retrying in {1} second(s)." -f $Test, $SecondsDelay)
         Start-Sleep $SecondsDelay
       }
@@ -133,24 +142,29 @@ function Publish-Artifacts {
 
   # copy artifacts to s3
   Copy-Item $UserdataLogFile -Destination "$ArtifactDir" -Force
-  Write-S3Object -BucketName "$BuildSlug" -KeyPrefix "$BuildLabel" -Folder "$ArtifactDir" -Recurse
-  Write-Tfi "Wrote logs to s3://$BuildSlug/$BuildLabel" $?
+  Write-S3Object -BucketName "$BuildBucket" -KeyPrefix "$${BuildKeyPrefix}/$${BuildLabel}" -Folder "$ArtifactDir" -Recurse
+  Write-Tfi "Wrote logs to s3://$${BuildBucket}/$${BuildKeyPrefix}/$${BuildLabel}" $?
 
   # creates compressed archive to upload to s3
-  $BuildSlugZipName = "$BuildSlug" -replace '/','-'
-  $ZipFile = "$TempDir\$BuildSlugZipName-$BuildLabel.zip"
+  $BuildSlugZipName = "$BuildSlug" -replace '/', '-'
+  $ZipFile = "$${TempDir}\$${BuildSlugZipName}-$${BuildLabel}.zip"
+  $ZipFileName = Split-Path $ZipFile -Leaf
   cd 'C:\Program Files\7-Zip'
   Test-Command ".\7z a -y -tzip $ZipFile -r $ArtifactDir\*"
-  Write-S3Object -BucketName "$BuildSlug" -File $ZipFile
+  Write-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${ZipFileName}" -File "$ZipFile"
 }
 
 function Publish-SCAP-Scan {
+  $ScanSlug = "${scan_slug}".trimstart("s3://")
+  $ScanSlugParts = $ScanSlug.Split('/')
+  $ScanBucket = $ScanSlugParts[0]
+  $ScanKeyPrefix = $ScanSlugParts[1..($ScanSlugParts.Length - 1)] -Join '/'
   Write-Tfi "Writing SCAP scan to ${scan_slug}/$BuildOS..."
   $ErrorActionPreference = "Continue"
   $ScanDir = "$TempDir\terrafirm\scan"
   Invoke-Expression -Command "mkdir $ScanDir" -ErrorAction SilentlyContinue
   Copy-Item "C:\Watchmaker\SCAP" -Destination "$ScanDir" -Recurse -Force
-  Write-S3Object -BucketName "${scan_slug}".trimstart("s3://") -KeyPrefix "$BuildOS" -Folder "$ScanDir\SCAP\Sessions" -Recurse
+  Write-S3Object -BucketName "$ScanBucket" -KeyPrefix "$${ScanKeyPrefix}/$${BuildOS}" -Folder "$${ScanDir}\SCAP\Sessions" -Recurse
   Write-Tfi "Wrote SCAP scan to ${scan_slug}/$BuildOS" $?
 }
 
@@ -170,7 +184,7 @@ function Test-DisplayResult {
 function Write-UserdataStatus {
   ## Write file to the local system to indicate the outcome of the userdata script.
   param (
-    [Parameter(Mandatory=$true)]$UserdataStatus
+    [Parameter(Mandatory = $true)]$UserdataStatus
   )
 
   # write the status to a file for reading by test script
@@ -199,15 +213,15 @@ function Open-WinRM {
   if ($BuildType -ne "builder") {
     # fix the lgpos to allow winrm
     & $SaltCall --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value `
-        key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowBasic' `
-        value='1' `
-        vtype='REG_DWORD'
+      key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowBasic' `
+      value='1' `
+      vtype='REG_DWORD'
     Write-Tfi "Command [salt-call --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value key='AllowBasic'...]" $?
 
     & $SaltCall --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value `
-        key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowUnencryptedTraffic' `
-        value='1' `
-        vtype='REG_DWORD'
+      key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowUnencryptedTraffic' `
+      value='1' `
+      vtype='REG_DWORD'
     Write-Tfi "Command [salt-call --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value key='AllowUnencryptedTraffic'...]" $?
   }
 }
@@ -225,8 +239,8 @@ function Open-Firewall {
 function Rename-User {
   ## Renames a system username.
   param (
-    [Parameter(Mandatory=$true)][string]$From,
-    [Parameter(Mandatory=$true)][string]$To
+    [Parameter(Mandatory = $true)][string]$From,
+    [Parameter(Mandatory = $true)][string]$To
   )
 
   $Admin = [adsi]("WinNT://./$From, user")
@@ -239,15 +253,16 @@ function Rename-User {
 function Set-Password {
   ## Changes a system user's password.
   param (
-    [Parameter(Mandatory=$true)][string]$User,
-    [Parameter(Mandatory=$true)][string]$Pass
+    [Parameter(Mandatory = $true)][string]$User,
+    [Parameter(Mandatory = $true)][string]$Pass
   )
   # Set Administrator password, for logging in before wam changes Administrator account name
   $Admin = [adsi]("WinNT://./$User, user")
   if ($Admin.Name) {
     $Admin.psbase.invoke("SetPassword", $Pass)
     Write-Tfi "Set $User password" $?
-  } else {
+  }
+  else {
     Write-Tfi "Unable to set password because user ($User) was not found."
   }
 }
@@ -270,7 +285,7 @@ function Invoke-CmdScript {
   ## Go through the environment variables in the temp file.
   ## For each of them, set the variable in our local environment.
   Get-Content $tempFile | Foreach-Object {
-    if($_ -match "^(.*?)=(.*)$") {
+    if ($_ -match "^(.*?)=(.*)$") {
       Set-Content "env:\$($matches[1])" $matches[2]
     }
   }
@@ -305,7 +320,8 @@ function Clone-Watchmaker {
     if ($GitRef -match "^[0-9]+$") {
       Test-Command "git fetch origin pull/$GitRef/head:pr-$GitRef" -Tries 2
       Test-Command "git checkout pr-$GitRef"
-    } else {
+    }
+    else {
       Test-Command "git checkout $GitRef"
     }
   }
@@ -329,7 +345,7 @@ Set-Password -User "Administrator" -Pass "${password}"
 Close-Firewall
 
 # declare an array to hold the status (number and message)
-$UserdataStatus=@(1,"Error: Build not completed (should never see this error)")
+$UserdataStatus = @(1, "Error: Build not completed (should never see this error)")
 
 # Use TLS, as git won't do SSL now
 [Net.ServicePointManager]::SecurityProtocol = "Ssl3, Tls, Tls11, Tls12"
@@ -340,54 +356,55 @@ Invoke-Expression -Command "$TempDir\7z-install.exe /S /D='C:\Program Files\7-Zi
 
 Check-Metadata-Availability
 Write-Tfi "Start Build ============"
-$StartDate=Get-Date
+$StartDate = Get-Date
 
 %{ if build_type == build_type_builder }
 try {
-    # Install choco
-    Set-ExecutionPolicy Bypass -Scope Process -Force
-    Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+  # Install choco
+  Set-ExecutionPolicy Bypass -Scope Process -Force
+  Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 
-    # Install jq
-    choco install jq -y --force
+  # Install jq
+  choco install jq -y --force
 
-    # install pwsh
-    choco install pwsh -y --force
+  # install pwsh
+  choco install pwsh -y --force
 
-    Install-PythonGit
-    Clone-Watchmaker
+  Install-PythonGit
+  Clone-Watchmaker
 
-    Test-Command "python -m pip install --index-url=`"$PypiUrl`" -r requirements\pip.txt" -Tries 2
-    Test-Command "python -m pip install --index-url=`"$PypiUrl`" -r requirements\basics.txt" -Tries 2
+  Test-Command "python -m pip install --index-url=`"$PypiUrl`" -r requirements\pip.txt" -Tries 2
+  Test-Command "python -m pip install --index-url=`"$PypiUrl`" -r requirements\basics.txt" -Tries 2
 
-    $VirtualEnvDir = ".\venv"
-    Test-Command "virtualenv $VirtualEnvDir"
-    Test-Command "$${VirtualEnvDir}\Scripts\activate"
-    Test-Command "pwsh ci\build.ps1" -Tries 2
+  $VirtualEnvDir = ".\venv"
+  Test-Command "virtualenv $VirtualEnvDir"
+  Test-Command "$${VirtualEnvDir}\Scripts\activate"
+  Test-Command "pwsh ci\build.ps1" -Tries 2
 
-    $STAGING_DIR = ".pyinstaller\dist"
-    Remove-Item ".\$STAGING_DIR\0*" -Recurse
-    Write-S3Object -BucketName "$BuildSlug" -KeyPrefix "${release_prefix}" -Folder ".\$STAGING_DIR" -Recurse
-    Test-DisplayResult "Copied standalone to $BuildSlug/${release_prefix}" $?
+  $STAGING_DIR = ".pyinstaller\dist"
+  Remove-Item ".\$${STAGING_DIR}\0*" -Recurse
+  Write-S3Object -BucketName "$BuildBucket" -KeyPrefix "$${BuildKeyPrefix}/${release_prefix}" -Folder ".\$STAGING_DIR" -Recurse
+  Test-DisplayResult "Copied standalone to $${BuildBucket}/$${BuildKeyPrefix}/${release_prefix}" $?
 
-    # ----------  end of wam standalone package build ----------
+  # ----------  end of wam standalone package build ----------
 
-    $UserdataStatus=@(0,"Success") # made it this far, it's a success
-} catch {
+  $UserdataStatus = @(0, "Success") # made it this far, it's a success
+}
+catch {
   $ErrorMessage = [String]$_.Exception + "Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
   Write-Tfi "*** ERROR caught ***"
   Write-Tfi $ErrorMessage
 
   # signal any builds waiting to test this standalone that the build failed
   if (-not (Test-Path "$StandaloneErrorSignalFile")) {
-      New-Item "$StandaloneErrorSignalFile" -ItemType "file" -Force
+    New-Item "$StandaloneErrorSignalFile" -ItemType "file" -Force
   }
   $Msg = "$ErrorMessage (For more information on the error, see the win_builder/userdata.log file.)"
   "$(Get-Date): $Msg" | Out-File "$StandaloneErrorSignalFile" -Append -Encoding utf8
-  Write-S3Object -BucketName "$BuildSlug/${release_prefix}" -File $StandaloneErrorSignalFile
+  Write-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${StandaloneErrorSignalFile}" -File "$StandaloneErrorSignalFile"
   Write-Tfi "Signal error to S3" $?
   $ErrCode = 1
-  $UserdataStatus=@($ErrCode,"Error [$ErrorMessage]")
+  $UserdataStatus = @($ErrCode, "Error [$ErrorMessage]")
 }
 
 %{ else }
@@ -412,15 +429,17 @@ try {
 
     # see if the standalone is ready yet
     try {
-      Get-S3ObjectMetadata -BucketName "$BuildSlug" -Key "$Standalone"
-    } catch {
+      Get-S3ObjectMetadata -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${Standalone}"
+    }
+    catch {
       $Exists = $false
     }
 
     # see if the builder encountered an error
     try {
-      Get-S3ObjectMetadata -BucketName "$BuildSlug" -Key "$ErrorKey"
-    } catch {
+      Get-S3ObjectMetadata -BucketName "$BuildBucket" -Key "$${BuuildKeyPrefix}/$${ErrorKey}"
+    }
+    catch {
       $SignaledError = $false
     }
 
@@ -430,11 +449,13 @@ try {
       Write-Tfi $ErrorMsg
       throw $ErrorMsg
       break
-    } else {
+    }
+    else {
       if ($Exists) {
         Write-Tfi "The standalone executable was found!"
         break
-      } else {
+      }
+      else {
         Write-Tfi "The standalone executable was not found. Trying again in $SleepTime s..."
         Start-Sleep -Seconds $SleepTime
       }
@@ -443,15 +464,16 @@ try {
 
   #Invoke-Expression -Command "mkdir C:\scripts" -ErrorAction SilentlyContinue
   $DownloadDir = "${download_dir}"
-  Read-S3Object -BucketName "$BuildSlug" -Key $Standalone -File "$DownloadDir\watchmaker.exe"
-  Test-Command "$DownloadDir\watchmaker.exe ${args}"
-  $UserdataStatus=@(0,"Success") # made it this far, it's a success
-} catch {
+  Read-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${Standalone}" -File "$${DownloadDir}\watchmaker.exe"
+  Test-Command "$${DownloadDir}\watchmaker.exe ${args}"
+  $UserdataStatus = @(0, "Success") # made it this far, it's a success
+}
+catch {
   $ErrorMessage = [String]$_.Exception + "Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
   Write-Tfi "*** ERROR caught ***"
   Write-Tfi $ErrorMessage
   $ErrCode = 1  # trying to set this to $lastExitCode does not work (always get 0)
-  $UserdataStatus=@($ErrCode,"Error [$ErrorMessage]")
+  $UserdataStatus = @($ErrCode, "Error [$ErrorMessage]")
 }
 
 %{ else }
@@ -465,13 +487,14 @@ try {
   Test-Command "watchmaker ${args}"
   # ----------  end of wam install ----------
 
-  $UserdataStatus=@(0,"Success") # made it this far, it's a success
-} catch {
+  $UserdataStatus = @(0, "Success") # made it this far, it's a success
+}
+catch {
   $ErrorMessage = [String]$_.Exception + "Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
   Write-Tfi "*** ERROR caught ***"
   Write-Tfi $ErrorMessage
   $ErrCode = 1
-  $UserdataStatus=@($ErrCode,"Error [$ErrorMessage]")
+  $UserdataStatus = @($ErrCode, "Error [$ErrorMessage]")
 }
 
 %{ endif }
