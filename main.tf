@@ -2,7 +2,7 @@ locals {
   ami_filter_name                  = "name"
   ami_filter_virtualization_type   = "virtualization-type"
   ami_most_recent                  = true
-  ami_owners                       = ["701759196663", "099720109477", "801119661308", "039368651566", "513442679011", "077303321853"]
+  ami_owners                       = ["174003430611", "216406534498", "701759196663", "099720109477", "801119661308", "039368651566", "513442679011", "077303321853"]
   ami_virtualization_type          = "hvm"
   aws_region                       = var.aws_region
   build_id                         = "${substr(element(split(":", local.full_build_id), 1), 0, 8)}${substr(element(split(":", local.full_build_id), 1), 9, 4)}" #extract node portion of uuid (last 6 octets) for brevity
