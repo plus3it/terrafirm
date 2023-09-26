@@ -273,7 +273,7 @@ install-watchmaker() {
 
   # Update submodule refs
   try_cmd 1 git submodule sync
-  try_cmd 1 git submodule update --init --recursive
+  try_cmd 1 git submodule update --init --recursive --force
 
   # Install watchmaker
   try_cmd 1 python3 -m pip install --upgrade --index-url "$PYPI_URL" --editable .
