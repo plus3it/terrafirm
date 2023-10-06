@@ -1,3 +1,5 @@
+TEST
+
 ![Terrafirm diagram](architecture.png)
 # terrafirm
 Terrafirm performs integration tests of [Watchmaker](https://github.com/plus3it/watchmaker) using Terraform to launch Windows and Linux builds.
