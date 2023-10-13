@@ -51,7 +51,7 @@ locals {
   url_local_ip                     = "http://ipv4.icanhazip.com"
   url_pypi                         = "https://pypi.org/simple"
   win_args                         = "${var.common_args} ${var.win_args}"
-  win_builder_os                   = "win12"
+  win_builder_os                   = "win16"
   win_connection_type              = "winrm"
   win_download_dir                 = "C:\\Users\\Administrator\\Downloads"
   win_executable                   = "${local.release_prefix}/latest/watchmaker-latest-standalone-windows-amd64.exe"
@@ -162,12 +162,6 @@ locals {
       ami_regex  = "spel-minimal-rhel-7-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp2"
       ami_search = "spel-minimal-rhel-7-hvm-*.x86_64-gp2"
       platform   = local.platform_info.lx
-    }
-
-    win12 = {
-      ami_regex  = null
-      ami_search = "Windows_Server-2012-R2_RTM-English-64Bit-Base*"
-      platform   = local.platform_info.win
     }
 
     win16 = {
