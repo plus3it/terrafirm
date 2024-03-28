@@ -395,6 +395,7 @@ resource "aws_instance" "builder" {
 
     connection {
       host = coalesce(self.public_ip, self.private_ip)
+      user = local.build_info[each.key].platform.connection_user_builder
       type = local.build_info[each.key].platform.connection_type
       script_path = format(
         local.build_info[each.key].platform.format_str_inline_path,
@@ -491,6 +492,7 @@ resource "aws_instance" "standalone_build" {
 
     connection {
       host = coalesce(self.public_ip, self.private_ip)
+      user = local.build_info[each.key].platform.connection_user
       type = local.build_info[each.key].platform.connection_type
       script_path = format(
         local.build_info[each.key].platform.format_str_inline_path,
@@ -585,6 +587,7 @@ resource "aws_instance" "source_build" {
 
     connection {
       host = coalesce(self.public_ip, self.private_ip)
+      user = local.build_info[each.key].platform.connection_user
       type = local.build_info[each.key].platform.connection_type
       script_path = format(
         local.build_info[each.key].platform.format_str_inline_path,
