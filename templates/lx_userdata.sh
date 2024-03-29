@@ -237,6 +237,12 @@ install-docker() {
   apt-get -y install docker-ce docker-ce-cli containerd.io
 }
 
+# shellcheck disable=SC2317
+clone-watchmaker() {
+  rm -rf watchmaker
+  git clone "$GIT_REPO" --recursive
+}
+
 install-watchmaker() {
   # install watchmaker from source
 
@@ -258,7 +264,8 @@ install-watchmaker() {
   try_cmd 1 python3 -m pip install --index-url="$PYPI_URL" --upgrade boto3 requests
 
   # Clone watchmaker
-  try_cmd 3 git clone "$GIT_REPO" --recursive
+  try_cmd 3 clone-watchmaker
+
   cd watchmaker
   if [ -n "$GIT_REF" ] ; then
     # decide whether to switch to pull request or a branch
