@@ -258,7 +258,7 @@ install-watchmaker() {
   try_cmd 1 python3 -m pip install --index-url="$PYPI_URL" --upgrade boto3 requests
 
   # Clone watchmaker
-  try_cmd 1 git clone "$GIT_REPO" --recursive
+  try_cmd 3 git clone "$GIT_REPO" --recursive
   cd watchmaker
   if [ -n "$GIT_REF" ] ; then
     # decide whether to switch to pull request or a branch
@@ -317,7 +317,7 @@ handle_builder_exit() {
   fi
 }
 
-try_cmd 1 apt-get -y update && apt-get -y install awscli
+try_cmd 3 apt-get -y update && apt-get -y install awscli
 
 # to resolve the issue with "sudo: unable to resolve host"
 # https://forums.aws.amazon.com/message.jspa?messageID=495274
@@ -340,7 +340,7 @@ try_cmd 1 apt-get -y \
   upgrade
 
 # install prerequisites
-try_cmd 1 apt-get -y install \
+try_cmd 3 apt-get -y install \
   apt-transport-https \
   ca-certificates \
   curl \
