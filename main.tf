@@ -25,7 +25,7 @@ locals {
   lx_executable                    = "${local.release_prefix}/latest/watchmaker-latest-standalone-linux-x86_64"
   lx_format_str_destination        = "/home/%s/watchmaker-test-%s-%s.sh"
   lx_format_str_inline_path        = "/home/%s/inline-%s-%s.sh"
-  lx_format_str_inline_script      = "chmod +x /home/%s/watchmaker-test-%s-%s.sh\n/home/%[1]s/watchmaker-test-%[2]s-%[3]s.sh"
+  lx_format_str_inline_script      = "sudo setenforce 0\nchmod +x /home/%s/watchmaker-test-%s-%s.sh\n/home/%[1]s/watchmaker-test-%[2]s-%[3]s.sh"
   lx_format_str_instance_name      = "${local.resource_name}-%s-%s"
   lx_format_str_userdata           = "%s"
   lx_port                          = 122
