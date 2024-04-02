@@ -360,6 +360,12 @@ resource "aws_instance" "builder" {
     timeout     = local.build_info[each.key].platform.connection_timeout
     port        = local.build_info[each.key].platform.connection_port
     private_key = local.build_info[each.key].platform.connection_key
+    script_path = format(
+      local.build_info[each.key].platform.format_str_inline_path,
+      local.build_info[each.key].platform.connection_user_builder,
+      local.build_type_builder,
+      each.key
+    )
   }
 
   provisioner "file" {
@@ -395,14 +401,7 @@ resource "aws_instance" "builder" {
 
     connection {
       host = coalesce(self.public_ip, self.private_ip)
-      user = local.build_info[each.key].platform.connection_user_builder
       type = local.build_info[each.key].platform.connection_type
-      script_path = format(
-        local.build_info[each.key].platform.format_str_inline_path,
-        local.build_info[each.key].platform.connection_user_builder,
-        local.build_type_builder,
-        each.key
-      )
     }
   }
 }
@@ -457,6 +456,12 @@ resource "aws_instance" "standalone_build" {
     port        = local.build_info[each.key].platform.connection_port
     timeout     = local.build_info[each.key].platform.connection_timeout
     password    = local.build_info[each.key].platform.connection_password
+    script_path = format(
+      local.build_info[each.key].platform.format_str_inline_path,
+      local.build_info[each.key].platform.connection_user,
+      local.build_type_builder,
+      each.key
+    )
   }
 
   provisioner "file" {
@@ -492,14 +497,7 @@ resource "aws_instance" "standalone_build" {
 
     connection {
       host = coalesce(self.public_ip, self.private_ip)
-      user = local.build_info[each.key].platform.connection_user
       type = local.build_info[each.key].platform.connection_type
-      script_path = format(
-        local.build_info[each.key].platform.format_str_inline_path,
-        local.build_info[each.key].platform.connection_user,
-        local.build_type_standalone,
-        each.key
-      )
     }
   }
 }
@@ -552,6 +550,12 @@ resource "aws_instance" "source_build" {
     port        = local.build_info[each.key].platform.connection_port
     timeout     = local.build_info[each.key].platform.connection_timeout
     password    = local.build_info[each.key].platform.connection_password
+    script_path = format(
+      local.build_info[each.key].platform.format_str_inline_path,
+      local.build_info[each.key].platform.connection_user,
+      local.build_type_builder,
+      each.key
+    )
   }
 
   provisioner "file" {
@@ -587,14 +591,7 @@ resource "aws_instance" "source_build" {
 
     connection {
       host = coalesce(self.public_ip, self.private_ip)
-      user = local.build_info[each.key].platform.connection_user
       type = local.build_info[each.key].platform.connection_type
-      script_path = format(
-        local.build_info[each.key].platform.format_str_inline_path,
-        local.build_info[each.key].platform.connection_user,
-        local.build_type_source,
-        each.key
-      )
     }
   }
 }
