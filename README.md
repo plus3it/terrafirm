@@ -26,22 +26,23 @@ Several environment variables allow you to control what builds Terrafirm runs. E
 
 To pick specific operating system builds, set the `TF_VAR_source_builds` and `TF_VAR_standalone_builds` environment variables to one or more the following operating system values. In the variable names, `standalone`/`source` refers to the standalone package test or the from source test.
 
-* `centos7`
-* `rhel7`
+* `centos8stream`
+* `ol8`
+* `rhel8`
 * `win16`
 * `win19`
 
 For example, to set the `TF_VAR_source_builds` environment variable in Bash-like shells, use this syntax:
 
 ```console
-export TF_VAR_source_builds='["centos7","win16"]'
+export TF_VAR_source_builds='["centos8stream","win19"]'
 ```
 
 You would expect Terraform's output to include lines like these if you run Terrafirm with these settings:
 
 ```console
-aws_instance.source_build["win16"]: Still creating... [1m10s elapsed]
-aws_instance.source_build["centos7"]: Still creating... [1m10s elapsed]
+aws_instance.source_build["win19"]: Still creating... [1m10s elapsed]
+aws_instance.source_build["centos8stream"]: Still creating... [1m10s elapsed]
 ```
 
 <!-- BEGIN TFDOCS -->
@@ -94,8 +95,8 @@ aws_instance.source_build["centos7"]: Still creating... [1m10s elapsed]
 | <a name="input_lx_userdata_log"></a> [lx\_userdata\_log](#input\_lx\_userdata\_log) | n/a | `string` | `"/var/log/userdata.log"` | no |
 | <a name="input_s3_bucket"></a> [s3\_bucket](#input\_s3\_bucket) | n/a | `string` | `"mybucket"` | no |
 | <a name="input_scan_s3_url"></a> [scan\_s3\_url](#input\_scan\_s3\_url) | n/a | `string` | `""` | no |
-| <a name="input_source_builds"></a> [source\_builds](#input\_source\_builds) | n/a | `list(string)` | <pre>[<br>  "win16",<br>  "win19",<br>  "rhel7",<br>  "centos7",<br>  "rhel8",<br>  "centos8stream",<br>  "ol8"<br>]</pre> | no |
-| <a name="input_standalone_builds"></a> [standalone\_builds](#input\_standalone\_builds) | n/a | `list(string)` | <pre>[<br>  "win16",<br>  "win19",<br>  "rhel7",<br>  "centos7",<br>  "rhel8",<br>  "centos8stream",<br>  "ol8"<br>]</pre> | no |
+| <a name="input_source_builds"></a> [source\_builds](#input\_source\_builds) | n/a | `list(string)` | <pre>[<br>  "win16",<br>  "win19",<br>  "rhel8",<br>  "centos8stream",<br>  "ol8"<br>]</pre> | no |
+| <a name="input_standalone_builds"></a> [standalone\_builds](#input\_standalone\_builds) | n/a | `list(string)` | <pre>[<br>  "win16",<br>  "win19",<br>  "rhel8",<br>  "centos8stream",<br>  "ol8"<br>]</pre> | no |
 | <a name="input_win_args"></a> [win\_args](#input\_win\_args) | n/a | `string` | `"--log-dir=C:\\Watchmaker\\Logs"` | no |
 | <a name="input_win_instance_type"></a> [win\_instance\_type](#input\_win\_instance\_type) | n/a | `string` | `"t2.large"` | no |
 | <a name="input_win_user"></a> [win\_user](#input\_win\_user) | n/a | `string` | `"Administrator"` | no |
