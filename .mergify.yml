@@ -1,7 +1,7 @@
 pull_request_rules:
   - name: automatic approve dependabot pull requests
     conditions:
-      - author~=dependabot\[bot\]|dependabot-preview\[bot\]
+      - author=dependabot[bot]
       - status-success=Travis CI - Pull Request
     actions:
       review:
@@ -10,7 +10,7 @@ pull_request_rules:
   # For Dockerfile updates, trigger codebuild, merge on codebuild status
   - name: write issue comment to start codebuild job
     conditions:
-      - author~=dependabot\[bot\]|dependabot-preview\[bot\]
+      - author=dependabot[bot]
       - files=Dockerfile
       - "#approved-reviews-by>=1"
     actions:
@@ -19,9 +19,8 @@ pull_request_rules:
 
   - name: automatic merge for tardigrade-ci updates
     conditions:
-      - author~=dependabot\[bot\]|dependabot-preview\[bot\]
+      - author=dependabot[bot]
       - files=Dockerfile
-      - status-success=codebuild/pr
       - status-success=codebuild/default/pr
       - "#approved-reviews-by>=1"
     actions:
@@ -31,7 +30,7 @@ pull_request_rules:
   # For regular dependabot pr, automatically merge on approve
   - name: automatic merge for dependabot pull requests
     conditions:
-      - author~=dependabot\[bot\]|dependabot-preview\[bot\]
+      - author=dependabot[bot]
       - "#approved-reviews-by>=1"
       - files!=Dockerfile
     actions:
