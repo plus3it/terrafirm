@@ -164,6 +164,12 @@ locals {
       platform   = local.platform_info.win
     }
 
+    win22 = {
+      ami_regex  = null
+      ami_search = "Windows_Server-2022-English-Full-Base*"
+      platform   = local.platform_info.win
+    }
+
     focal = {
       ami_regex  = null
       ami_search = "ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server*"
