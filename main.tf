@@ -152,6 +152,24 @@ locals {
       platform   = local.platform_info.lx
     }
 
+    centos9stream = {
+      ami_regex  = "spel-minimal-centos-9stream-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp3"
+      ami_search = "spel-minimal-centos-9stream-hvm-*.x86_64-gp3"
+      platform   = local.platform_info.lx
+    }
+
+    ol9 = {
+      ami_regex  = "spel-minimal-ol-9-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp3"
+      ami_search = "spel-minimal-ol-9-hvm-*.x86_64-gp3"
+      platform   = local.platform_info.lx
+    }
+
+    rhel9 = {
+      ami_regex  = "spel-minimal-rhel-9-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp3"
+      ami_search = "spel-minimal-rhel-9-hvm-*.x86_64-gp3"
+      platform   = local.platform_info.lx
+    }
+
     win16 = {
       ami_regex  = null
       ami_search = "Windows_Server-2016-English-Full-Base*"
