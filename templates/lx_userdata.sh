@@ -260,8 +260,8 @@ install-watchmaker() {
   try_cmd 2 python3 -m pip install --index-url="$PYPI_URL" --upgrade pip setuptools
   try_cmd 1 python3 -m pip --version
 
-  # Install boto3 and requests
-  try_cmd 1 python3 -m pip install --index-url="$PYPI_URL" --upgrade boto3 requests
+  # Install boto3
+  try_cmd 1 python3 -m pip install --index-url="$PYPI_URL" --upgrade boto3
 
   # Clone watchmaker
   try_cmd 3 clone-watchmaker
