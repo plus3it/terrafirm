@@ -1,9 +1,6 @@
 #!/bin/bash
 # shellcheck disable=SC2269
 
-export LC_ALL=en_US.UTF-8
-export LANG=en_US.UTF-8
-
 build_os="${build_os}"
 build_type="${build_type}"
 build_label="${build_label}"
