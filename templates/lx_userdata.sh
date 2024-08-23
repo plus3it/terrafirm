@@ -124,7 +124,10 @@ open-ssh() {
 
     # allow ssh to be on non-standard port (SEL-enforced rule)
     try_cmd 1 setenforce 0
-
+    
+    # ensure default zone is drop and an active zone
+    try_cmd 1 firewall-cmd --set-default-zone=drop
+    try_cmd 1 firewall-cmd --zone=drop --change-interface=eth0
     try_cmd 1 firewall-cmd --add-port="$new_lx_port"/tcp
 
     try_cmd 1 sed -i -e "5iPort $new_lx_port" /etc/ssh/sshd_config
