@@ -1,9 +1,6 @@
 #!/bin/bash
 # shellcheck disable=SC2269
 
-export LC_ALL=en_US.UTF-8
-export LANG=en_US.UTF-8
-
 build_os="${build_os}"
 build_type="${build_type}"
 build_label="${build_label}"
@@ -127,7 +124,10 @@ open-ssh() {
 
     # allow ssh to be on non-standard port (SEL-enforced rule)
     try_cmd 1 setenforce 0
-
+    
+    # ensure default zone is drop and an active zone
+    try_cmd 1 firewall-cmd --set-default-zone=drop
+    try_cmd 1 firewall-cmd --zone=drop --change-interface=eth0
     try_cmd 1 firewall-cmd --add-port="$new_lx_port"/tcp
 
     try_cmd 1 sed -i -e "5iPort $new_lx_port" /etc/ssh/sshd_config
@@ -260,8 +260,8 @@ install-watchmaker() {
   try_cmd 2 python3 -m pip install --index-url="$PYPI_URL" --upgrade pip setuptools
   try_cmd 1 python3 -m pip --version
 
-  # Install boto3 and requests
-  try_cmd 1 python3 -m pip install --index-url="$PYPI_URL" --upgrade boto3 requests
+  # Install boto3
+  try_cmd 1 python3 -m pip install --index-url="$PYPI_URL" --upgrade boto3
 
   # Clone watchmaker
   try_cmd 3 clone-watchmaker
