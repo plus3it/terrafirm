@@ -124,7 +124,10 @@ open-ssh() {
 
     # allow ssh to be on non-standard port (SEL-enforced rule)
     try_cmd 1 setenforce 0
-    
+
+    # remount /home so remote-exec works
+    try_cmd 1 mount -o remount,exec /home
+
     # ensure default zone is drop and an active zone
     try_cmd 1 firewall-cmd --set-default-zone=drop
     try_cmd 1 firewall-cmd --zone=drop --change-interface=eth0
@@ -133,9 +136,6 @@ open-ssh() {
     try_cmd 1 sed -i -e "5iPort $new_lx_port" /etc/ssh/sshd_config
     try_cmd 1 sed -i -e 's/Port 22/#Port 22/g' /etc/ssh/sshd_config
     try_cmd 1 systemctl restart sshd
-
-    # remount /home so remote-exec works
-    try_cmd 1 mount -o remount,exec /home
 
   else
     ## Not CentOS / RedHat (i.e., Ubuntu)
