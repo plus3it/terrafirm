@@ -314,7 +314,7 @@ function Clone-Watchmaker {
   $GitRepo = "${git_repo}"
   $GitRef = "${git_ref}"
 
-  Test-Command "git clone `"$GitRepo`" --recursive" -Tries 2
+  Test-Command "Remove-Item -force -recurse watchmaker -ErrorAction SilentlyContinue; git clone `"$GitRepo`" --recursive" -Tries 5
   cd watchmaker
   if ($GitRef) {
     if ($GitRef -match "^[0-9]+$") {
