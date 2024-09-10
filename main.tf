@@ -70,9 +70,9 @@ locals {
   win_test_template                = "templates/win_test.ps1"
   win_timeout_connection           = "75m"
   win_timeout_create               = "85m"
-  win_url_7zip                     = "https://www.7-zip.org/a/7z1900-x64.exe"
-  win_url_git                      = "https://github.com/git-for-windows/git/releases/download/v2.33.1.windows.1/Git-2.33.1-64-bit.exe"
-  win_url_python                   = "https://www.python.org/ftp/python/3.8.10/python-3.8.10-amd64.exe"
+  win_url_7zip                     = "https://www.7-zip.org/a/7z2408-x64.exe"
+  win_url_git                      = "https://github.com/git-for-windows/git/releases/download/v2.46.0.windows.1/Git-2.46.0-64-bit.exe"
+  win_url_python                   = "https://www.python.org/ftp/python/3.10.11/python-3.10.11-amd64.exe"
   win_user                         = var.win_user
   win_userdata_log                 = var.win_userdata_log
   win_userdata_status_file         = "${local.win_temp_dir}\\userdata_status"
