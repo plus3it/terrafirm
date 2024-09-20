@@ -145,14 +145,14 @@ locals {
     }
 
     ol8 = {
-      ami_regex  = "spel-minimal-ol-8-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp3"
-      ami_search = "spel-minimal-ol-8-hvm-*.x86_64-gp3"
+      ami_regex  = "spel-ci-minimal-ol-8-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.dev01\\.x86_64-gp3"
+      ami_search = "spel-ci-minimal-ol-8-hvm-*.x86_64-gp3"
       platform   = local.platform_info.lx
     }
 
     rhel8 = {
-      ami_regex  = "spel-minimal-rhel-8-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp3"
-      ami_search = "spel-minimal-rhel-8-hvm-*.x86_64-gp3"
+      ami_regex  = "spel-ci-minimal-rhel-8-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.dev01\\.x86_64-gp3"
+      ami_search = "spel-ci-minimal-rhel-8-hvm-*.x86_64-gp3"
       platform   = local.platform_info.lx
     }
 
