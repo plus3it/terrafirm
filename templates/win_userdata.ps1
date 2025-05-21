@@ -382,7 +382,7 @@ try {
   Test-Command "pwsh ci\build.ps1" -Tries 2
 
   $STAGING_DIR = ".pyinstaller\dist"
-  Remove-Item ".\$${STAGING_DIR}\0*" -Recurse
+  Get-ChildItem ".\$${STAGING_DIR}\0*" -Recurse | Remove-Item
   Write-S3Object -BucketName "$BuildBucket" -KeyPrefix "$${BuildKeyPrefix}/${release_prefix}" -Folder ".\$STAGING_DIR" -Recurse
   Test-DisplayResult "Copied standalone to $${BuildBucket}/$${BuildKeyPrefix}/${release_prefix}" $?
 
