@@ -386,6 +386,10 @@ try_cmd 1 chmod +x ci/prep_docker.sh && ci/prep_docker.sh
 
 STAGING_DIR=.pyinstaller/dist
 
+rm -rf "$STAGING_DIR/latest"
+mv "$STAGING_DIR/"* "$STAGING_DIR/latest"
+mv "$STAGING_DIR/latest/"watchmaker-*-standalone-linux-x86_64 "$STAGING_DIR/latest/watchmaker-latest-standalone-linux-x86_64"
+
 # shellcheck disable=SC2154
 artifact_dest="s3://$build_slug/${release_prefix}/"
 try_cmd 1 aws s3 cp "$STAGING_DIR" "$artifact_dest" --recursive
