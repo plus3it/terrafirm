@@ -386,9 +386,9 @@ try_cmd 1 chmod +x ci/prep_docker.sh && ci/prep_docker.sh
 
 STAGING_DIR=.pyinstaller/dist
 
-# only using "latest" so versioned copy is just wasted space
-rm -rf "$STAGING_DIR"/0*
-write-tfi "Remove versioned standalone (keeping 'latest')" --result $?
+rm -rf "$STAGING_DIR/latest"
+mv "$STAGING_DIR/"* "$STAGING_DIR/latest"
+mv "$STAGING_DIR/latest/"watchmaker-*-standalone-linux-x86_64 "$STAGING_DIR/latest/watchmaker-latest-standalone-linux-x86_64"
 
 # shellcheck disable=SC2154
 artifact_dest="s3://$build_slug/${release_prefix}/"

@@ -382,7 +382,11 @@ try {
   Test-Command "pwsh ci\build.ps1" -Tries 2
 
   $STAGING_DIR = ".pyinstaller\dist"
-  Get-ChildItem ".\$${STAGING_DIR}\0*" -Recurse | Remove-Item
+
+  Test-Command "Remove-Item -Path `".\$STAGING_DIR\latest`" -Force  -Recurse -ErrorAction SilentlyContinue" -Tries 3
+  Test-Command "Get-ChildItem -Path `".\$STAGING_DIR\*`" | Rename-Item -NewName latest" -Tries 3
+  Test-Command "Get-Item -Path `".\$STAGING_DIR\latest\watchmaker-*-standalone-windows-amd64.exe`" | Rename-Item -NewName watchmaker-latest-standalone-windows-amd64.exe" -Tries 3
+
   Write-S3Object -BucketName "$BuildBucket" -KeyPrefix "$${BuildKeyPrefix}/${release_prefix}" -Folder ".\$STAGING_DIR" -Recurse
   Test-DisplayResult "Copied standalone to $${BuildBucket}/$${BuildKeyPrefix}/${release_prefix}" $?
 
