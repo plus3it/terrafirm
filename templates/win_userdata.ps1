@@ -383,7 +383,10 @@ try {
 
   $STAGING_DIR = ".pyinstaller\dist"
 
-  Test-Command "Remove-Item -Path `".\$STAGING_DIR\latest`" -Force  -Recurse -ErrorAction SilentlyContinue" -Tries 3
+  if (Test-Path ".\$STAGING_DIR\latest") {
+    Test-Command "Remove-Item -Path `".\$STAGING_DIR\latest`" -Force  -Recurse" -Tries 3
+  }
+
   Test-Command "Get-ChildItem -Path `".\$STAGING_DIR\*`" | Rename-Item -NewName latest" -Tries 3
   Test-Command "Get-Item -Path `".\$STAGING_DIR\latest\watchmaker-*-standalone-windows-amd64.exe`" | Rename-Item -NewName watchmaker-latest-standalone-windows-amd64.exe" -Tries 3
 
