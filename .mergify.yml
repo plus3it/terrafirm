@@ -1,33 +1,44 @@
 pull_request_rules:
-  - name: approve dependabot pull requests
+  # For dockerfile updates, trigger builds and merge on success
+  - name: Trigger builds for dockerfile updates
     conditions:
       - author=dependabot[bot]
+      - files=Dockerfile
     actions:
       review:
         type: APPROVE
+        message: /build
 
-  # For Dockerfile updates, trigger codebuild, merge on codebuild status
-  - name: write issue comment to start codebuild job
+  - name: Merge dockerfile updates
     conditions:
       - author=dependabot[bot]
       - files=Dockerfile
       - "#approved-reviews-by>=1"
-    actions:
-      comment:
-        message: go codebuild go
-
-  - name: merge tardigrade-ci updates
-    conditions:
-      - author=dependabot[bot]
-      - files=Dockerfile
-      - status-success=codebuild/default/pr
-      - "#approved-reviews-by>=1"
+      # Must pass codebuild jobs before merge
+      - check-success = "test-source (rhel8)"
+      - check-success = "test-source (rhel9)"
+      - check-success = "test-source (win16)"
+      - check-success = "test-source (win19)"
+      - check-success = "test-source (win22)"
+      - check-success = "test-standalone (rhel8)"
+      - check-success = "test-standalone (rhel9)"
+      - check-success = "test-standalone (win16)"
+      - check-success = "test-standalone (win19)"
+      - check-success = "test-standalone (win22)"
     actions:
       merge:
         method: merge
 
-  # For regular dependabot pr, automatically merge on approve
-  - name: merge dependabot pull requests
+  # For regular dependabot pr, approve and merge after branch protection checks
+  - name: Approve dependabot pull requests
+    conditions:
+      - author=dependabot[bot]
+      - files!=Dockerfile
+    actions:
+      review:
+        type: APPROVE
+
+  - name: Merge dependabot pull requests
     conditions:
       - author=dependabot[bot]
       - "#approved-reviews-by>=1"

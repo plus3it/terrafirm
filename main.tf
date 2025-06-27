@@ -5,7 +5,7 @@ locals {
   ami_owners                       = ["174003430611", "216406534498", "701759196663", "099720109477", "801119661308", "039368651566", "513442679011", "077303321853"]
   ami_virtualization_type          = "hvm"
   aws_region                       = var.aws_region
-  build_id                         = "${substr(element(split(":", local.full_build_id), 1), 0, 8)}${substr(element(split(":", local.full_build_id), 1), 9, 4)}" #extract node portion of uuid (last 6 octets) for brevity
+  build_id                         = "${substr(element(split(":", local.full_build_id), 1), 0, 8)}${substr(element(split(":", local.full_build_id), 1), 9, 4)}-${random_string.test_id.result}" #extract node portion of uuid (last 6 octets) for brevity
   build_slug                       = "${var.s3_bucket}/${local.date_ymd}/${local.date_hm}-${local.build_id}"
   build_type_builder               = "builder"
   build_type_source                = "source_build"
@@ -296,6 +296,13 @@ resource "random_string" "password" {
   length           = local.win_password_length
   special          = local.win_password_special
   override_special = local.win_password_override_special
+}
+
+resource "random_string" "test_id" {
+  length  = 6
+  upper   = false
+  special = false
+  numeric = false
 }
 
 resource "aws_security_group" "builds" {

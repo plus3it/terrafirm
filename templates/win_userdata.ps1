@@ -318,12 +318,12 @@ function Clone-Watchmaker {
   cd watchmaker
   if ($GitRef) {
     if ($GitRef -match "^[0-9]+$") {
-      Test-Command "git fetch origin pull/$GitRef/head:pr-$GitRef" -Tries 2
-      Test-Command "git checkout pr-$GitRef"
+      Test-Command "git fetch origin +refs/pull/$${GitRef}/merge:$${GitRef}" -Tries 2
     }
-    else {
-      Test-Command "git checkout $GitRef"
+    elseif ($GitRef -match "^refs/pull/.*") {
+      Test-Command "git fetch origin +$${GitRef}:$${GitRef}" -Tries 2
     }
+    Test-Command "git checkout $GitRef"
   }
 
   Test-Command "git submodule update"
