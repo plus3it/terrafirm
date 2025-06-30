@@ -1,0 +1,76 @@
+name: terrafirm
+description: Runs watchmaker integration tests
+inputs:
+  destroy-after-test:
+    default: true
+    description: Whether to destroy the resources after the test
+    required: false
+  terrafirm-repository:
+    default: plus3it/terrafirm
+    description: The terrafirm repository to use
+    required: false
+  terrafirm-ref:
+    default: ''
+    description: The terrafirm repository ref to use
+    required: false
+outputs:
+  artifact-location:
+    description: Location of the test artifacts
+    value: ${{ steps.post-build.outputs.ARTIFACT_LOCATION }}
+runs:
+  using: composite
+  steps:
+    - name: Checkout Terrafirm Project
+      if: inputs.terrafirm-repository != github.repository
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      with:
+        repository: ${{ inputs.terrafirm-repository }}
+        ref: ${{ inputs.terrafirm-ref }}
+
+    - name: Setup PATH
+      shell: bash
+      run: echo "$HOME/bin" >> $GITHUB_PATH
+
+    - name: Install terraform
+      shell: bash
+      run: make terraform/install
+
+    - name: Run terraform init
+      shell: bash
+      run: terraform init -input=false
+
+    - name: Run terraform plan
+      shell: bash
+      run: terraform plan -out=tfplan -input=false
+
+    - name: Run terraform apply
+      shell: bash
+      run: terraform apply -parallelism=16 -input=false tfplan
+
+    - name: Post-build cleanup
+      id: post-build
+      if: always()
+      shell: bash
+      env:
+        TF_DESTROY_AFTER_TEST: ${{ inputs.destroy-after-test }}
+      run: |
+        ARTIFACT_PATH="$(terraform output -raw build_slug)"
+        terraform output -no-color | aws s3 cp - "s3://${ARTIFACT_PATH}/terraform_output.log" || true
+        test -r $TF_LOG_PATH && aws s3 cp $TF_LOG_PATH "s3://${ARTIFACT_PATH}/terraform.log" || true
+        test -r terraform.tfstate && aws s3 cp terraform.tfstate "s3://${ARTIFACT_PATH}/terraform.tfstate" || true
+
+        PARTITION="$(aws sts get-caller-identity --query Arn --out text | cut -d: -f2)"
+        if [ "$PARTITION" = "aws-us-gov" ]; then
+          ARTIFACT_LOCATION="https://${AWS_DEFAULT_REGION}.console.amazonaws-us-gov.com/s3/buckets/${ARTIFACT_PATH}/"
+        else
+          ARTIFACT_LOCATION="https://${AWS_DEFAULT_REGION}.console.aws.amazon.com/s3/buckets/${ARTIFACT_PATH}/"
+        fi
+        echo "ARTIFACT_LOCATION=${ARTIFACT_LOCATION}"
+
+        if [ "${TF_DESTROY_AFTER_TEST}" = "true" ]; then
+          # destroy resources
+          terraform destroy -no-color -input=false -auto-approve
+        fi
+
+        echo "ARTIFACT_LOCATION=${ARTIFACT_LOCATION}"
+        echo "ARTIFACT_LOCATION=${ARTIFACT_LOCATION}" >> "$GITHUB_OUTPUT"

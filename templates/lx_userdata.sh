@@ -271,11 +271,11 @@ install-watchmaker() {
     # decide whether to switch to pull request or a branch
     num_re='^[0-9]+$'
     if [[ "$GIT_REF" =~ $num_re ]] ; then
-      try_cmd 1 git fetch origin pull/"$GIT_REF"/head:pr-"$GIT_REF"
-      try_cmd 1 git checkout pr-"$GIT_REF"
-    else
-      try_cmd 1 git checkout "$GIT_REF"
+      try_cmd 1 git fetch origin +refs/pull/"$GIT_REF"/merge:"$GIT_REF"
+    elif [[ "$GIT_REF" =~ ^refs/pull/.* ]] ; then
+      try_cmd 1 git fetch origin +"$GIT_REF":"$GIT_REF"
     fi
+    try_cmd 1 git checkout "$GIT_REF"
   fi
 
   # Update submodule refs
