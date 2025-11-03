@@ -237,7 +237,7 @@ install-docker() {
   apt-get -y install docker-ce docker-ce-cli containerd.io
 }
 
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 clone-watchmaker() {
   rm -rf watchmaker
   git clone "$GIT_REPO" --recursive
@@ -306,7 +306,7 @@ virtualenv_path="$virtualenv_base/venv"
 virtualenv_activate_script="$virtualenv_path/bin/activate"
 # ---------------------------------------------------------
 
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 handle_builder_exit() {
   if [ "$1" != "0" ] ; then
     echo "For more information on the error, see the lx_builder/userdata.log file." > "$temp_dir/error.log"
