@@ -460,30 +460,24 @@ else
   try_cmd 5 yum -y install git
 
   # Prefer newer python3 version if available
-  if alternatives --display python3 | grep python3.14 > /dev/null 2>&1; then
-    echo "Setting python3 to python3.14"
-    alternatives --set python3 "$(command -v python3.14)"
-  elif alternatives --display python3 | grep python3.13 > /dev/null 2>&1; then
-    echo "Setting python3 to python3.13"
-    alternatives --set python3 "$(command -v python3.13)"
-  elif alternatives --display python3 | grep python3.12 > /dev/null 2>&1; then
-    echo "Setting python3 to python3.12"
-    alternatives --set python3 "$(command -v python3.12)"
-  elif alternatives --display python3 | grep python3.11 > /dev/null 2>&1; then
-    echo "Setting python3 to python3.11"
-    alternatives --set python3 "$(command -v python3.11)"
-  elif alternatives --display python3 | grep python3.10 > /dev/null 2>&1; then
-    echo "Setting python3 to python3.10"
-    alternatives --set python3 "$(command -v python3.10)"
-  elif alternatives --display python3 | grep python3.9 > /dev/null 2>&1; then
-    echo "Setting python3 to python3.9"
-    alternatives --set python3 "$(command -v python3.9)"
-  elif alternatives --display python3 | grep python3.8 > /dev/null 2>&1; then
-    echo "Setting python3 to python3.8"
-    alternatives --set python3 "$(command -v python3.8)"
-  else
-    echo "No appropriate alternative python3 found, using default python3 version"
+  # shellcheck disable=SC2034
+  python_versions=("3.14" "3.13" "3.12" "3.11" "3.10" "3.9" "3.8")
+  found_python=false
+
+  # shellcheck disable=SC2034,SC2066
+  for version in "$${python_versions[@]}"; do
+      if alternatives --display python3 | grep "python$${version}" > /dev/null 2>&1; then
+          echo "Setting python3 to python$${version}"
+          alternatives --set python3 "$(command -v "python$${version}")"
+          found_python=true
+          break
+      fi
+  done
+
+  if [ "$found_python" = false ]; then
+      echo "No appropriate alternative python3 found, using default python3 version"
   fi
+
   python3 --version
 
   install-watchmaker
