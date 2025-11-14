@@ -237,7 +237,7 @@ install-docker() {
   apt-get -y install docker-ce docker-ce-cli containerd.io
 }
 
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 clone-watchmaker() {
   rm -rf watchmaker
   git clone "$GIT_REPO" --recursive
@@ -306,7 +306,7 @@ virtualenv_path="$virtualenv_base/venv"
 virtualenv_activate_script="$virtualenv_path/bin/activate"
 # ---------------------------------------------------------
 
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 handle_builder_exit() {
   if [ "$1" != "0" ] ; then
     echo "For more information on the error, see the lx_builder/userdata.log file." > "$temp_dir/error.log"
@@ -458,6 +458,27 @@ else
 
   # Install git
   try_cmd 5 yum -y install git
+
+  # Prefer newer python3 version if available
+  # shellcheck disable=SC2034
+  python_versions=("3.14" "3.13" "3.12" "3.11" "3.10" "3.9" "3.8")
+  found_python=false
+
+  # shellcheck disable=SC2034,SC2066
+  for version in "$${python_versions[@]}"; do
+      if alternatives --display python3 | grep "python$${version}" > /dev/null 2>&1; then
+          echo "Setting python3 to python$${version}"
+          alternatives --set python3 "$(command -v "python$${version}")"
+          found_python=true
+          break
+      fi
+  done
+
+  if [ "$found_python" = false ]; then
+      echo "No appropriate alternative python3 found, using default python3 version"
+  fi
+
+  python3 --version
 
   install-watchmaker
 

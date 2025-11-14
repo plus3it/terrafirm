@@ -28,7 +28,7 @@ finally() {
   exit "$exit_code"
 }
 
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317,SC2329
 catch() {
   local exit_code="$${1:-1}"
 
