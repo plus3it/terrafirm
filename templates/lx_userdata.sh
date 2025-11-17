@@ -380,11 +380,19 @@ install-docker
 # Launch docker and build watchmaker
 # shellcheck disable=SC2154
 export DOCKER_SLUG="${docker_slug}"
-try_cmd 1 chmod +x ci/prep_docker.sh && ci/prep_docker.sh
+
+# Check if PyApp build script exists and use it, otherwise fall back to PyInstaller
+if [ -f ci/prep_docker_pyapp.sh ]; then
+  write-tfi "Found ci/prep_docker_pyapp.sh, using PyApp build..."
+  try_cmd 1 chmod +x ci/prep_docker_pyapp.sh && ci/prep_docker_pyapp.sh
+  STAGING_DIR=.pyapp/dist
+else
+  write-tfi "PyApp build script not found, using PyInstaller build..."
+  try_cmd 1 chmod +x ci/prep_docker.sh && ci/prep_docker.sh
+  STAGING_DIR=.pyinstaller/dist
+fi
 
 # ----------  begin of wam deploy  -------------------------------------------
-
-STAGING_DIR=.pyinstaller/dist
 
 rm -rf "$STAGING_DIR/latest"
 mv "$STAGING_DIR/"* "$STAGING_DIR/latest"

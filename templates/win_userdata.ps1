@@ -377,9 +377,18 @@ try {
   $VirtualEnvDir = ".\venv"
   Test-Command "python -m venv $VirtualEnvDir"
   Test-Command "$${VirtualEnvDir}\Scripts\activate"
-  Test-Command "pwsh ci\build.ps1" -Tries 2
 
-  $STAGING_DIR = ".pyinstaller\dist"
+  # Check if PyApp build script exists and use it, otherwise fall back to PyInstaller
+  if (Test-Path ".\ci\build_pyapp.ps1") {
+    Write-Tfi "Found ci\build_pyapp.ps1, using PyApp build..."
+    Test-Command "pwsh ci\build_pyapp.ps1" -Tries 2
+    $STAGING_DIR = ".pyapp\dist"
+  }
+  else {
+    Write-Tfi "PyApp build script not found, using PyInstaller build..."
+    Test-Command "pwsh ci\build.ps1" -Tries 2
+    $STAGING_DIR = ".pyinstaller\dist"
+  }
 
   if (Test-Path ".\$STAGING_DIR\latest") {
     Test-Command "Remove-Item -Path `".\$STAGING_DIR\latest`" -Force  -Recurse" -Tries 3
