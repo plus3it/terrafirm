@@ -1,11 +1,9 @@
-
 $BuildOS = "${build_os}"
 $BuildType = "${build_type}"
 $BuildLabel = "${build_label}"
 $BuildTypeStandalone = "${build_type_standalone}"
 $BuildTypeSource = "${build_type_source}"
 
-# global vars
 $BuildSlug = "${build_slug}"
 $BuildSlugParts = $BuildSlug -Split "/"
 $BuildBucket = $BuildSlugParts[0]
@@ -15,18 +13,15 @@ $WinUser = "${user}"
 $PypiUrl = "${url_pypi}"
 $DebugMode = "${debug}"
 
-# set default AWS region for Powershell and API calls
 Set-DefaultAWSRegion -Region "${aws_region}"
 $Env:AWS_DEFAULT_REGION = "${aws_region}"
 
-# log file
 $UserdataLogFile = "${userdata_log}"
 $UserdataLogFileName = Split-Path $UserdataLogFile -Leaf
 if (-not (Test-Path "$UserdataLogFile")) {
   New-Item "$UserdataLogFile" -ItemType "file" -Force
 }
 
-# directory needed by logs and for various other purposes
 $TempDir = "${temp_dir}"
 if (-not (Test-Path "$TempDir")) {
   New-Item "$TempDir" -ItemType "directory" -Force
@@ -34,7 +29,7 @@ if (-not (Test-Path "$TempDir")) {
 cd $TempDir
 
 function Debug-2S3 {
-  ## Immediately upload the debug and log files to S3.
+  ## Upload the debug and log files to S3.
   param (
     [Parameter(Mandatory = $false)][string]$Msg
   )
@@ -46,8 +41,8 @@ function Debug-2S3 {
   Write-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${BuildLabel}/$${UserdataLogFileName}" -File "$UserdataLogFile"
 }
 
-function Check-Metadata-Availability {
-  ## This will not return until metadata is available.
+function Check-Metadata {
+  ## Wait until metadata is available.
   $MetadataLoopbackAZ = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
   $MetadataCommand = "Invoke-WebRequest -Uri $MetadataLoopbackAZ -UseBasicParsing | Select-Object -ExpandProperty Content"
 
@@ -58,13 +53,12 @@ function Check-Metadata-Availability {
 }
 
 function Write-Tfi {
-  ## Writes messages to a Terrafirm log file. Second param is success/failure related to msg.
+  ## Write to Terrafirm log. Second param is success/failure
   param (
     [String]$Msg,
     $Success = $null
   )
 
-  # result is succeeded or failed or nothing if success is null
   if ( $Success -ne $null ) {
     if ($Success) {
       $OutResult = ": Succeeded"
@@ -82,7 +76,7 @@ function Write-Tfi {
 }
 
 function Test-Command {
-  ## Tests commands and handles/retries errors that result.
+  ## Test command and retry errors
   param (
     [Parameter(Mandatory = $true)][string]$Test,
     [Parameter(Mandatory = $false)][int]$Tries = 1,
@@ -96,7 +90,7 @@ function Test-Command {
   while (-not $Completed) {
     try {
       $Result = @{}
-      # Invokes commands and in the same context captures the $? and $LastExitCode
+      # Invokes command and captures the $? and $LastExitCode
       Invoke-Expression -Command ($Test + ';$Result = @{ Success = $?; ExitCode = $LastExitCode }')
       if (($False -eq $Result.Success) -Or ((($Result.ExitCode) -ne $null) -And (0 -ne ($Result.ExitCode)) )) {
         throw $MsgFailed
@@ -125,13 +119,11 @@ function Test-Command {
 }
 
 function Publish-Artifacts {
-  ## Uploads various useful files to s3 relative to the test/build.
+  ## Upload files to s3 related to the build
   $ErrorActionPreference = "Continue"
-
-  # create a directory with all the build artifacts
   $ArtifactDir = "$TempDir\build-artifacts"
   Invoke-Expression -Command "mkdir $ArtifactDir" -ErrorAction SilentlyContinue
-  Invoke-Expression -Command "mkdir $ArtifactDir\watchmaker" -ErrorAction SilentlyContinue # need to create dir if globbing to it
+  Invoke-Expression -Command "mkdir $ArtifactDir\watchmaker" -ErrorAction SilentlyContinue
   Copy-Item "C:\Watchmaker\Logs\*log" -Destination "$ArtifactDir\watchmaker" -Recurse -Force
   Copy-Item "C:\Watchmaker\SCAP" -Destination "$ArtifactDir\scap" -Recurse -Force
   Copy-Item "C:\ProgramData\Amazon\EC2-Windows\Launch\Log" -Destination "$ArtifactDir\cloud" -Recurse -Force
@@ -140,12 +132,10 @@ function Publish-Artifacts {
   Copy-Item "C:\Program Files\Amazon\Ec2ConfigService\Scripts\User*ps1" -Destination "$ArtifactDir\cloud" -Recurse -Force
   Get-ChildItem Env: | Out-File "$ArtifactDir\cloud\environment_variables.log" -Append -Encoding utf8
 
-  # copy artifacts to s3
   Copy-Item $UserdataLogFile -Destination "$ArtifactDir" -Force
   Write-S3Object -BucketName "$BuildBucket" -KeyPrefix "$${BuildKeyPrefix}/$${BuildLabel}" -Folder "$ArtifactDir" -Recurse
   Write-Tfi "Wrote logs to s3://$${BuildBucket}/$${BuildKeyPrefix}/$${BuildLabel}" $?
 
-  # creates compressed archive to upload to s3
   $BuildSlugZipName = "$BuildSlug" -replace '/', '-'
   $ZipFile = "$${TempDir}\$${BuildSlugZipName}-$${BuildLabel}.zip"
   $ZipFileName = Split-Path $ZipFile -Leaf
@@ -169,7 +159,7 @@ function Publish-SCAP-Scan {
 }
 
 function Test-DisplayResult {
-  ## Call this function with $? to log the outcome and throw errors.
+  ## Call with $? to log outcome and throw error
   param (
     [String]$Msg,
     $Success = $null
@@ -182,27 +172,21 @@ function Test-DisplayResult {
 }
 
 function Write-UserdataStatus {
-  ## Write file to the local system to indicate the outcome of the userdata script.
+  ## Write file to local system to indicate outcome of userdata
   param (
     [Parameter(Mandatory = $true)]$UserdataStatus
   )
-
-  # write the status to a file for reading by test script
   $UserdataStatus | Out-File "${userdata_status_file}"
   Write-Tfi "Write userdata status file" $?
 }
 
 function Open-WinRM {
-  ## Open WinRM for access
   Test-Command "Start-Process -FilePath `"winrm`" -ArgumentList `"quickconfig -q`""
   Test-Command "Start-Process -FilePath `"winrm`" -ArgumentList `"set winrm/config/service @{AllowUnencrypted=```"true```"}`" -Wait"
   Test-Command "Start-Process -FilePath `"winrm`" -ArgumentList `"set winrm/config/service/auth @{Basic=```"true```"}`" -Wait"
   Test-Command "Start-Process -FilePath `"winrm`" -ArgumentList `"set winrm/config @{MaxTimeoutms=```"1900000```"}`""
 
-  # Sets default location for salt-call executable
   $SaltCall = "C:\Program Files\Salt Project\salt\salt-call.exe"
-
-  # Sets salt-call executable based on salt version
   if (Test-Path -path "C:\Program Files\Salt Project\salt\salt-call.bat") {
     $SaltCall = "C:\Program Files\Salt Project\salt\salt-call.bat"
   }
@@ -227,17 +211,14 @@ function Open-WinRM {
 }
 
 function Close-Firewall {
-  ## Close the local firewall to WinRM
   Test-Command "netsh advfirewall firewall add rule name=`"WinRM in`" protocol=tcp dir=in profile=any localport=5985 remoteip=any localip=any action=block"
 }
 
 function Open-Firewall {
-  ## Open the local firewall to WinRM
   Test-Command "netsh advfirewall firewall set rule name=`"WinRM in`" new action=allow"
 }
 
 function Rename-User {
-  ## Renames a system username.
   param (
     [Parameter(Mandatory = $true)][string]$From,
     [Parameter(Mandatory = $true)][string]$To
@@ -251,12 +232,10 @@ function Rename-User {
 }
 
 function Set-Password {
-  ## Changes a system user's password.
   param (
     [Parameter(Mandatory = $true)][string]$User,
     [Parameter(Mandatory = $true)][string]$Pass
   )
-  # Set Administrator password, for logging in before wam changes Administrator account name
   $Admin = [adsi]("WinNT://./$User, user")
   if ($Admin.Name) {
     $Admin.psbase.invoke("SetPassword", $Pass)
@@ -267,39 +246,11 @@ function Set-Password {
   }
 }
 
-function Invoke-CmdScript {
-  ## Invoke the specified batch file with params, and propagate env var changes back to
-  ## PowerShell environment that called it.
-  ## Recipe from "Windows PowerShell Cookbook by Lee Holmes"
-  param (
-    [string] $script,
-    [string] $parameters
-  )
-
-  $tempFile = [IO.Path]::GetTempFileName()
-
-  ## Store the output of cmd.exe. We also ask cmd.exe to output
-  ## the environment table after the batch file completes
-  cmd /c " `"$script`" $parameters && set > `"$tempFile`" "
-
-  ## Go through the environment variables in the temp file.
-  ## For each of them, set the variable in our local environment.
-  Get-Content $tempFile | Foreach-Object {
-    if ($_ -match "^(.*?)=(.*)$") {
-      Set-Content "env:\$($matches[1])" $matches[2]
-    }
-  }
-
-  Remove-Item $tempFile
-}
-
 function Install-PythonGit {
-  ## Use the Watchmaker bootstrap to install Python and Git.
   $BootstrapUrl = "${url_bootstrap}"
   $PythonUrl = "${url_python}"
   $GitUrl = "${url_git}"
 
-  # Download bootstrap file
   $BootstrapFile = "$${Env:Temp}\$($${BootstrapUrl}.split("/")[-1])"
   (New-Object System.Net.WebClient).DownloadFile($BootstrapUrl, $BootstrapFile)
 
@@ -342,31 +293,20 @@ Write-Tfi "----------------------------- $BuildLabel ---------------------"
 
 Set-Password -User "Administrator" -Pass "${password}"
 Close-Firewall
-
-# declare an array to hold the status (number and message)
 $UserdataStatus = @(1, "Error: Build not completed (should never see this error)")
-
-# Use TLS, as git won't do SSL now
-[Net.ServicePointManager]::SecurityProtocol = "Ssl3, Tls, Tls11, Tls12"
-
-# install 7-zip for use with artifacts - download fails after wam install, fyi
+[Net.ServicePointManager]::SecurityProtocol = "Tls12, Tls13"
 (New-Object System.Net.WebClient).DownloadFile("${url_7zip}", "$TempDir\7z-install.exe")
 Invoke-Expression -Command "$TempDir\7z-install.exe /S /D='C:\Program Files\7-Zip'" -ErrorAction Continue
 
-Check-Metadata-Availability
+Check-Metadata
 Write-Tfi "Start Build ============"
 $StartDate = Get-Date
 
 %{ if build_type == build_type_builder }
 try {
-  # Install choco
   Set-ExecutionPolicy Bypass -Scope Process -Force
   Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-
-  # Install jq
   choco install jq -y --force
-
-  # install pwsh
   choco install pwsh -y --force
 
   Install-PythonGit
@@ -381,6 +321,7 @@ try {
   # Check if PyApp build script exists and use it, otherwise fall back to PyInstaller
   if (Test-Path ".\ci\build_pyapp.ps1") {
     Write-Tfi "Found ci\build_pyapp.ps1, using PyApp build..."
+    choco install rust -y --force
     Test-Command "pwsh ci\build_pyapp.ps1" -Tries 2
     $STAGING_DIR = ".pyapp\dist"
   }
