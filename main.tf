@@ -30,6 +30,7 @@ locals {
   lx_format_str_userdata           = "%s"
   lx_port                          = 122
   lx_standalone_error_signal_file  = "${local.release_prefix}/lx_standalone_error_signal.log"
+  lx_root_volume_size              = 20
   lx_root_volume_type              = "gp3"
   lx_temp_dir                      = "/tmp"
   lx_test_template                 = "templates/lx_test.sh"
@@ -64,6 +65,7 @@ locals {
   win_password_length              = 18
   win_password_override_special    = "()~!@#^*+=|{}[]:;,?"
   win_password_special             = true
+  win_root_volume_size             = 30
   win_root_volume_type             = "gp3"
   win_standalone_error_signal_file = "${local.release_prefix}/win_standalone_error_signal.log"
   win_temp_dir                     = "C:\\Temp"
@@ -109,6 +111,7 @@ locals {
       format_str_userdata      = local.win_format_str_userdata
       instance_type            = var.win_instance_type
       key                      = "win"
+      root_volume_size         = local.win_root_volume_size
       root_volume_type         = local.win_root_volume_type
       test_template            = local.win_test_template
       userdata_template        = local.win_userdata_template
@@ -131,6 +134,7 @@ locals {
       format_str_userdata      = local.lx_format_str_userdata
       instance_type            = var.lx_instance_type
       key                      = "lx"
+      root_volume_size         = local.lx_root_volume_size
       root_volume_type         = local.lx_root_volume_type
       test_template            = local.lx_test_template
       userdata_template        = local.lx_userdata_template
@@ -364,6 +368,7 @@ resource "aws_instance" "builder" {
   )
 
   root_block_device {
+    volume_size = local.build_info[each.key].platform.root_volume_size
     volume_type = local.build_info[each.key].platform.root_volume_type
     tags = {
       Name = format(
