@@ -29,10 +29,7 @@ if (-not (Test-Path "$TempDir")) {
 cd $TempDir
 
 function Debug-2S3 {
-  ## Upload the debug and log files to S3.
-  param (
-    [Parameter(Mandatory = $false)][string]$Msg
-  )
+  param ([string]$Msg)
 
   $DebugFileName = "debug.log"
   $DebugFile = "$TempDir\$DebugFileName"
@@ -42,7 +39,6 @@ function Debug-2S3 {
 }
 
 function Check-Metadata {
-  ## Wait until metadata is available.
   $MetadataLoopbackAZ = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
   $MetadataCommand = "Invoke-WebRequest -Uri $MetadataLoopbackAZ -UseBasicParsing | Select-Object -ExpandProperty Content"
 
@@ -53,7 +49,6 @@ function Check-Metadata {
 }
 
 function Write-Tfi {
-  ## Write to Terrafirm log. Second param is success/failure
   param (
     [String]$Msg,
     $Success = $null
@@ -76,7 +71,6 @@ function Write-Tfi {
 }
 
 function Test-Command {
-  ## Test command and retry errors
   param (
     [Parameter(Mandatory = $true)][string]$Test,
     [Parameter(Mandatory = $false)][int]$Tries = 1,
@@ -195,7 +189,6 @@ function Publish-SCAP-Scan {
 }
 
 function Test-DisplayResult {
-  ## Call with $? to log outcome and throw error
   param (
     [String]$Msg,
     $Success = $null
@@ -208,10 +201,7 @@ function Test-DisplayResult {
 }
 
 function Write-UserdataStatus {
-  ## Write file to local system to indicate outcome of userdata
-  param (
-    [Parameter(Mandatory = $true)]$UserdataStatus
-  )
+  param ($UserdataStatus)
   $UserdataStatus | Out-File "${userdata_status_file}"
   Write-Tfi "Write userdata status file" $?
 }
@@ -377,14 +367,12 @@ try {
   Write-S3Object -BucketName "$BuildBucket" -KeyPrefix "$${BuildKeyPrefix}/${release_prefix}" -Folder ".\$STAGING_DIR" -Recurse
   Test-DisplayResult "Copied standalone to $${BuildBucket}/$${BuildKeyPrefix}/${release_prefix}" $?
 
-  # ----------  end of wam standalone package build ----------
-
-  $UserdataStatus = @(0, "Success") # made it this far, it's a success
+  $UserdataStatus = @(0, "Success")
 
 %{~ else }
 %{~ if build_type == build_type_standalone }
 
-  Write-Tfi "Installing Watchmaker from standalone executable............."
+  Write-Tfi "Installing Watchmaker from standalone executable..."
 
   $SleepTime = 20
   $Standalone = "${executable}"
@@ -434,22 +422,18 @@ try {
     }
   } # end of while($true)
 
-  #Invoke-Expression -Command "mkdir C:\scripts" -ErrorAction SilentlyContinue
   $DownloadDir = "${download_dir}"
   Read-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${Standalone}" -File "$${DownloadDir}\watchmaker.exe"
   Test-Command "$${DownloadDir}\watchmaker.exe ${args}"
-  $UserdataStatus = @(0, "Success") # made it this far, it's a success
+  $UserdataStatus = @(0, "Success")
 
 %{~ else }
-  # ---------- begin of wam install ----------
-  Write-Tfi "Installing Watchmaker from source...................................."
+  Write-Tfi "Installing Watchmaker from source..."
   Install-PythonGit
   Clone-Watchmaker
   Install-Watchmaker
   Test-Command "watchmaker ${args}"
-  # ----------  end of wam install ----------
-
-  $UserdataStatus = @(0, "Success") # made it this far, it's a success
+  $UserdataStatus = @(0, "Success")
 
 %{~ endif }
 %{~ endif }
