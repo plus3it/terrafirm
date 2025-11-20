@@ -220,7 +220,7 @@ function Open-WinRM {
     $SaltCall = "C:\salt\salt-call.bat"
   }
 
-  if ($BuildType -ne "builder") {
+  if (Test-Path -path $SaltCall) {
     # fix the lgpos to allow winrm
     & $SaltCall --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value `
       key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowBasic' `
