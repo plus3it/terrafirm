@@ -323,23 +323,23 @@ function Install-Watchmaker {
   Test-Command "python -m pip install --index-url `"$PypiUrl`" --editable ." -Tries 2
 }
 
-$ErrorActionPreference = "Stop"
+try {
+  $ErrorActionPreference = "Stop"
+  $StartDate = Get-Date
 
-Write-Tfi "----------------------------- $BuildLabel ---------------------"
+  Write-Tfi "----------------------------- $BuildLabel ---------------------"
 
-Set-Password -User "Administrator" -Pass "${password}"
-Close-Firewall
-$UserdataStatus = @(1, "Error: Build not completed (should never see this error)")
-[Net.ServicePointManager]::SecurityProtocol = "Tls12, Tls13"
-(New-Object System.Net.WebClient).DownloadFile("${url_7zip}", "$TempDir\7z-install.exe")
-Invoke-Expression -Command "$TempDir\7z-install.exe /S /D='C:\Program Files\7-Zip'" -ErrorAction Continue
+  Set-Password -User "Administrator" -Pass "${password}"
+  Close-Firewall
+  $UserdataStatus = @(1, "Error: Build not completed (should never see this error)")
+  [Net.ServicePointManager]::SecurityProtocol = "Tls12, Tls13"
+  (New-Object System.Net.WebClient).DownloadFile("${url_7zip}", "$TempDir\7z-install.exe")
+  Invoke-Expression -Command "$TempDir\7z-install.exe /S /D='C:\Program Files\7-Zip'" -ErrorAction Continue
 
-Check-Metadata
-Write-Tfi "Start Build ============"
-$StartDate = Get-Date
+  Check-Metadata
+  Write-Tfi "Start Build ============"
 
 %{~ if build_type == build_type_builder }
-try {
   Set-ExecutionPolicy Bypass -Scope Process -Force
   Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
   choco install jq -y --force
@@ -380,28 +380,9 @@ try {
   # ----------  end of wam standalone package build ----------
 
   $UserdataStatus = @(0, "Success") # made it this far, it's a success
-}
-catch {
-  $ErrorMessage = [String]$_.Exception + "Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
-  Write-Tfi "*** ERROR caught ***"
-  Write-Tfi $ErrorMessage
-
-  # signal any builds waiting to test this standalone that the build failed
-  if (-not (Test-Path "$StandaloneErrorSignalFile")) {
-    New-Item "$StandaloneErrorSignalFile" -ItemType "file" -Force
-  }
-  $Msg = "$ErrorMessage (For more information on the error, see the win_builder/userdata.log file.)"
-  "$(Get-Date): $Msg" | Out-File "$StandaloneErrorSignalFile" -Append -Encoding utf8
-  Write-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${StandaloneErrorSignalFile}" -File "$StandaloneErrorSignalFile"
-  Write-Tfi "Signal error to S3" $?
-  $ErrCode = 1
-  $UserdataStatus = @($ErrCode, "Error [$ErrorMessage]")
-}
 
 %{~ else }
 %{~ if build_type == build_type_standalone }
-
-try {
 
   Write-Tfi "Installing Watchmaker from standalone executable............."
 
@@ -458,18 +439,8 @@ try {
   Read-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${Standalone}" -File "$${DownloadDir}\watchmaker.exe"
   Test-Command "$${DownloadDir}\watchmaker.exe ${args}"
   $UserdataStatus = @(0, "Success") # made it this far, it's a success
-}
-catch {
-  $ErrorMessage = [String]$_.Exception + "Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
-  Write-Tfi "*** ERROR caught ***"
-  Write-Tfi $ErrorMessage
-  $ErrCode = 1  # trying to set this to $lastExitCode does not work (always get 0)
-  $UserdataStatus = @($ErrCode, "Error [$ErrorMessage]")
-}
 
 %{~ else }
-
-try {
   # ---------- begin of wam install ----------
   Write-Tfi "Installing Watchmaker from source...................................."
   Install-PythonGit
@@ -479,17 +450,31 @@ try {
   # ----------  end of wam install ----------
 
   $UserdataStatus = @(0, "Success") # made it this far, it's a success
+
+%{~ endif }
+%{~ endif }
+
 }
 catch {
   $ErrorMessage = [String]$_.Exception + "Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
   Write-Tfi "*** ERROR caught ***"
   Write-Tfi $ErrorMessage
+
+%{~ if build_type == build_type_builder }
+  # signal builds waiting to test a standalone that the build failed
+  if (-not (Test-Path "$StandaloneErrorSignalFile")) {
+    New-Item "$StandaloneErrorSignalFile" -ItemType "file" -Force
+  }
+  $Msg = "$ErrorMessage (For more information on the error, see the win_builder/userdata.log file.)"
+  "$(Get-Date): $Msg" | Out-File "$StandaloneErrorSignalFile" -Append -Encoding utf8
+  Write-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${StandaloneErrorSignalFile}" -File "$StandaloneErrorSignalFile"
+  Write-Tfi "Signal error to S3" $?
+%{~ endif }
+
   $ErrCode = 1
   $UserdataStatus = @($ErrCode, "Error [$ErrorMessage]")
 }
 
-%{~ endif }
-%{~ endif }
 $EndDate = Get-Date
 Write-Tfi "End Build =============="
 Write-Tfi ("Build took {0} seconds." -f [math]::Round(($EndDate - $StartDate).TotalSeconds))
