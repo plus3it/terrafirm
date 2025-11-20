@@ -466,8 +466,8 @@ Write-Tfi ("Build took {0} seconds." -f [math]::Round(($EndDate - $StartDate).To
 Rename-User -From "Administrator" -To "$WinUser"
 Open-WinRM
 Write-UserdataStatus -UserdataStatus $UserdataStatus
-Open-Firewall
 Publish-Artifacts
+Open-Firewall
 
 if (($BuildType -eq $BuildTypeSource) -and ("${scan_slug}" -ne "")) {
   Publish-SCAP-Scan
