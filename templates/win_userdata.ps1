@@ -323,7 +323,7 @@ try {
   Close-Firewall
   $UserdataStatus = @(1, "Error: Build not completed (should never see this error)")
   [Net.ServicePointManager]::SecurityProtocol = "Tls12, Tls13"
-  (New-Object System.Net.WebClient).DownloadFile("${url_7zip}", "$TempDir\7z-install.exe")
+  Test-Command "Invoke-WebRequest -Uri '${url_7zip}' -OutFile '$TempDir\7z-install.exe' -UseBasicParsing" -Tries 5
   Invoke-Expression -Command "$TempDir\7z-install.exe /S /D='C:\Program Files\7-Zip'" -ErrorAction Continue
 
   Check-Metadata
