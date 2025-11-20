@@ -123,14 +123,50 @@ function Publish-Artifacts {
   $ErrorActionPreference = "Continue"
   $ArtifactDir = "$TempDir\build-artifacts"
   Invoke-Expression -Command "mkdir $ArtifactDir" -ErrorAction SilentlyContinue
+
+  # Watchmaker logs and SCAP results
   Invoke-Expression -Command "mkdir $ArtifactDir\watchmaker" -ErrorAction SilentlyContinue
   Copy-Item "C:\Watchmaker\Logs\*log" -Destination "$ArtifactDir\watchmaker" -Recurse -Force
   Copy-Item "C:\Watchmaker\SCAP" -Destination "$ArtifactDir\scap" -Recurse -Force
-  Copy-Item "C:\ProgramData\Amazon\EC2-Windows\Launch\Log" -Destination "$ArtifactDir\cloud" -Recurse -Force
-  Copy-Item "C:\Program Files\Amazon\Ec2ConfigService\Logs" -Destination "$ArtifactDir\cloud" -Recurse -Force
+
+  # AWS EC2 Launch mechanisms (userdata execution logs)
+  Copy-Item "C:\ProgramData\Amazon\EC2Launch\Log" -Destination "$ArtifactDir\ec2launchv2" -Recurse -Force
+  Copy-Item "C:\ProgramData\Amazon\EC2-Windows\Launch\Log" -Destination "$ArtifactDir\ec2launch" -Recurse -Force
+  Copy-Item "C:\Program Files\Amazon\Ec2ConfigService\Logs" -Destination "$ArtifactDir\ec2config" -Recurse -Force
+
+  # AWS Systems Manager logs
+  Copy-Item "C:\ProgramData\Amazon\SSM\Logs" -Destination "$ArtifactDir\ssm" -Recurse -Force
+
+  # CloudFormation logs (cfn-init, cfn-hup, cfn-signal)
+  Copy-Item "C:\cfn\log" -Destination "$ArtifactDir\cfn" -Recurse -Force
+
+  # Windows Event Logs (Application, System, Security for troubleshooting)
+  Invoke-Expression -Command "mkdir $ArtifactDir\eventlogs" -ErrorAction SilentlyContinue
+  wevtutil epl Application "$ArtifactDir\eventlogs\Application.evtx"
+  wevtutil epl System "$ArtifactDir\eventlogs\System.evtx"
+  wevtutil epl Security "$ArtifactDir\eventlogs\Security.evtx"
+  wevtutil epl "Microsoft-Windows-PowerShell/Operational" "$ArtifactDir\eventlogs\PowerShell-Operational.evtx"
+
+  # Userdata execution artifacts
+  Invoke-Expression -Command "mkdir $ArtifactDir\cloud" -ErrorAction SilentlyContinue
   Copy-Item "C:\Windows\TEMP\*.tmp" -Destination "$ArtifactDir\cloud" -Recurse -Force
   Copy-Item "C:\Program Files\Amazon\Ec2ConfigService\Scripts\User*ps1" -Destination "$ArtifactDir\cloud" -Recurse -Force
-  Get-ChildItem Env: | Out-File "$ArtifactDir\cloud\environment_variables.log" -Append -Encoding utf8
+  Copy-Item "C:\Windows\Temp\UserScript.ps1" -Destination "$ArtifactDir\cloud\UserScript.ps1" -Recurse -Force
+  Copy-Item "C:\Windows\system32\config\systemprofile\AppData\Local\Temp\EC2Launch*" -Destination "$ArtifactDir\cloud\" -Recurse -Force
+
+  # System information for troubleshooting
+  Get-ChildItem Env: | Out-File "$ArtifactDir\sys\environment_variables.log" -Append -Encoding utf8
+  systeminfo | Out-File "$ArtifactDir\sys\systeminfo.log" -Encoding utf8
+  Get-ComputerInfo | Out-File "$ArtifactDir\sys\computerinfo.log" -Encoding utf8
+  Get-HotFix | Out-File "$ArtifactDir\sys\hotfixes.log" -Encoding utf8
+
+  # Network configuration for connectivity troubleshooting
+  ipconfig /all | Out-File "$ArtifactDir\sys\ipconfig.log" -Encoding utf8
+  route print | Out-File "$ArtifactDir\sys\routes.log" -Encoding utf8
+
+  # PowerShell execution policy and version info
+  Get-ExecutionPolicy -List | Out-File "$ArtifactDir\sys\execution_policy.log" -Encoding utf8
+  $PSVersionTable | Out-File "$ArtifactDir\sys\powershell_version.log" -Encoding utf8
 
   Copy-Item $UserdataLogFile -Destination "$ArtifactDir" -Force
   Write-S3Object -BucketName "$BuildBucket" -KeyPrefix "$${BuildKeyPrefix}/$${BuildLabel}" -Folder "$ArtifactDir" -Recurse
@@ -302,7 +338,7 @@ Check-Metadata
 Write-Tfi "Start Build ============"
 $StartDate = Get-Date
 
-%{ if build_type == build_type_builder }
+%{~ if build_type == build_type_builder }
 try {
   Set-ExecutionPolicy Bypass -Scope Process -Force
   Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
@@ -362,8 +398,8 @@ catch {
   $UserdataStatus = @($ErrCode, "Error [$ErrorMessage]")
 }
 
-%{ else }
-%{ if build_type == build_type_standalone }
+%{~ else }
+%{~ if build_type == build_type_standalone }
 
 try {
 
@@ -431,7 +467,7 @@ catch {
   $UserdataStatus = @($ErrCode, "Error [$ErrorMessage]")
 }
 
-%{ else }
+%{~ else }
 
 try {
   # ---------- begin of wam install ----------
@@ -452,8 +488,8 @@ catch {
   $UserdataStatus = @($ErrCode, "Error [$ErrorMessage]")
 }
 
-%{ endif }
-%{ endif }
+%{~ endif }
+%{~ endif }
 $EndDate = Get-Date
 Write-Tfi "End Build =============="
 Write-Tfi ("Build took {0} seconds." -f [math]::Round(($EndDate - $StartDate).TotalSeconds))
