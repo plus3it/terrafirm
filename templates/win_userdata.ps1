@@ -29,10 +29,7 @@ if (-not (Test-Path "$TempDir")) {
 cd $TempDir
 
 function Debug-2S3 {
-  ## Upload the debug and log files to S3.
-  param (
-    [Parameter(Mandatory = $false)][string]$Msg
-  )
+  param ([string]$Msg)
 
   $DebugFileName = "debug.log"
   $DebugFile = "$TempDir\$DebugFileName"
@@ -42,7 +39,6 @@ function Debug-2S3 {
 }
 
 function Check-Metadata {
-  ## Wait until metadata is available.
   $MetadataLoopbackAZ = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
   $MetadataCommand = "Invoke-WebRequest -Uri $MetadataLoopbackAZ -UseBasicParsing | Select-Object -ExpandProperty Content"
 
@@ -53,7 +49,6 @@ function Check-Metadata {
 }
 
 function Write-Tfi {
-  ## Write to Terrafirm log. Second param is success/failure
   param (
     [String]$Msg,
     $Success = $null
@@ -76,7 +71,6 @@ function Write-Tfi {
 }
 
 function Test-Command {
-  ## Test command and retry errors
   param (
     [Parameter(Mandatory = $true)][string]$Test,
     [Parameter(Mandatory = $false)][int]$Tries = 1,
@@ -123,14 +117,50 @@ function Publish-Artifacts {
   $ErrorActionPreference = "Continue"
   $ArtifactDir = "$TempDir\build-artifacts"
   Invoke-Expression -Command "mkdir $ArtifactDir" -ErrorAction SilentlyContinue
+
+  # Watchmaker logs and SCAP results
   Invoke-Expression -Command "mkdir $ArtifactDir\watchmaker" -ErrorAction SilentlyContinue
   Copy-Item "C:\Watchmaker\Logs\*log" -Destination "$ArtifactDir\watchmaker" -Recurse -Force
   Copy-Item "C:\Watchmaker\SCAP" -Destination "$ArtifactDir\scap" -Recurse -Force
-  Copy-Item "C:\ProgramData\Amazon\EC2-Windows\Launch\Log" -Destination "$ArtifactDir\cloud" -Recurse -Force
-  Copy-Item "C:\Program Files\Amazon\Ec2ConfigService\Logs" -Destination "$ArtifactDir\cloud" -Recurse -Force
+
+  # AWS EC2 Launch mechanisms (userdata execution logs)
+  Copy-Item "C:\ProgramData\Amazon\EC2Launch\Log" -Destination "$ArtifactDir\ec2launchv2" -Recurse -Force
+  Copy-Item "C:\ProgramData\Amazon\EC2-Windows\Launch\Log" -Destination "$ArtifactDir\ec2launch" -Recurse -Force
+  Copy-Item "C:\Program Files\Amazon\Ec2ConfigService\Logs" -Destination "$ArtifactDir\ec2config" -Recurse -Force
+
+  # AWS Systems Manager logs
+  Copy-Item "C:\ProgramData\Amazon\SSM\Logs" -Destination "$ArtifactDir\ssm" -Recurse -Force
+
+  # CloudFormation logs (cfn-init, cfn-hup, cfn-signal)
+  Copy-Item "C:\cfn\log" -Destination "$ArtifactDir\cfn" -Recurse -Force
+
+  # Windows Event Logs (Application, System, Security for troubleshooting)
+  Invoke-Expression -Command "mkdir $ArtifactDir\eventlogs" -ErrorAction SilentlyContinue
+  wevtutil epl Application "$ArtifactDir\eventlogs\Application.evtx"
+  wevtutil epl System "$ArtifactDir\eventlogs\System.evtx"
+  wevtutil epl Security "$ArtifactDir\eventlogs\Security.evtx"
+  wevtutil epl "Microsoft-Windows-PowerShell/Operational" "$ArtifactDir\eventlogs\PowerShell-Operational.evtx"
+
+  # Userdata execution artifacts
+  Invoke-Expression -Command "mkdir $ArtifactDir\cloud" -ErrorAction SilentlyContinue
   Copy-Item "C:\Windows\TEMP\*.tmp" -Destination "$ArtifactDir\cloud" -Recurse -Force
   Copy-Item "C:\Program Files\Amazon\Ec2ConfigService\Scripts\User*ps1" -Destination "$ArtifactDir\cloud" -Recurse -Force
-  Get-ChildItem Env: | Out-File "$ArtifactDir\cloud\environment_variables.log" -Append -Encoding utf8
+  Copy-Item "C:\Windows\Temp\UserScript.ps1" -Destination "$ArtifactDir\cloud\UserScript.ps1" -Recurse -Force
+  Copy-Item "C:\Windows\system32\config\systemprofile\AppData\Local\Temp\EC2Launch*" -Destination "$ArtifactDir\cloud\" -Recurse -Force
+
+  # System information for troubleshooting
+  Get-ChildItem Env: | Out-File "$ArtifactDir\sys\environment_variables.log" -Append -Encoding utf8
+  systeminfo | Out-File "$ArtifactDir\sys\systeminfo.log" -Encoding utf8
+  Get-ComputerInfo | Out-File "$ArtifactDir\sys\computerinfo.log" -Encoding utf8
+  Get-HotFix | Out-File "$ArtifactDir\sys\hotfixes.log" -Encoding utf8
+
+  # Network configuration for connectivity troubleshooting
+  ipconfig /all | Out-File "$ArtifactDir\sys\ipconfig.log" -Encoding utf8
+  route print | Out-File "$ArtifactDir\sys\routes.log" -Encoding utf8
+
+  # PowerShell execution policy and version info
+  Get-ExecutionPolicy -List | Out-File "$ArtifactDir\sys\execution_policy.log" -Encoding utf8
+  $PSVersionTable | Out-File "$ArtifactDir\sys\powershell_version.log" -Encoding utf8
 
   Copy-Item $UserdataLogFile -Destination "$ArtifactDir" -Force
   Write-S3Object -BucketName "$BuildBucket" -KeyPrefix "$${BuildKeyPrefix}/$${BuildLabel}" -Folder "$ArtifactDir" -Recurse
@@ -159,7 +189,6 @@ function Publish-SCAP-Scan {
 }
 
 function Test-DisplayResult {
-  ## Call with $? to log outcome and throw error
   param (
     [String]$Msg,
     $Success = $null
@@ -172,10 +201,7 @@ function Test-DisplayResult {
 }
 
 function Write-UserdataStatus {
-  ## Write file to local system to indicate outcome of userdata
-  param (
-    [Parameter(Mandatory = $true)]$UserdataStatus
-  )
+  param ($UserdataStatus)
   $UserdataStatus | Out-File "${userdata_status_file}"
   Write-Tfi "Write userdata status file" $?
 }
@@ -194,7 +220,7 @@ function Open-WinRM {
     $SaltCall = "C:\salt\salt-call.bat"
   }
 
-  if ($BuildType -ne "builder") {
+  if (Test-Path -path $SaltCall) {
     # fix the lgpos to allow winrm
     & $SaltCall --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value `
       key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowBasic' `
@@ -287,23 +313,23 @@ function Install-Watchmaker {
   Test-Command "python -m pip install --index-url `"$PypiUrl`" --editable ." -Tries 2
 }
 
-$ErrorActionPreference = "Stop"
-
-Write-Tfi "----------------------------- $BuildLabel ---------------------"
-
-Set-Password -User "Administrator" -Pass "${password}"
-Close-Firewall
-$UserdataStatus = @(1, "Error: Build not completed (should never see this error)")
-[Net.ServicePointManager]::SecurityProtocol = "Tls12, Tls13"
-(New-Object System.Net.WebClient).DownloadFile("${url_7zip}", "$TempDir\7z-install.exe")
-Invoke-Expression -Command "$TempDir\7z-install.exe /S /D='C:\Program Files\7-Zip'" -ErrorAction Continue
-
-Check-Metadata
-Write-Tfi "Start Build ============"
-$StartDate = Get-Date
-
-%{ if build_type == build_type_builder }
 try {
+  $ErrorActionPreference = "Stop"
+  $StartDate = Get-Date
+
+  Write-Tfi "----------------------------- $BuildLabel ---------------------"
+
+  Set-Password -User "Administrator" -Pass "${password}"
+  Close-Firewall
+  $UserdataStatus = @(1, "Error: Build not completed (should never see this error)")
+  [Net.ServicePointManager]::SecurityProtocol = "Tls12, Tls13"
+  Test-Command "Invoke-WebRequest -Uri '${url_7zip}' -OutFile '$TempDir\7z-install.exe' -UseBasicParsing" -Tries 5
+  Invoke-Expression -Command "$TempDir\7z-install.exe /S /D='C:\Program Files\7-Zip'" -ErrorAction Continue
+
+  Check-Metadata
+  Write-Tfi "Start Build ============"
+
+%{~ if build_type == build_type_builder }
   Set-ExecutionPolicy Bypass -Scope Process -Force
   Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
   choco install jq -y --force
@@ -341,33 +367,12 @@ try {
   Write-S3Object -BucketName "$BuildBucket" -KeyPrefix "$${BuildKeyPrefix}/${release_prefix}" -Folder ".\$STAGING_DIR" -Recurse
   Test-DisplayResult "Copied standalone to $${BuildBucket}/$${BuildKeyPrefix}/${release_prefix}" $?
 
-  # ----------  end of wam standalone package build ----------
+  $UserdataStatus = @(0, "Success")
 
-  $UserdataStatus = @(0, "Success") # made it this far, it's a success
-}
-catch {
-  $ErrorMessage = [String]$_.Exception + "Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
-  Write-Tfi "*** ERROR caught ***"
-  Write-Tfi $ErrorMessage
+%{~ else }
+%{~ if build_type == build_type_standalone }
 
-  # signal any builds waiting to test this standalone that the build failed
-  if (-not (Test-Path "$StandaloneErrorSignalFile")) {
-    New-Item "$StandaloneErrorSignalFile" -ItemType "file" -Force
-  }
-  $Msg = "$ErrorMessage (For more information on the error, see the win_builder/userdata.log file.)"
-  "$(Get-Date): $Msg" | Out-File "$StandaloneErrorSignalFile" -Append -Encoding utf8
-  Write-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${StandaloneErrorSignalFile}" -File "$StandaloneErrorSignalFile"
-  Write-Tfi "Signal error to S3" $?
-  $ErrCode = 1
-  $UserdataStatus = @($ErrCode, "Error [$ErrorMessage]")
-}
-
-%{ else }
-%{ if build_type == build_type_standalone }
-
-try {
-
-  Write-Tfi "Installing Watchmaker from standalone executable............."
+  Write-Tfi "Installing Watchmaker from standalone executable..."
 
   $SleepTime = 20
   $Standalone = "${executable}"
@@ -417,43 +422,43 @@ try {
     }
   } # end of while($true)
 
-  #Invoke-Expression -Command "mkdir C:\scripts" -ErrorAction SilentlyContinue
   $DownloadDir = "${download_dir}"
   Read-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${Standalone}" -File "$${DownloadDir}\watchmaker.exe"
   Test-Command "$${DownloadDir}\watchmaker.exe ${args}"
-  $UserdataStatus = @(0, "Success") # made it this far, it's a success
-}
-catch {
-  $ErrorMessage = [String]$_.Exception + "Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
-  Write-Tfi "*** ERROR caught ***"
-  Write-Tfi $ErrorMessage
-  $ErrCode = 1  # trying to set this to $lastExitCode does not work (always get 0)
-  $UserdataStatus = @($ErrCode, "Error [$ErrorMessage]")
-}
+  $UserdataStatus = @(0, "Success")
 
-%{ else }
-
-try {
-  # ---------- begin of wam install ----------
-  Write-Tfi "Installing Watchmaker from source...................................."
+%{~ else }
+  Write-Tfi "Installing Watchmaker from source..."
   Install-PythonGit
   Clone-Watchmaker
   Install-Watchmaker
   Test-Command "watchmaker ${args}"
-  # ----------  end of wam install ----------
+  $UserdataStatus = @(0, "Success")
 
-  $UserdataStatus = @(0, "Success") # made it this far, it's a success
+%{~ endif }
+%{~ endif }
+
 }
 catch {
   $ErrorMessage = [String]$_.Exception + "Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
   Write-Tfi "*** ERROR caught ***"
   Write-Tfi $ErrorMessage
+
+%{~ if build_type == build_type_builder }
+  # signal builds waiting to test a standalone that the build failed
+  if (-not (Test-Path "$StandaloneErrorSignalFile")) {
+    New-Item "$StandaloneErrorSignalFile" -ItemType "file" -Force
+  }
+  $Msg = "$ErrorMessage (For more information on the error, see the win_builder/userdata.log file.)"
+  "$(Get-Date): $Msg" | Out-File "$StandaloneErrorSignalFile" -Append -Encoding utf8
+  Write-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${StandaloneErrorSignalFile}" -File "$StandaloneErrorSignalFile"
+  Write-Tfi "Signal error to S3" $?
+%{~ endif }
+
   $ErrCode = 1
   $UserdataStatus = @($ErrCode, "Error [$ErrorMessage]")
 }
 
-%{ endif }
-%{ endif }
 $EndDate = Get-Date
 Write-Tfi "End Build =============="
 Write-Tfi ("Build took {0} seconds." -f [math]::Round(($EndDate - $StartDate).TotalSeconds))
@@ -461,8 +466,8 @@ Write-Tfi ("Build took {0} seconds." -f [math]::Round(($EndDate - $StartDate).To
 Rename-User -From "Administrator" -To "$WinUser"
 Open-WinRM
 Write-UserdataStatus -UserdataStatus $UserdataStatus
-Open-Firewall
 Publish-Artifacts
+Open-Firewall
 
 if (($BuildType -eq $BuildTypeSource) -and ("${scan_slug}" -ne "")) {
   Publish-SCAP-Scan
