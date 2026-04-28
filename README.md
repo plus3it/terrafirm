@@ -88,6 +88,10 @@ aws_instance.source_build["centos8stream"]: Still creating... [1m10s elapsed]
 | <a name="input_docker_slug"></a> [docker\_slug](#input\_docker\_slug) | n/a | `string` | `""` | no |
 | <a name="input_git_ref"></a> [git\_ref](#input\_git\_ref) | n/a | `string` | `"main"` | no |
 | <a name="input_git_repo"></a> [git\_repo](#input\_git\_repo) | n/a | `string` | `"https://github.com/plus3it/watchmaker.git"` | no |
+| <a name="input_github_artifact_repo_name"></a> [github\_artifact\_repo\_name](#input\_github\_artifact\_repo\_name) | n/a | `string` | `"watchmaker"` | no |
+| <a name="input_github_artifact_repo_owner"></a> [github\_artifact\_repo\_owner](#input\_github\_artifact\_repo\_owner) | n/a | `string` | `"plus3it"` | no |
+| <a name="input_github_artifact_run_id"></a> [github\_artifact\_run\_id](#input\_github\_artifact\_run\_id) | n/a | `string` | `""` | no |
+| <a name="input_github_artifact_token_ssm_parameter"></a> [github\_artifact\_token\_ssm\_parameter](#input\_github\_artifact\_token\_ssm\_parameter) | n/a | `string` | `""` | no |
 | <a name="input_instance_profile"></a> [instance\_profile](#input\_instance\_profile) | n/a | `string` | `""` | no |
 | <a name="input_lx_args"></a> [lx\_args](#input\_lx\_args) | n/a | `string` | `"--log-dir=/var/log/watchmaker"` | no |
 | <a name="input_lx_instance_type"></a> [lx\_instance\_type](#input\_lx\_instance\_type) | n/a | `string` | `"t2.medium"` | no |
@@ -98,6 +102,7 @@ aws_instance.source_build["centos8stream"]: Still creating... [1m10s elapsed]
 | <a name="input_source_builds"></a> [source\_builds](#input\_source\_builds) | n/a | `list(string)` | <pre>[<br/>  "win16",<br/>  "win19",<br/>  "win22",<br/>  "rhel8",<br/>  "centos8stream",<br/>  "ol8",<br/>  "rhel9",<br/>  "centos9stream",<br/>  "ol9"<br/>]</pre> | no |
 | <a name="input_standalone_builder"></a> [standalone\_builder](#input\_standalone\_builder) | n/a | `string` | `"pyinstaller"` | no |
 | <a name="input_standalone_builds"></a> [standalone\_builds](#input\_standalone\_builds) | n/a | `list(string)` | <pre>[<br/>  "win16",<br/>  "win19",<br/>  "win22",<br/>  "rhel8",<br/>  "centos8stream",<br/>  "ol8",<br/>  "rhel9",<br/>  "centos9stream",<br/>  "ol9"<br/>]</pre> | no |
+| <a name="input_standalone_source"></a> [standalone\_source](#input\_standalone\_source) | n/a | `string` | `"builder"` | no |
 | <a name="input_win_args"></a> [win\_args](#input\_win\_args) | n/a | `string` | `"--log-dir=C:\\Watchmaker\\Logs"` | no |
 | <a name="input_win_instance_type"></a> [win\_instance\_type](#input\_win\_instance\_type) | n/a | `string` | `"t2.large"` | no |
 | <a name="input_win_user"></a> [win\_user](#input\_win\_user) | n/a | `string` | `"Administrator"` | no |

@@ -48,6 +48,7 @@ locals {
   resource_name                    = "${local.name_prefix}-${local.build_id}"
   scan_slug                        = var.scan_s3_url
   security_group_description       = "Used by Terrafirm (${local.resource_name})"
+  standalone_source                = var.standalone_source
   timestamp                        = timestamp()
   url_bootstrap                    = "https://raw.githubusercontent.com/plus3it/watchmaker/main/docs/files/bootstrap/watchmaker-bootstrap.ps1"
   url_local_ip                     = "https://checkip.amazonaws.com"
@@ -205,20 +206,25 @@ locals {
 
   template_vars = {
     base = {
-      aws_region            = local.aws_region
-      build_slug            = local.build_slug
-      build_type_builder    = local.build_type_builder
-      build_type_source     = local.build_type_source
-      build_type_standalone = local.build_type_standalone
-      debug                 = local.debug
-      docker_slug           = local.docker_slug
-      git_ref               = local.git_ref
-      git_repo              = local.git_repo
-      release_prefix        = local.release_prefix
-      scan_slug             = local.scan_slug
-      standalone_builder    = var.standalone_builder
-      url_bootstrap         = local.url_bootstrap
-      url_pypi              = local.url_pypi
+      aws_region                          = local.aws_region
+      build_slug                          = local.build_slug
+      build_type_builder                  = local.build_type_builder
+      build_type_source                   = local.build_type_source
+      build_type_standalone               = local.build_type_standalone
+      debug                               = local.debug
+      docker_slug                         = local.docker_slug
+      github_artifact_repo_name           = var.github_artifact_repo_name
+      github_artifact_repo_owner          = var.github_artifact_repo_owner
+      github_artifact_run_id              = var.github_artifact_run_id
+      github_artifact_token_ssm_parameter = var.github_artifact_token_ssm_parameter
+      git_ref                             = local.git_ref
+      git_repo                            = local.git_repo
+      release_prefix                      = local.release_prefix
+      scan_slug                           = local.scan_slug
+      standalone_builder                  = var.standalone_builder
+      standalone_source                   = local.standalone_source
+      url_bootstrap                       = local.url_bootstrap
+      url_pypi                            = local.url_pypi
     }
 
     lx = {
@@ -248,7 +254,7 @@ locals {
 
   standalone_builds    = toset(var.standalone_builds)
   source_builds        = toset(var.source_builds)
-  builders             = toset([for s in local.standalone_builds : local.build_info[s].platform.builder])
+  builders             = local.standalone_source == "builder" ? toset([for s in local.standalone_builds : local.build_info[s].platform.builder]) : toset([])
   unique_builds_needed = setunion(local.standalone_builds, local.source_builds, local.builders)
 }
 
@@ -485,15 +491,20 @@ resource "aws_instance" "standalone_build" {
     }
   }
 
-  tags = {
-    Name = format(
-      local.build_info[each.key].platform.format_str_instance_name,
-      local.build_type_standalone,
-      each.key
-    )
-
-    BuilderID = aws_instance.builder[local.build_info[each.key].platform.builder].id
-  }
+  tags = merge(
+    {
+      Name = format(
+        local.build_info[each.key].platform.format_str_instance_name,
+        local.build_type_standalone,
+        each.key
+      )
+    },
+    local.standalone_source == "builder" ? {
+      BuilderID = aws_instance.builder[local.build_info[each.key].platform.builder].id
+      } : local.standalone_source == "github_actions_artifact" ? {
+      GitHubArtifactBuild = "true"
+    } : {}
+  )
 
   timeouts {
     create = local.build_info[each.key].platform.create_timeout

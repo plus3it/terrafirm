@@ -6,6 +6,11 @@ build_type="${build_type}"
 build_label="${build_label}"
 build_type_source="${build_type_source}"
 build_type_standalone="${build_type_standalone}"
+standalone_source="${standalone_source}"
+github_artifact_repo_owner="${github_artifact_repo_owner}"
+github_artifact_repo_name="${github_artifact_repo_name}"
+github_artifact_run_id="${github_artifact_run_id}"
+github_artifact_token_ssm_parameter="${github_artifact_token_ssm_parameter}"
 
 # shellcheck disable=SC2154
 exec &> "${userdata_log}"
@@ -176,6 +181,85 @@ publish-artifacts() {
   tar -cvzf "$zip_file" .
   aws s3 cp "$zip_file" "s3://$build_slug/"
   write-tfi "Uploaded artifact zip to S3" --result $?
+}
+
+github-artifact-name() {
+  # shellcheck disable=SC2154
+  if [ "${standalone_builder}" = "pyapp" ]; then
+    echo "standalone-pyapp-dists-linux"
+    return
+  fi
+  echo "standalone-dists-linux"
+}
+
+get-github-token() {
+  if [ -z "$github_artifact_token_ssm_parameter" ]; then
+    write-tfi "github_artifact_token_ssm_parameter must be set when standalone_source is github_actions_artifact"
+    return 1
+  fi
+
+  aws ssm get-parameter \
+    --name "$github_artifact_token_ssm_parameter" \
+    --with-decryption \
+    --query 'Parameter.Value' \
+    --output text
+}
+
+install-standalone-from-github-artifact() {
+  local artifact_name
+  local token
+  local artifact_json
+  local artifact_url
+  local artifact_zip
+  local extract_dir
+  local executable_path
+
+  if [ -z "$github_artifact_run_id" ]; then
+    write-tfi "github_artifact_run_id must be set when standalone_source is github_actions_artifact" >&2
+    return 1
+  fi
+
+  artifact_name=$(github-artifact-name)
+  token=$(get-github-token) || return 1
+
+  write-tfi "Querying GitHub artifact metadata for $artifact_name from run $github_artifact_run_id" >&2
+  artifact_json=$(curl -fsSL \
+    -H "Authorization: Bearer $token" \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    "https://api.github.com/repos/$github_artifact_repo_owner/$github_artifact_repo_name/actions/runs/$github_artifact_run_id/artifacts") || return 1
+
+  artifact_url=$(echo "$artifact_json" | jq -r ".artifacts[] | select(.name == \"$artifact_name\") | .archive_download_url")
+
+  if [ -z "$artifact_url" ]; then
+    write-tfi "GitHub artifact $artifact_name was not found for run $github_artifact_run_id" >&2
+    return 1
+  fi
+
+  artifact_zip="$temp_dir/$artifact_name.zip"
+  extract_dir="$temp_dir/$artifact_name"
+  rm -f "$artifact_zip"
+  rm -rf "$extract_dir"
+  mkdir -p "$extract_dir"
+
+  write-tfi "Downloading GitHub artifact $artifact_name" >&2
+  curl -fsSL \
+    -H "Authorization: Bearer $token" \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    "$artifact_url" -o "$artifact_zip" || return 1
+
+  write-tfi "Extracting GitHub artifact $artifact_name" >&2
+  unzip -q "$artifact_zip" -d "$extract_dir" || return 1
+
+  executable_path=$(find "$extract_dir" -type f -name 'watchmaker-*-standalone-linux-x86_64' | head -n 1)
+
+  if [ -z "$executable_path" ]; then
+    write-tfi "No standalone executable found in GitHub artifact $artifact_name" >&2
+    return 1
+  fi
+
+  echo "$executable_path"
 }
 
 publish-scap-scan() {
@@ -418,46 +502,54 @@ set -e
 trap 'catch $? $LINENO' EXIT
 
 if [ "$build_type" == "$build_type_standalone" ]; then
-  # shellcheck disable=SC2154
-  standalone_location="s3://$build_slug/${executable}"
-  error_location="s3://$build_slug/$standalone_error_signal_file"
-  sleep_time=20
-  nonexistent_code="nonexistent"
-  no_error_code="0"
-
-  write-tfi "Looking for standalone executable at $standalone_location"
-
-  #block until executable exists, an error, or timeout
-  while true; do
-
-    # aws s3 ls $standalone_location ==> exit 1, if it doesn't exist!
-
-    # find out what's happening with the builder
-    exists=$(aws s3 ls "$standalone_location" || echo "$nonexistent_code")
-    error=$(aws s3 ls "$error_location" || echo "$no_error_code")
-
-    if [ "$error" != "0" ]; then
-      # error signaled by the builder
-      write-tfi "Error signaled by the builder"
-      write-tfi "Error file found at $error_location"
-      catch 1 "$LINENO"
-    else
-      # no builder errors signaled
-      if [ "$exists" = "$nonexistent_code"  ]; then
-        # standalone does not exist
-        write-tfi "The standalone executable was not found. Trying again in $sleep_time s..."
-        sleep "$sleep_time"
-      else
-        # it exists!
-        write-tfi "The standalone executable was found!"
-        break
-      fi
-    fi
-
-  done
-
   standalone_dest=/home/maintuser
-  try_cmd 5 aws s3 cp "$standalone_location" "$standalone_dest/watchmaker"
+
+  if [ "$standalone_source" = "github_actions_artifact" ]; then
+    try_cmd 5 yum -y install jq
+    executable_path=$(install-standalone-from-github-artifact) || catch 1 "$LINENO"
+    cp "$executable_path" "$standalone_dest/watchmaker"
+  else
+    # shellcheck disable=SC2154
+    standalone_location="s3://$build_slug/${executable}"
+    error_location="s3://$build_slug/$standalone_error_signal_file"
+    sleep_time=20
+    nonexistent_code="nonexistent"
+    no_error_code="0"
+
+    write-tfi "Looking for standalone executable at $standalone_location"
+
+    #block until executable exists, an error, or timeout
+    while true; do
+
+      # aws s3 ls $standalone_location ==> exit 1, if it doesn't exist!
+
+      # find out what's happening with the builder
+      exists=$(aws s3 ls "$standalone_location" || echo "$nonexistent_code")
+      error=$(aws s3 ls "$error_location" || echo "$no_error_code")
+
+      if [ "$error" != "0" ]; then
+        # error signaled by the builder
+        write-tfi "Error signaled by the builder"
+        write-tfi "Error file found at $error_location"
+        catch 1 "$LINENO"
+      else
+        # no builder errors signaled
+        if [ "$exists" = "$nonexistent_code"  ]; then
+          # standalone does not exist
+          write-tfi "The standalone executable was not found. Trying again in $sleep_time s..."
+          sleep "$sleep_time"
+        else
+          # it exists!
+          write-tfi "The standalone executable was found!"
+          break
+        fi
+      fi
+
+    done
+
+    try_cmd 5 aws s3 cp "$standalone_location" "$standalone_dest/watchmaker"
+  fi
+
   chmod +x "$standalone_dest/watchmaker"
 
   # shellcheck disable=SC2154,SC2086
