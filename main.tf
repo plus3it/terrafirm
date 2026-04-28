@@ -357,7 +357,7 @@ resource "aws_instance" "builder" {
   vpc_security_group_ids      = [aws_security_group.builds.id]
   instance_type               = local.build_info[each.key].platform.instance_type
 
-  user_data = format(
+  user_data_base64 = base64gzip(format(
     local.build_info[each.key].platform.format_str_userdata,
     templatefile(
       local.build_info[each.key].platform.userdata_template,
@@ -372,7 +372,7 @@ resource "aws_instance" "builder" {
         }
       )
     )
-  )
+  ))
 
   root_block_device {
     volume_size = local.build_info[each.key].platform.root_volume_size
@@ -463,7 +463,7 @@ resource "aws_instance" "standalone_build" {
   vpc_security_group_ids      = [aws_security_group.builds.id]
   instance_type               = local.build_info[each.key].platform.instance_type
 
-  user_data = format(
+  user_data_base64 = base64gzip(format(
     local.build_info[each.key].platform.format_str_userdata,
     templatefile(
       local.build_info[each.key].platform.userdata_template,
@@ -478,7 +478,7 @@ resource "aws_instance" "standalone_build" {
         }
       )
     )
-  )
+  ))
 
   root_block_device {
     volume_type = local.build_info[each.key].platform.root_volume_type
@@ -575,7 +575,7 @@ resource "aws_instance" "source_build" {
   vpc_security_group_ids      = [aws_security_group.builds.id]
   instance_type               = local.build_info[each.key].platform.instance_type
 
-  user_data = format(
+  user_data_base64 = base64gzip(format(
     local.build_info[each.key].platform.format_str_userdata,
     templatefile(
       local.build_info[each.key].platform.userdata_template,
@@ -590,7 +590,7 @@ resource "aws_instance" "source_build" {
         }
       )
     )
-  )
+  ))
 
   root_block_device {
     volume_type = local.build_info[each.key].platform.root_volume_type
