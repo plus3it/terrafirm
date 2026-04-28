@@ -216,6 +216,7 @@ locals {
       git_repo              = local.git_repo
       release_prefix        = local.release_prefix
       scan_slug             = local.scan_slug
+      standalone_builder    = var.standalone_builder
       url_bootstrap         = local.url_bootstrap
       url_pypi              = local.url_pypi
     }

@@ -116,3 +116,13 @@ variable "debug" {
   default = true
   type    = bool
 }
+
+variable "standalone_builder" {
+  default = "pyinstaller"
+  type    = string
+
+  validation {
+    condition     = contains(["pyinstaller", "pyapp"], var.standalone_builder)
+    error_message = "The standalone_builder value must be \"pyinstaller\" or \"pyapp\"."
+  }
+}
