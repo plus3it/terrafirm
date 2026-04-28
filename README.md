@@ -96,6 +96,7 @@ aws_instance.source_build["centos8stream"]: Still creating... [1m10s elapsed]
 | <a name="input_s3_bucket"></a> [s3\_bucket](#input\_s3\_bucket) | n/a | `string` | `"mybucket"` | no |
 | <a name="input_scan_s3_url"></a> [scan\_s3\_url](#input\_scan\_s3\_url) | n/a | `string` | `""` | no |
 | <a name="input_source_builds"></a> [source\_builds](#input\_source\_builds) | n/a | `list(string)` | <pre>[<br/>  "win16",<br/>  "win19",<br/>  "win22",<br/>  "rhel8",<br/>  "centos8stream",<br/>  "ol8",<br/>  "rhel9",<br/>  "centos9stream",<br/>  "ol9"<br/>]</pre> | no |
+| <a name="input_standalone_builder"></a> [standalone\_builder](#input\_standalone\_builder) | n/a | `string` | `"pyinstaller"` | no |
 | <a name="input_standalone_builds"></a> [standalone\_builds](#input\_standalone\_builds) | n/a | `list(string)` | <pre>[<br/>  "win16",<br/>  "win19",<br/>  "win22",<br/>  "rhel8",<br/>  "centos8stream",<br/>  "ol8",<br/>  "rhel9",<br/>  "centos9stream",<br/>  "ol9"<br/>]</pre> | no |
 | <a name="input_win_args"></a> [win\_args](#input\_win\_args) | n/a | `string` | `"--log-dir=C:\\Watchmaker\\Logs"` | no |
 | <a name="input_win_instance_type"></a> [win\_instance\_type](#input\_win\_instance\_type) | n/a | `string` | `"t2.large"` | no |

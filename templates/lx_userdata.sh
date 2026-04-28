@@ -381,16 +381,18 @@ install-docker
 # shellcheck disable=SC2154
 export DOCKER_SLUG="${docker_slug}"
 
-# Check if PyApp build script exists and use it, otherwise fall back to PyInstaller
-if [ -f ci/prep_docker_pyapp.sh ]; then
-  write-tfi "Found ci/prep_docker_pyapp.sh, using PyApp build..."
-  try_cmd 1 chmod +x ci/prep_docker_pyapp.sh && ci/prep_docker_pyapp.sh
-  STAGING_DIR=.pyapp/dist
-else
-  write-tfi "PyApp build script not found, using PyInstaller build..."
-  try_cmd 1 chmod +x ci/prep_docker.sh && ci/prep_docker.sh
-  STAGING_DIR=.pyinstaller/dist
-fi
+# shellcheck disable=SC1083,SC2288
+%{ if standalone_builder == "pyapp" }
+write-tfi "Using PyApp build..."
+try_cmd 1 chmod +x ci/prep_docker_pyapp.sh && ci/prep_docker_pyapp.sh
+STAGING_DIR=.pyapp/dist
+# shellcheck disable=SC1083,SC2288
+%{ else }
+write-tfi "Using PyInstaller build..."
+try_cmd 1 chmod +x ci/prep_docker.sh && ci/prep_docker.sh
+STAGING_DIR=.pyinstaller/dist
+# shellcheck disable=SC1083,SC2288
+%{ endif }
 
 # ----------  begin of wam deploy  -------------------------------------------
 

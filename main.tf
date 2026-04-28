@@ -65,16 +65,16 @@ locals {
   win_password_length              = 18
   win_password_override_special    = "()~!@#^*+=|{}[]:;,?"
   win_password_special             = true
-  win_root_volume_size             = 30
+  win_root_volume_size             = 40
   win_root_volume_type             = "gp3"
   win_standalone_error_signal_file = "${local.release_prefix}/win_standalone_error_signal.log"
   win_temp_dir                     = "C:\\Temp"
   win_test_template                = "templates/win_test.ps1"
   win_timeout_connection           = "75m"
   win_timeout_create               = "85m"
-  win_url_7zip                     = "https://www.7-zip.org/a/7z2408-x64.exe"
-  win_url_git                      = "https://github.com/git-for-windows/git/releases/download/v2.46.0.windows.1/Git-2.46.0-64-bit.exe"
-  win_url_python                   = "https://www.python.org/ftp/python/3.10.11/python-3.10.11-amd64.exe"
+  win_url_7zip                     = "https://github.com/ip7z/7zip/releases/download/26.01/7z2601-x64.exe"
+  win_url_git                      = "https://github.com/git-for-windows/git/releases/download/v2.54.0.windows.1/Git-2.54.0-64-bit.exe"
+  win_url_python                   = "https://www.python.org/ftp/python/3.14.4/python-3.14.4-amd64.exe"
   win_user                         = var.win_user
   win_userdata_log                 = var.win_userdata_log
   win_userdata_status_file         = "${local.win_temp_dir}\\userdata_status"
@@ -216,6 +216,7 @@ locals {
       git_repo              = local.git_repo
       release_prefix        = local.release_prefix
       scan_slug             = local.scan_slug
+      standalone_builder    = var.standalone_builder
       url_bootstrap         = local.url_bootstrap
       url_pypi              = local.url_pypi
     }
