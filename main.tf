@@ -79,6 +79,7 @@ locals {
   win_user                         = var.win_user
   win_userdata_log                 = var.win_userdata_log
   win_userdata_status_file         = "${local.win_temp_dir}\\userdata_status"
+  win_userdata_bootstrap_template  = "templates/win_userdata_bootstrap.ps1"
   win_userdata_template            = "templates/win_userdata.ps1"
 
   security_group_ingress = {
@@ -357,7 +358,27 @@ resource "aws_instance" "builder" {
   vpc_security_group_ids      = [aws_security_group.builds.id]
   instance_type               = local.build_info[each.key].platform.instance_type
 
-  user_data_base64 = base64gzip(format(
+  user_data_base64 = local.build_info[each.key].platform.key == "win" ? base64encode(format(
+    local.build_info[each.key].platform.format_str_userdata,
+    templatefile(
+      local.win_userdata_bootstrap_template,
+      {
+        userdata_payload_base64gzip = base64gzip(templatefile(
+          local.build_info[each.key].platform.userdata_template,
+          merge(
+            local.template_vars.base,
+            local.template_vars[local.build_info[each.key].platform.key],
+            {
+              build_os    = each.key
+              build_type  = local.build_type_builder
+              build_label = format(local.format_str_build_label, local.build_type_builder, each.key)
+              password    = local.build_info[each.key].platform.connection_password
+            }
+          )
+        ))
+      }
+    )
+    )) : base64gzip(format(
     local.build_info[each.key].platform.format_str_userdata,
     templatefile(
       local.build_info[each.key].platform.userdata_template,
@@ -463,7 +484,27 @@ resource "aws_instance" "standalone_build" {
   vpc_security_group_ids      = [aws_security_group.builds.id]
   instance_type               = local.build_info[each.key].platform.instance_type
 
-  user_data_base64 = base64gzip(format(
+  user_data_base64 = local.build_info[each.key].platform.key == "win" ? base64encode(format(
+    local.build_info[each.key].platform.format_str_userdata,
+    templatefile(
+      local.win_userdata_bootstrap_template,
+      {
+        userdata_payload_base64gzip = base64gzip(templatefile(
+          local.build_info[each.key].platform.userdata_template,
+          merge(
+            local.template_vars.base,
+            local.template_vars[local.build_info[each.key].platform.key],
+            {
+              build_os    = each.key
+              build_type  = local.build_type_standalone
+              build_label = format(local.format_str_build_label, local.build_type_standalone, each.key)
+              password    = local.build_info[each.key].platform.connection_password
+            }
+          )
+        ))
+      }
+    )
+    )) : base64gzip(format(
     local.build_info[each.key].platform.format_str_userdata,
     templatefile(
       local.build_info[each.key].platform.userdata_template,
@@ -575,7 +616,27 @@ resource "aws_instance" "source_build" {
   vpc_security_group_ids      = [aws_security_group.builds.id]
   instance_type               = local.build_info[each.key].platform.instance_type
 
-  user_data_base64 = base64gzip(format(
+  user_data_base64 = local.build_info[each.key].platform.key == "win" ? base64encode(format(
+    local.build_info[each.key].platform.format_str_userdata,
+    templatefile(
+      local.win_userdata_bootstrap_template,
+      {
+        userdata_payload_base64gzip = base64gzip(templatefile(
+          local.build_info[each.key].platform.userdata_template,
+          merge(
+            local.template_vars.base,
+            local.template_vars[local.build_info[each.key].platform.key],
+            {
+              build_os    = each.key
+              build_type  = local.build_type_source
+              build_label = format(local.format_str_build_label, local.build_type_source, each.key)
+              password    = local.build_info[each.key].platform.connection_password
+            }
+          )
+        ))
+      }
+    )
+    )) : base64gzip(format(
     local.build_info[each.key].platform.format_str_userdata,
     templatefile(
       local.build_info[each.key].platform.userdata_template,
