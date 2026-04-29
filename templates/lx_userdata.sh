@@ -1,22 +1,39 @@
 #!/bin/bash
 # shellcheck disable=SC2269
 
-build_os="${build_os}"
-build_type="${build_type}"
+aws_region="${aws_region}"
 build_label="${build_label}"
+build_os="${build_os}"
+build_slug="${build_slug}"
+build_type="${build_type}"
 build_type_source="${build_type_source}"
 build_type_standalone="${build_type_standalone}"
-
-# shellcheck disable=SC2154
-exec &> "${userdata_log}"
-
-build_slug="${build_slug}"
+debug="${debug}"
+docker_slug="${docker_slug}"
+executable="${executable}"
+git_ref="${git_ref}"
+git_repo="${git_repo}"
+github_artifact_repo_name="${github_artifact_repo_name}"
+github_artifact_repo_owner="${github_artifact_repo_owner}"
+github_artifact_run_id="${github_artifact_run_id}"
+github_artifact_token_ssm_parameter="${github_artifact_token_ssm_parameter}"
+port="${port}"
+release_prefix="${release_prefix}"
+scan_slug="${scan_slug}"
+standalone_builder="${standalone_builder}"
 standalone_error_signal_file="${standalone_error_signal_file}"
+standalone_source="${standalone_source}"
 temp_dir="${temp_dir}"
-# shellcheck disable=SC2154
-export AWS_DEFAULT_REGION="${aws_region}"
-# shellcheck disable=SC2154
-debug_mode="${debug}"
+url_pypi="${url_pypi}"
+userdata_log="${userdata_log}"
+userdata_status_file="${userdata_status_file}"
+
+# Split args once and pass as a safe argv array where needed.
+read -r -a args <<< "${args}"
+
+exec &> "$userdata_log"
+
+export AWS_DEFAULT_REGION="$aws_region"
 
 echo "------------------------------- $build_label ---------------------"
 
@@ -29,7 +46,7 @@ debug-2s3() {
   debug_file="$temp_dir/debug.log"
   echo "$msg" >> "$debug_file"
   aws s3 cp "$debug_file" "s3://$build_slug/$build_label/" > /dev/null 2>&1 || true
-  aws s3 cp "${userdata_log}" "s3://$build_slug/$build_label/" > /dev/null 2>&1 || true
+  aws s3 cp "$userdata_log" "s3://$build_slug/$build_label/" > /dev/null 2>&1 || true
 }
 
 check-metadata-availability() {
@@ -56,9 +73,9 @@ write-tfi() {
   done
   msg="$(echo -e "$msg" | sed -e 's/^[[:space:]]*//')"
 
-  if [ "$result" = "" ]; then
+  if [[ "$result" == "" ]]; then
     out_result=""
-  elif [ "$result" = "0" ]; then
+  elif [[ "$result" == "0" ]]; then
     out_result=": Succeeded"
   else
     out_result=": Failed"
@@ -66,7 +83,7 @@ write-tfi() {
 
   echo "$(date +%F_%T): $msg $out_result"
 
-  if [ "$debug_mode" != "false" ] ; then
+  if [[ "$debug" != "false" ]]; then
     debug-2s3 "$(date +%F_%T): $msg $out_result"
   fi
 }
@@ -83,7 +100,7 @@ try_cmd() {
 
   shift 1
 
-  if [ "$try" -gt 1 ]; then
+  if [[ "$try" -gt 1 ]]; then
     write-tfi "Will try $try time(s) :: $*"
   fi
 
@@ -116,10 +133,9 @@ try_cmd() {
 open-ssh() {
   # open firewall on rhel 7/8 and ubuntu, move ssh to non-standard
 
-  # shellcheck disable=SC2154
-  local new_lx_port="${port}"
+  local new_lx_port="$port"
 
-  if [ -f /etc/redhat-release ]; then
+  if [[ -f /etc/redhat-release ]]; then
     ## CentOS / RedHat / Oracle Linux
 
     # allow ssh to be on non-standard port (SEL-enforced rule)
@@ -166,7 +182,7 @@ publish-artifacts() {
 
   # move logs to s3
   artifact_dest="s3://$build_slug/$build_label"
-  cp "${userdata_log}" "$artifact_dir"
+  cp "$userdata_log" "$artifact_dir"
   aws s3 cp "$artifact_dir" "$artifact_dest" --recursive
   write-tfi "Uploaded logs to $artifact_dest" --result $?
 
@@ -178,6 +194,84 @@ publish-artifacts() {
   write-tfi "Uploaded artifact zip to S3" --result $?
 }
 
+github-artifact-name() {
+  if [[ "$standalone_builder" == "pyapp" ]]; then
+    echo "standalone-pyapp-dists-linux"
+    return
+  fi
+  echo "standalone-dists-linux"
+}
+
+get-github-token() {
+  if [[ -z "$github_artifact_token_ssm_parameter" ]]; then
+    write-tfi "github_artifact_token_ssm_parameter must be set when standalone_source is github_actions_artifact"
+    return 1
+  fi
+
+  aws ssm get-parameter \
+    --name "$github_artifact_token_ssm_parameter" \
+    --with-decryption \
+    --query 'Parameter.Value' \
+    --output text
+}
+
+install-standalone-from-github-artifact() {
+  local artifact_name
+  local token
+  local artifact_json
+  local artifact_url
+  local artifact_zip
+  local extract_dir
+  local executable_path
+
+  if [[ -z "$github_artifact_run_id" ]]; then
+    write-tfi "github_artifact_run_id must be set when standalone_source is github_actions_artifact" >&2
+    return 1
+  fi
+
+  artifact_name=$(github-artifact-name)
+  token=$(get-github-token) || return 1
+
+  write-tfi "Querying GitHub artifact metadata for $artifact_name from run $github_artifact_run_id" >&2
+  artifact_json=$(curl -fsSL \
+    -H "Authorization: Bearer $token" \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    "https://api.github.com/repos/$github_artifact_repo_owner/$github_artifact_repo_name/actions/runs/$github_artifact_run_id/artifacts") || return 1
+
+  artifact_url=$(echo "$artifact_json" | jq -r ".artifacts[] | select(.name == \"$artifact_name\") | .archive_download_url")
+
+  if [[ -z "$artifact_url" ]]; then
+    write-tfi "GitHub artifact $artifact_name was not found for run $github_artifact_run_id" >&2
+    return 1
+  fi
+
+  artifact_zip="$temp_dir/$artifact_name.zip"
+  extract_dir="$temp_dir/$artifact_name"
+  rm -f "$artifact_zip"
+  rm -rf "$extract_dir"
+  mkdir -p "$extract_dir"
+
+  write-tfi "Downloading GitHub artifact $artifact_name" >&2
+  curl -fsSL \
+    -H "Authorization: Bearer $token" \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    "$artifact_url" -o "$artifact_zip" || return 1
+
+  write-tfi "Extracting GitHub artifact $artifact_name" >&2
+  unzip -q "$artifact_zip" -d "$extract_dir" || return 1
+
+  executable_path=$(find "$extract_dir" -type f -name 'watchmaker-*-standalone-linux-x86_64' | head -n 1)
+
+  if [[ -z "$executable_path" ]]; then
+    write-tfi "No standalone executable found in GitHub artifact $artifact_name" >&2
+    return 1
+  fi
+
+  echo "$executable_path"
+}
+
 publish-scap-scan() {
   # create a directory with scap scan output
   scan_dir="$temp_dir/terrafirm/scan"
@@ -185,8 +279,7 @@ publish-scap-scan() {
   cp -R /root/scap/output/* "$scan_dir" || true
 
   # move scan output to s3
-  # shellcheck disable=SC2154
-  scan_dest="${scan_slug}/$build_os"
+  scan_dest="$scan_slug/$build_os"
   aws s3 cp "$scan_dir" "$scan_dest" --recursive
   write-tfi "Uploaded scap scan to $scan_dest" --result $?
 }
@@ -197,8 +290,7 @@ finally() {
   runtime=$((end-start))
   write-tfi "WAM install took $runtime seconds."
 
-  # shellcheck disable=SC2154
-  printf "%s\n" "$${userdata_status[@]}" > "${userdata_status_file}"
+  printf "%s\n" "$${userdata_status[@]}" > "$userdata_status_file"
 
   # disable fapolicyd so it can't block aws-cli
   if systemctl is-active --quiet fapolicyd; then
@@ -207,8 +299,7 @@ finally() {
 
   open-ssh
   publish-artifacts
-  # shellcheck disable=SC2154
-  if [ "$build_type" == "$build_type_source" ] && [ "${scan_slug}" != "" ]; then
+  if [[ "$build_type" == "$build_type_source" && "$scan_slug" != "" ]]; then
     publish-scap-scan
   fi
 
@@ -246,12 +337,9 @@ clone-watchmaker() {
 install-watchmaker() {
   # install watchmaker from source
 
-  # shellcheck disable=SC2154
-  GIT_REPO="${git_repo}"
-  # shellcheck disable=SC2154
-  GIT_REF="${git_ref}"
-  # shellcheck disable=SC2154
-  PYPI_URL="${url_pypi}"
+  GIT_REPO="$git_repo"
+  GIT_REF="$git_ref"
+  PYPI_URL="$url_pypi"
 
   # Install pip
   try_cmd 2 python3 -m ensurepip --upgrade --default-pip
@@ -267,7 +355,7 @@ install-watchmaker() {
   try_cmd 3 clone-watchmaker
 
   cd watchmaker
-  if [ -n "$GIT_REF" ] ; then
+  if [[ -n "$GIT_REF" ]]; then
     # decide whether to switch to pull request or a branch
     num_re='^[0-9]+$'
     if [[ "$GIT_REF" =~ $num_re ]] ; then
@@ -308,7 +396,7 @@ virtualenv_activate_script="$virtualenv_path/bin/activate"
 
 # shellcheck disable=SC2317,SC2329
 handle_builder_exit() {
-  if [ "$1" != "0" ] ; then
+  if [[ "$1" != "0" ]]; then
     echo "For more information on the error, see the lx_builder/userdata.log file." > "$temp_dir/error.log"
     echo "$0: line $2: exiting with status $1" >> "$temp_dir/error.log"
 
@@ -378,8 +466,7 @@ install-watchmaker
 install-docker
 
 # Launch docker and build watchmaker
-# shellcheck disable=SC2154
-export DOCKER_SLUG="${docker_slug}"
+export DOCKER_SLUG="$docker_slug"
 
 # shellcheck disable=SC1083,SC2288
 %{ if standalone_builder == "pyapp" }
@@ -400,8 +487,7 @@ rm -rf "$STAGING_DIR/latest"
 mv "$STAGING_DIR/"* "$STAGING_DIR/latest"
 mv "$STAGING_DIR/latest/"watchmaker-*-standalone-linux-x86_64 "$STAGING_DIR/latest/watchmaker-latest-standalone-linux-x86_64"
 
-# shellcheck disable=SC2154
-artifact_dest="s3://$build_slug/${release_prefix}/"
+artifact_dest="s3://$build_slug/$release_prefix/"
 try_cmd 1 aws s3 cp "$STAGING_DIR" "$artifact_dest" --recursive
 
 # ----------  end of wam deploy  ---------------------------------------------
@@ -417,51 +503,57 @@ check-metadata-availability
 set -e
 trap 'catch $? $LINENO' EXIT
 
-if [ "$build_type" == "$build_type_standalone" ]; then
-  # shellcheck disable=SC2154
-  standalone_location="s3://$build_slug/${executable}"
-  error_location="s3://$build_slug/$standalone_error_signal_file"
-  sleep_time=20
-  nonexistent_code="nonexistent"
-  no_error_code="0"
-
-  write-tfi "Looking for standalone executable at $standalone_location"
-
-  #block until executable exists, an error, or timeout
-  while true; do
-
-    # aws s3 ls $standalone_location ==> exit 1, if it doesn't exist!
-
-    # find out what's happening with the builder
-    exists=$(aws s3 ls "$standalone_location" || echo "$nonexistent_code")
-    error=$(aws s3 ls "$error_location" || echo "$no_error_code")
-
-    if [ "$error" != "0" ]; then
-      # error signaled by the builder
-      write-tfi "Error signaled by the builder"
-      write-tfi "Error file found at $error_location"
-      catch 1 "$LINENO"
-    else
-      # no builder errors signaled
-      if [ "$exists" = "$nonexistent_code"  ]; then
-        # standalone does not exist
-        write-tfi "The standalone executable was not found. Trying again in $sleep_time s..."
-        sleep "$sleep_time"
-      else
-        # it exists!
-        write-tfi "The standalone executable was found!"
-        break
-      fi
-    fi
-
-  done
-
+if [[ "$build_type" == "$build_type_standalone" ]]; then
   standalone_dest=/home/maintuser
-  try_cmd 5 aws s3 cp "$standalone_location" "$standalone_dest/watchmaker"
+
+  if [[ "$standalone_source" == "github_actions_artifact" ]]; then
+    try_cmd 5 yum -y install jq
+    executable_path=$(install-standalone-from-github-artifact) || catch 1 "$LINENO"
+    cp "$executable_path" "$standalone_dest/watchmaker"
+  else
+    standalone_location="s3://$build_slug/$executable"
+    error_location="s3://$build_slug/$standalone_error_signal_file"
+    sleep_time=20
+    nonexistent_code="nonexistent"
+    no_error_code="no_error"
+
+    write-tfi "Looking for standalone executable at $standalone_location"
+
+    #block until executable exists, an error, or timeout
+    while true; do
+
+      # aws s3 ls $standalone_location ==> exit 1, if it doesn't exist!
+
+      # find out what's happening with the builder
+      exists=$(aws s3 ls "$standalone_location" || echo "$nonexistent_code")
+      error=$(aws s3 ls "$error_location" || echo "$no_error_code")
+
+      if [[ "$error" != "$no_error_code" ]]; then
+        # error signaled by the builder
+        write-tfi "Error signaled by the builder"
+        write-tfi "Error file found at $error_location"
+        catch 1 "$LINENO"
+      else
+        # no builder errors signaled
+        if [[ "$exists" == "$nonexistent_code" ]]; then
+          # standalone does not exist
+          write-tfi "The standalone executable was not found. Trying again in $sleep_time s..."
+          sleep "$sleep_time"
+        else
+          # it exists!
+          write-tfi "The standalone executable was found!"
+          break
+        fi
+      fi
+
+    done
+
+    try_cmd 5 aws s3 cp "$standalone_location" "$standalone_dest/watchmaker"
+  fi
+
   chmod +x "$standalone_dest/watchmaker"
 
-  # shellcheck disable=SC2154,SC2086
-  try_cmd 1 "$standalone_dest"/watchmaker ${args}
+  try_cmd 1 "$standalone_dest"/watchmaker "$${args[@]}"
 
 else
   # Install from source
@@ -484,7 +576,7 @@ else
       fi
   done
 
-  if [ "$found_python" = false ]; then
+  if [[ "$found_python" == false ]]; then
       echo "No appropriate alternative python3 found, using default python3 version"
   fi
 
@@ -493,8 +585,7 @@ else
   install-watchmaker
 
   # Run watchmaker
-  # shellcheck disable=SC2086
-  try_cmd 1 watchmaker ${args}
+  try_cmd 1 watchmaker "$${args[@]}"
 
   # ----------  end of wam install  ----------
 fi

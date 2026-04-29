@@ -3,12 +3,17 @@ $BuildType = "${build_type}"
 $BuildLabel = "${build_label}"
 $BuildTypeStandalone = "${build_type_standalone}"
 $BuildTypeSource = "${build_type_source}"
+$StandaloneSource = "${standalone_source}"
 
 $BuildSlug = "${build_slug}"
 $BuildSlugParts = $BuildSlug -Split "/"
 $BuildBucket = $BuildSlugParts[0]
 $BuildKeyPrefix = $BuildSlugParts[1..($BuildSlugParts.Length - 1)] -Join "/"
 $StandaloneErrorSignalFile = "${standalone_error_signal_file}"
+$GitHubArtifactRepoOwner = "${github_artifact_repo_owner}"
+$GitHubArtifactRepoName = "${github_artifact_repo_name}"
+$GitHubArtifactRunId = "${github_artifact_run_id}"
+$GitHubArtifactTokenSsmParameter = "${github_artifact_token_ssm_parameter}"
 $WinUser = "${user}"
 $PypiUrl = "${url_pypi}"
 $DebugMode = "${debug}"
@@ -186,6 +191,84 @@ function Publish-SCAP-Scan {
   Copy-Item "C:\Watchmaker\SCAP" -Destination "$ScanDir" -Recurse -Force
   Write-S3Object -BucketName "$ScanBucket" -KeyPrefix "$${ScanKeyPrefix}/$${BuildOS}" -Folder "$${ScanDir}\SCAP\Sessions" -Recurse
   Write-Tfi "Wrote SCAP scan to ${scan_slug}/$BuildOS" $?
+}
+
+function Get-GitHubArtifactName {
+  if ("${standalone_builder}" -eq "pyapp") {
+    return "standalone-pyapp-dists-windows"
+  }
+  return "standalone-dists-windows"
+}
+
+function Get-GitHubToken {
+  if ([string]::IsNullOrEmpty($GitHubArtifactTokenSsmParameter)) {
+    throw "github_artifact_token_ssm_parameter must be set when standalone_source is github_actions_artifact"
+  }
+
+  $Response = Get-SSMParameterValue -Name $GitHubArtifactTokenSsmParameter -WithDecryption $true
+  $Token = $null
+
+  if ($null -ne $Response.Parameter) {
+    $Token = $Response.Parameter.Value
+  }
+  elseif ($null -ne $Response.Parameters -and $Response.Parameters.Count -gt 0) {
+    $Token = $Response.Parameters[0].Value
+  }
+
+  if ([string]::IsNullOrEmpty($Token)) {
+    throw "Unable to retrieve GitHub token from SSM parameter '$GitHubArtifactTokenSsmParameter'"
+  }
+
+  return $Token
+}
+
+function Install-StandaloneFromGitHubArtifact {
+  $ArtifactName = Get-GitHubArtifactName
+  $Token        = Get-GitHubToken
+  $Headers = @{
+    Authorization = "Bearer $Token"
+    Accept        = "application/vnd.github+json"
+
+    "X-GitHub-Api-Version" = "2022-11-28"
+  }
+
+  if ([string]::IsNullOrEmpty($GitHubArtifactRunId)) {
+    throw "github_artifact_run_id must be set when standalone_source is github_actions_artifact"
+  }
+
+  $ArtifactsUri = "https://api.github.com/repos/$GitHubArtifactRepoOwner/$GitHubArtifactRepoName/actions/runs/$GitHubArtifactRunId/artifacts"
+  Write-Tfi "Querying GitHub artifact metadata from $ArtifactsUri"
+  $ArtifactsResponse = Invoke-RestMethod -Headers $Headers -Uri $ArtifactsUri -Method Get
+  $Artifact = $ArtifactsResponse.artifacts | Where-Object { $_.name -eq $ArtifactName } | Select-Object -First 1
+
+  if ($null -eq $Artifact) {
+    throw "GitHub artifact '$ArtifactName' was not found for run $GitHubArtifactRunId"
+  }
+
+  $DownloadDir = "${download_dir}"
+  if (-not (Test-Path $DownloadDir)) {
+    New-Item -ItemType Directory -Force -Path $DownloadDir | Out-Null
+  }
+
+  $ArtifactZip = Join-Path $DownloadDir "$ArtifactName.zip"
+  $ArtifactExtractDir = Join-Path $DownloadDir $ArtifactName
+  Remove-Item -Path $ArtifactZip -Force -ErrorAction SilentlyContinue
+  Remove-Item -Path $ArtifactExtractDir -Force -Recurse -ErrorAction SilentlyContinue
+
+  Write-Tfi "Downloading GitHub artifact '$ArtifactName'"
+  Invoke-WebRequest -Headers $Headers -Uri $Artifact.archive_download_url -OutFile $ArtifactZip
+
+  Write-Tfi "Extracting GitHub artifact '$ArtifactName'"
+  Expand-Archive -Path $ArtifactZip -DestinationPath $ArtifactExtractDir -Force
+
+  $Executable = Get-ChildItem -Path $ArtifactExtractDir -Filter "watchmaker-*-standalone-windows-amd64.exe" -File -Recurse | Select-Object -First 1
+  if ($null -eq $Executable) {
+    throw "No Windows standalone executable was found in artifact '$ArtifactName'"
+  }
+
+  $Destination = Join-Path $DownloadDir "watchmaker.exe"
+  Copy-Item -Path $Executable.FullName -Destination $Destination -Force
+  return $Destination
 }
 
 function Test-DisplayResult {
@@ -372,6 +455,9 @@ try {
 
   Write-Tfi "Installing Watchmaker from standalone executable..."
 
+%{~ if standalone_source == "github_actions_artifact" }
+  $ExecutablePath = Install-StandaloneFromGitHubArtifact
+%{~ else }
   $SleepTime = 20
   $Standalone = "${executable}"
   $ErrorKey = $StandaloneErrorSignalFile
@@ -395,7 +481,7 @@ try {
 
     # see if the builder encountered an error
     try {
-      Get-S3ObjectMetadata -BucketName "$BuildBucket" -Key "$${BuuildKeyPrefix}/$${ErrorKey}"
+      Get-S3ObjectMetadata -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${ErrorKey}"
     }
     catch {
       $SignaledError = $false
@@ -422,7 +508,9 @@ try {
 
   $DownloadDir = "${download_dir}"
   Read-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${Standalone}" -File "$${DownloadDir}\watchmaker.exe"
-  Test-Command "$${DownloadDir}\watchmaker.exe ${args}"
+  $ExecutablePath = "$${DownloadDir}\watchmaker.exe"
+%{~ endif }
+  Test-Command "$ExecutablePath ${args}"
   $UserdataStatus = @(0, "Success")
 
 %{~ else }

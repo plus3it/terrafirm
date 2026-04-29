@@ -126,3 +126,33 @@ variable "standalone_builder" {
     error_message = "The standalone_builder value must be \"pyinstaller\" or \"pyapp\"."
   }
 }
+
+variable "standalone_source" {
+  default = "builder"
+  type    = string
+
+  validation {
+    condition     = contains(["builder", "github_actions_artifact"], var.standalone_source)
+    error_message = "The standalone_source value must be \"builder\" or \"github_actions_artifact\"."
+  }
+}
+
+variable "github_artifact_repo_owner" {
+  default = "plus3it"
+  type    = string
+}
+
+variable "github_artifact_repo_name" {
+  default = "watchmaker"
+  type    = string
+}
+
+variable "github_artifact_run_id" {
+  default = ""
+  type    = string
+}
+
+variable "github_artifact_token_ssm_parameter" {
+  default = ""
+  type    = string
+}

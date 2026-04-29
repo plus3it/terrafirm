@@ -48,6 +48,7 @@ locals {
   resource_name                    = "${local.name_prefix}-${local.build_id}"
   scan_slug                        = var.scan_s3_url
   security_group_description       = "Used by Terrafirm (${local.resource_name})"
+  standalone_source                = var.standalone_source
   timestamp                        = timestamp()
   url_bootstrap                    = "https://raw.githubusercontent.com/plus3it/watchmaker/main/docs/files/bootstrap/watchmaker-bootstrap.ps1"
   url_local_ip                     = "https://checkip.amazonaws.com"
@@ -78,6 +79,7 @@ locals {
   win_user                         = var.win_user
   win_userdata_log                 = var.win_userdata_log
   win_userdata_status_file         = "${local.win_temp_dir}\\userdata_status"
+  win_userdata_bootstrap_template  = "templates/win_userdata_bootstrap.ps1"
   win_userdata_template            = "templates/win_userdata.ps1"
 
   security_group_ingress = {
@@ -205,20 +207,25 @@ locals {
 
   template_vars = {
     base = {
-      aws_region            = local.aws_region
-      build_slug            = local.build_slug
-      build_type_builder    = local.build_type_builder
-      build_type_source     = local.build_type_source
-      build_type_standalone = local.build_type_standalone
-      debug                 = local.debug
-      docker_slug           = local.docker_slug
-      git_ref               = local.git_ref
-      git_repo              = local.git_repo
-      release_prefix        = local.release_prefix
-      scan_slug             = local.scan_slug
-      standalone_builder    = var.standalone_builder
-      url_bootstrap         = local.url_bootstrap
-      url_pypi              = local.url_pypi
+      aws_region                          = local.aws_region
+      build_slug                          = local.build_slug
+      build_type_builder                  = local.build_type_builder
+      build_type_source                   = local.build_type_source
+      build_type_standalone               = local.build_type_standalone
+      debug                               = local.debug
+      docker_slug                         = local.docker_slug
+      github_artifact_repo_name           = var.github_artifact_repo_name
+      github_artifact_repo_owner          = var.github_artifact_repo_owner
+      github_artifact_run_id              = var.github_artifact_run_id
+      github_artifact_token_ssm_parameter = var.github_artifact_token_ssm_parameter
+      git_ref                             = local.git_ref
+      git_repo                            = local.git_repo
+      release_prefix                      = local.release_prefix
+      scan_slug                           = local.scan_slug
+      standalone_builder                  = var.standalone_builder
+      standalone_source                   = local.standalone_source
+      url_bootstrap                       = local.url_bootstrap
+      url_pypi                            = local.url_pypi
     }
 
     lx = {
@@ -248,7 +255,7 @@ locals {
 
   standalone_builds    = toset(var.standalone_builds)
   source_builds        = toset(var.source_builds)
-  builders             = toset([for s in local.standalone_builds : local.build_info[s].platform.builder])
+  builders             = local.standalone_source == "builder" ? toset([for s in local.standalone_builds : local.build_info[s].platform.builder]) : toset([])
   unique_builds_needed = setunion(local.standalone_builds, local.source_builds, local.builders)
 }
 
@@ -351,7 +358,27 @@ resource "aws_instance" "builder" {
   vpc_security_group_ids      = [aws_security_group.builds.id]
   instance_type               = local.build_info[each.key].platform.instance_type
 
-  user_data = format(
+  user_data_base64 = local.build_info[each.key].platform.key == "win" ? base64encode(format(
+    local.build_info[each.key].platform.format_str_userdata,
+    templatefile(
+      local.win_userdata_bootstrap_template,
+      {
+        userdata_payload_base64gzip = base64gzip(templatefile(
+          local.build_info[each.key].platform.userdata_template,
+          merge(
+            local.template_vars.base,
+            local.template_vars[local.build_info[each.key].platform.key],
+            {
+              build_os    = each.key
+              build_type  = local.build_type_builder
+              build_label = format(local.format_str_build_label, local.build_type_builder, each.key)
+              password    = local.build_info[each.key].platform.connection_password
+            }
+          )
+        ))
+      }
+    )
+    )) : base64gzip(format(
     local.build_info[each.key].platform.format_str_userdata,
     templatefile(
       local.build_info[each.key].platform.userdata_template,
@@ -366,7 +393,7 @@ resource "aws_instance" "builder" {
         }
       )
     )
-  )
+  ))
 
   root_block_device {
     volume_size = local.build_info[each.key].platform.root_volume_size
@@ -457,7 +484,27 @@ resource "aws_instance" "standalone_build" {
   vpc_security_group_ids      = [aws_security_group.builds.id]
   instance_type               = local.build_info[each.key].platform.instance_type
 
-  user_data = format(
+  user_data_base64 = local.build_info[each.key].platform.key == "win" ? base64encode(format(
+    local.build_info[each.key].platform.format_str_userdata,
+    templatefile(
+      local.win_userdata_bootstrap_template,
+      {
+        userdata_payload_base64gzip = base64gzip(templatefile(
+          local.build_info[each.key].platform.userdata_template,
+          merge(
+            local.template_vars.base,
+            local.template_vars[local.build_info[each.key].platform.key],
+            {
+              build_os    = each.key
+              build_type  = local.build_type_standalone
+              build_label = format(local.format_str_build_label, local.build_type_standalone, each.key)
+              password    = local.build_info[each.key].platform.connection_password
+            }
+          )
+        ))
+      }
+    )
+    )) : base64gzip(format(
     local.build_info[each.key].platform.format_str_userdata,
     templatefile(
       local.build_info[each.key].platform.userdata_template,
@@ -472,7 +519,7 @@ resource "aws_instance" "standalone_build" {
         }
       )
     )
-  )
+  ))
 
   root_block_device {
     volume_type = local.build_info[each.key].platform.root_volume_type
@@ -485,15 +532,20 @@ resource "aws_instance" "standalone_build" {
     }
   }
 
-  tags = {
-    Name = format(
-      local.build_info[each.key].platform.format_str_instance_name,
-      local.build_type_standalone,
-      each.key
-    )
-
-    BuilderID = aws_instance.builder[local.build_info[each.key].platform.builder].id
-  }
+  tags = merge(
+    {
+      Name = format(
+        local.build_info[each.key].platform.format_str_instance_name,
+        local.build_type_standalone,
+        each.key
+      )
+    },
+    local.standalone_source == "builder" ? {
+      BuilderID = aws_instance.builder[local.build_info[each.key].platform.builder].id
+      } : local.standalone_source == "github_actions_artifact" ? {
+      GitHubArtifactBuild = "true"
+    } : {}
+  )
 
   timeouts {
     create = local.build_info[each.key].platform.create_timeout
@@ -564,7 +616,27 @@ resource "aws_instance" "source_build" {
   vpc_security_group_ids      = [aws_security_group.builds.id]
   instance_type               = local.build_info[each.key].platform.instance_type
 
-  user_data = format(
+  user_data_base64 = local.build_info[each.key].platform.key == "win" ? base64encode(format(
+    local.build_info[each.key].platform.format_str_userdata,
+    templatefile(
+      local.win_userdata_bootstrap_template,
+      {
+        userdata_payload_base64gzip = base64gzip(templatefile(
+          local.build_info[each.key].platform.userdata_template,
+          merge(
+            local.template_vars.base,
+            local.template_vars[local.build_info[each.key].platform.key],
+            {
+              build_os    = each.key
+              build_type  = local.build_type_source
+              build_label = format(local.format_str_build_label, local.build_type_source, each.key)
+              password    = local.build_info[each.key].platform.connection_password
+            }
+          )
+        ))
+      }
+    )
+    )) : base64gzip(format(
     local.build_info[each.key].platform.format_str_userdata,
     templatefile(
       local.build_info[each.key].platform.userdata_template,
@@ -579,7 +651,7 @@ resource "aws_instance" "source_build" {
         }
       )
     )
-  )
+  ))
 
   root_block_device {
     volume_type = local.build_info[each.key].platform.root_volume_type
