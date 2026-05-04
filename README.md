@@ -22,6 +22,8 @@ Terrafirm can be run locally or with [AWS CodeBuild](https://aws.amazon.com/code
 
 Several environment variables allow you to control what builds Terrafirm runs. Each of them is described in more detail in this section.
 
+Use `TF_VAR_source_source` to choose how source builds install Watchmaker. The default is `git`, which clones the repository and installs it locally. Set it to `github_actions_artifact` to install the wheel from the `dists` artifact of a GitHub Actions run identified by the `TF_VAR_github_artifact_*` inputs.
+
 ### TF_VAR_source_builds and TF_VAR_standalone_builds
 
 To pick specific operating system builds, set the `TF_VAR_source_builds` and `TF_VAR_standalone_builds` environment variables to one or more the following operating system values. In the variable names, `standalone`/`source` refers to the standalone package test or the from source test.
@@ -100,6 +102,7 @@ aws_instance.source_build["centos8stream"]: Still creating... [1m10s elapsed]
 | <a name="input_s3_bucket"></a> [s3\_bucket](#input\_s3\_bucket) | n/a | `string` | `"mybucket"` | no |
 | <a name="input_scan_s3_url"></a> [scan\_s3\_url](#input\_scan\_s3\_url) | n/a | `string` | `""` | no |
 | <a name="input_source_builds"></a> [source\_builds](#input\_source\_builds) | n/a | `list(string)` | <pre>[<br/>  "win16",<br/>  "win19",<br/>  "win22",<br/>  "rhel8",<br/>  "centos8stream",<br/>  "ol8",<br/>  "rhel9",<br/>  "centos9stream",<br/>  "ol9"<br/>]</pre> | no |
+| <a name="input_source_source"></a> [source\_source](#input\_source\_source) | n/a | `string` | `"git"` | no |
 | <a name="input_standalone_builder"></a> [standalone\_builder](#input\_standalone\_builder) | n/a | `string` | `"pyinstaller"` | no |
 | <a name="input_standalone_builds"></a> [standalone\_builds](#input\_standalone\_builds) | n/a | `list(string)` | <pre>[<br/>  "win16",<br/>  "win19",<br/>  "win22",<br/>  "rhel8",<br/>  "centos8stream",<br/>  "ol8",<br/>  "rhel9",<br/>  "centos9stream",<br/>  "ol9"<br/>]</pre> | no |
 | <a name="input_standalone_source"></a> [standalone\_source](#input\_standalone\_source) | n/a | `string` | `"builder"` | no |

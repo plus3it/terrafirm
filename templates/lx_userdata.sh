@@ -20,6 +20,7 @@ github_artifact_token_ssm_parameter="${github_artifact_token_ssm_parameter}"
 port="${port}"
 release_prefix="${release_prefix}"
 scan_slug="${scan_slug}"
+source_source="${source_source}"
 standalone_builder="${standalone_builder}"
 standalone_error_signal_file="${standalone_error_signal_file}"
 standalone_source="${standalone_source}"
@@ -272,6 +273,63 @@ install-standalone-from-github-artifact() {
   echo "$executable_path"
 }
 
+install-source-wheel-from-github-artifact() {
+  local artifact_name
+  local token
+  local artifact_json
+  local artifact_url
+  local artifact_zip
+  local extract_dir
+  local wheel_path
+
+  if [[ -z "$github_artifact_run_id" ]]; then
+    write-tfi "github_artifact_run_id must be set when source_source is github_actions_artifact" >&2
+    return 1
+  fi
+
+  artifact_name="dists"
+  token=$(get-github-token) || return 1
+
+  write-tfi "Querying GitHub artifact metadata for $artifact_name from run $github_artifact_run_id" >&2
+  artifact_json=$(curl -fsSL \
+    -H "Authorization: Bearer $token" \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    "https://api.github.com/repos/$github_artifact_repo_owner/$github_artifact_repo_name/actions/runs/$github_artifact_run_id/artifacts") || return 1
+
+  artifact_url=$(echo "$artifact_json" | jq -r ".artifacts[] | select(.name == \"$artifact_name\") | .archive_download_url")
+
+  if [[ -z "$artifact_url" ]]; then
+    write-tfi "GitHub artifact $artifact_name was not found for run $github_artifact_run_id" >&2
+    return 1
+  fi
+
+  artifact_zip="$temp_dir/$artifact_name.zip"
+  extract_dir="$temp_dir/$artifact_name"
+  rm -f "$artifact_zip"
+  rm -rf "$extract_dir"
+  mkdir -p "$extract_dir"
+
+  write-tfi "Downloading GitHub artifact $artifact_name" >&2
+  curl -fsSL \
+    -H "Authorization: Bearer $token" \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    "$artifact_url" -o "$artifact_zip" || return 1
+
+  write-tfi "Extracting GitHub artifact $artifact_name" >&2
+  unzip -q "$artifact_zip" -d "$extract_dir" || return 1
+
+  wheel_path=$(find "$extract_dir" -type f -name 'watchmaker-*-py3-none-any.whl' | head -n 1)
+
+  if [[ -z "$wheel_path" ]]; then
+    write-tfi "No wheel distribution found in GitHub artifact $artifact_name" >&2
+    return 1
+  fi
+
+  echo "$wheel_path"
+}
+
 publish-scap-scan() {
   # create a directory with scap scan output
   scan_dir="$temp_dir/terrafirm/scan"
@@ -334,6 +392,20 @@ clone-watchmaker() {
   git clone "$GIT_REPO" --recursive
 }
 
+install-watchmaker-prereqs() {
+  PYPI_URL="$url_pypi"
+
+  # Install pip
+  try_cmd 2 python3 -m ensurepip --upgrade --default-pip
+
+  # Upgrade pip
+  try_cmd 2 python3 -m pip install --index-url="$PYPI_URL" --upgrade pip
+  try_cmd 1 python3 -m pip --version
+
+  # Install boto3
+  try_cmd 1 python3 -m pip install --index-url="$PYPI_URL" --upgrade boto3
+}
+
 install-watchmaker() {
   # install watchmaker from source
 
@@ -341,15 +413,14 @@ install-watchmaker() {
   GIT_REF="$git_ref"
   PYPI_URL="$url_pypi"
 
-  # Install pip
-  try_cmd 2 python3 -m ensurepip --upgrade --default-pip
+  install-watchmaker-prereqs
 
-  # Upgrade pip and setuptools
-  try_cmd 2 python3 -m pip install --index-url="$PYPI_URL" --upgrade pip setuptools
-  try_cmd 1 python3 -m pip --version
+  install-watchmaker-from-git
+}
 
-  # Install boto3
-  try_cmd 1 python3 -m pip install --index-url="$PYPI_URL" --upgrade boto3
+install-watchmaker-from-git() {
+  GIT_REPO="$git_repo"
+  GIT_REF="$git_ref"
 
   # Clone watchmaker
   try_cmd 3 clone-watchmaker
@@ -372,6 +443,15 @@ install-watchmaker() {
 
   # Install watchmaker
   try_cmd 1 python3 -m pip install --upgrade --index-url "$PYPI_URL" --editable .
+  try_cmd 1 watchmaker --version
+}
+
+install-watchmaker-from-github-artifact() {
+  local wheel_path
+
+  install-watchmaker-prereqs
+  wheel_path=$(install-source-wheel-from-github-artifact) || return 1
+  try_cmd 1 python3 -m pip install --upgrade --index-url "$url_pypi" "$wheel_path"
   try_cmd 1 watchmaker --version
 }
 
@@ -558,9 +638,6 @@ if [[ "$build_type" == "$build_type_standalone" ]]; then
 else
   # Install from source
 
-  # Install git
-  try_cmd 5 yum -y install git
-
   # Prefer newer python3 version if available
   # shellcheck disable=SC2034
   python_versions=("3.14" "3.13" "3.12" "3.11" "3.10" "3.9" "3.8")
@@ -582,7 +659,13 @@ else
 
   python3 --version
 
-  install-watchmaker
+  if [[ "$source_source" == "github_actions_artifact" ]]; then
+    try_cmd 5 yum -y install jq
+    install-watchmaker-from-github-artifact
+  else
+    try_cmd 5 yum -y install git
+    install-watchmaker
+  fi
 
   # Run watchmaker
   try_cmd 1 watchmaker "$${args[@]}"
