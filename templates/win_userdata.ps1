@@ -47,11 +47,11 @@ function Debug-2S3 {
 
 function Check-Metadata {
   $MetadataLoopbackAZ = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
-  $MetadataCommand = "Invoke-WebRequest -Uri $MetadataLoopbackAZ -UseBasicParsing | Select-Object -ExpandProperty Content"
+  Test-Command -Description "Check metadata endpoint availability" -Tries 50 -Command {
+    Invoke-WebRequest -Uri $MetadataLoopbackAZ -UseBasicParsing | Out-Null
+  }
 
-  Test-Command $MetadataCommand 50
-
-  Invoke-Expression -Command $MetadataCommand -OutVariable availability_zone
+  $availability_zone = Invoke-WebRequest -Uri $MetadataLoopbackAZ -UseBasicParsing | Select-Object -ExpandProperty Content
   Write-Tfi "Connect to EC2 metadata (Availability zone is $availability_zone)" $?
 }
 
@@ -79,21 +79,27 @@ function Write-Tfi {
 
 function Test-Command {
   param (
-    [Parameter(Mandatory = $true)][string]$Test,
+    [Parameter(Mandatory = $true)][scriptblock]$Command,
+    [Parameter(Mandatory = $false)][string]$Description = $Command.ToString().Trim(),
     [Parameter(Mandatory = $false)][int]$Tries = 1,
     [Parameter(Mandatory = $false)][int]$SecondsDelay = 2
   )
   $TryCount = 0
   $Completed = $false
-  $MsgFailed = "Command [{0}] failed" -f $Test
-  $MsgSucceeded = "Command [{0}] succeeded." -f $Test
+  $MsgFailed = "Command [{0}] failed" -f $Description
+  $MsgSucceeded = "Command [{0}] succeeded." -f $Description
+  $OriginalErrorActionPreference = $ErrorActionPreference
 
   while (-not $Completed) {
     try {
-      $Result = @{}
-      # Invokes command and captures the $? and $LastExitCode
-      Invoke-Expression -Command ($Test + ';$Result = @{ Success = $?; ExitCode = $LastExitCode }')
-      if (($False -eq $Result.Success) -Or ((($Result.ExitCode) -ne $null) -And (0 -ne ($Result.ExitCode)) )) {
+      $ErrorActionPreference = "Stop"
+      $global:LASTEXITCODE = 0
+      & $Command
+      $Result = @{
+        Success  = $?
+        ExitCode = $LASTEXITCODE
+      }
+      if (($False -eq $Result.Success) -Or (0 -ne $Result.ExitCode)) {
         throw $MsgFailed
       }
       else {
@@ -105,16 +111,19 @@ function Test-Command {
       $TryCount++
       if ($TryCount -ge $Tries) {
         $Completed = $true
-        $ErrorMessage = [String]$_.Exception + "Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
+        $ErrorMessage = [String]$_.Exception + " Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
         Write-Tfi $ErrorMessage
-        Write-Tfi ("Command [{0}] failed the maximum number of {1} time(s)." -f $Test, $Tries)
+        Write-Tfi ("Command [{0}] failed the maximum number of {1} time(s)." -f $Description, $Tries)
         Write-Tfi ("Error code (if available): {0}" -f ($Result.ExitCode))
-        throw ("Command [{0}] failed" -f $Test)
+        throw ("Command [{0}] failed" -f $Description)
       }
       else {
-        Write-Tfi ("Command [{0}] failed. Retrying in {1} second(s)." -f $Test, $SecondsDelay)
+        Write-Tfi ("Command [{0}] failed. Retrying in {1} second(s)." -f $Description, $SecondsDelay)
         Start-Sleep $SecondsDelay
       }
+    }
+    finally {
+      $ErrorActionPreference = $OriginalErrorActionPreference
     }
   }
 }
@@ -123,10 +132,10 @@ function Publish-Artifacts {
   ## Upload files to s3 related to the build
   $ErrorActionPreference = "Continue"
   $ArtifactDir = "$TempDir\build-artifacts"
-  Invoke-Expression -Command "mkdir $ArtifactDir" -ErrorAction SilentlyContinue
+  New-Item -Path $ArtifactDir -ItemType Directory -Force | Out-Null
 
   # Watchmaker logs and SCAP results
-  Invoke-Expression -Command "mkdir $ArtifactDir\watchmaker" -ErrorAction SilentlyContinue
+  New-Item -Path "$ArtifactDir\watchmaker" -ItemType Directory -Force | Out-Null
   Copy-Item "C:\Watchmaker\Logs\*log" -Destination "$ArtifactDir\watchmaker" -Recurse -Force
   Copy-Item "C:\Watchmaker\SCAP" -Destination "$ArtifactDir\scap" -Recurse -Force
 
@@ -142,15 +151,15 @@ function Publish-Artifacts {
   Copy-Item "C:\cfn\log" -Destination "$ArtifactDir\cfn" -Recurse -Force
 
   # Windows Event Logs (Application, System, Security for troubleshooting)
-  Invoke-Expression -Command "mkdir $ArtifactDir\eventlogs" -ErrorAction SilentlyContinue
+  New-Item -Path "$ArtifactDir\eventlogs" -ItemType Directory -Force | Out-Null
   wevtutil epl Application "$ArtifactDir\eventlogs\Application.evtx"
   wevtutil epl System "$ArtifactDir\eventlogs\System.evtx"
   wevtutil epl Security "$ArtifactDir\eventlogs\Security.evtx"
   wevtutil epl "Microsoft-Windows-PowerShell/Operational" "$ArtifactDir\eventlogs\PowerShell-Operational.evtx"
 
   # Userdata execution artifacts
-  Invoke-Expression -Command "mkdir $ArtifactDir\cloud" -ErrorAction SilentlyContinue
-  Invoke-Expression -Command "mkdir $ArtifactDir\sys" -ErrorAction SilentlyContinue
+  New-Item -Path "$ArtifactDir\cloud" -ItemType Directory -Force | Out-Null
+  New-Item -Path "$ArtifactDir\sys" -ItemType Directory -Force | Out-Null
   Copy-Item "C:\Windows\TEMP\*.tmp" -Destination "$ArtifactDir\cloud" -Recurse -Force
   Copy-Item "C:\Program Files\Amazon\Ec2ConfigService\Scripts\User*ps1" -Destination "$ArtifactDir\cloud" -Recurse -Force
   Copy-Item "C:\Windows\Temp\UserScript.ps1" -Destination "$ArtifactDir\cloud\UserScript.ps1" -Recurse -Force
@@ -177,8 +186,10 @@ function Publish-Artifacts {
   $BuildSlugZipName = "$BuildSlug" -replace '/', '-'
   $ZipFile = "$${TempDir}\$${BuildSlugZipName}-$${BuildLabel}.zip"
   $ZipFileName = Split-Path $ZipFile -Leaf
-  cd 'C:\Program Files\7-Zip'
-  Test-Command ".\7z a -y -tzip $ZipFile -r $ArtifactDir\*"
+  Test-Command -Description "Compress-Archive $ArtifactDir\* -> $ZipFile" -Command {
+    Compress-Archive -Path "$ArtifactDir\*" -DestinationPath $ZipFile -Force
+  }
+
   Write-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${ZipFileName}" -File "$ZipFile"
 }
 
@@ -190,7 +201,7 @@ function Publish-SCAP-Scan {
   Write-Tfi "Writing SCAP scan to ${scan_slug}/$BuildOS..."
   $ErrorActionPreference = "Continue"
   $ScanDir = "$TempDir\terrafirm\scan"
-  Invoke-Expression -Command "mkdir $ScanDir" -ErrorAction SilentlyContinue
+  New-Item -Path $ScanDir -ItemType Directory -Force | Out-Null
   Copy-Item "C:\Watchmaker\SCAP" -Destination "$ScanDir" -Recurse -Force
   Write-S3Object -BucketName "$ScanBucket" -KeyPrefix "$${ScanKeyPrefix}/$${BuildOS}" -Folder "$${ScanDir}\SCAP\Sessions" -Recurse
   Write-Tfi "Wrote SCAP scan to ${scan_slug}/$BuildOS" $?
@@ -379,11 +390,9 @@ function Invoke-PostStep {
 }
 
 function Open-WinRM {
-  Test-Command "Start-Process -FilePath `"winrm`" -ArgumentList `"quickconfig -q`""
-  Test-Command "Start-Process -FilePath `"winrm`" -ArgumentList `"set winrm/config/service @{AllowUnencrypted=```"true```"}`" -Wait"
-  Test-Command "Start-Process -FilePath `"winrm`" -ArgumentList `"set winrm/config/service/auth @{Basic=```"true```"}`" -Wait"
-  Test-Command "Start-Process -FilePath `"winrm`" -ArgumentList `"set winrm/config @{MaxTimeoutms=```"1900000```"}`""
-
+  Test-Command -Description "winrm quickconfig -q" -Command {
+    & winrm quickconfig -q
+  }
   $SaltCall = "C:\Program Files\Salt Project\salt\salt-call.exe"
   if (Test-Path -path "C:\Program Files\Salt Project\salt\salt-call.bat") {
     $SaltCall = "C:\Program Files\Salt Project\salt\salt-call.bat"
@@ -406,14 +415,28 @@ function Open-WinRM {
       vtype='REG_DWORD'
     Write-Tfi "Command [salt-call --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value key='AllowUnencryptedTraffic'...]" $?
   }
+
+  Test-Command -Description "winrm set service AllowUnencrypted=true" -Command {
+    & winrm set winrm/config/service '@{AllowUnencrypted="true"}'
+  }
+  Test-Command -Description "winrm set auth Basic=true" -Command {
+    & winrm set winrm/config/service/auth '@{Basic="true"}'
+  }
+  Test-Command -Description "winrm set MaxTimeoutms=1900000" -Command {
+    & winrm set winrm/config '@{MaxTimeoutms="1900000"}'
+  }
 }
 
 function Close-Firewall {
-  Test-Command "netsh advfirewall firewall add rule name=`"WinRM in`" protocol=tcp dir=in profile=any localport=5985 remoteip=any localip=any action=block"
+  Test-Command -Description "netsh block WinRM in" -Command {
+    & netsh advfirewall firewall add rule name="WinRM in" protocol=tcp dir=in profile=any localport=5985 remoteip=any localip=any action=block
+  }
 }
 
 function Open-Firewall {
-  Test-Command "netsh advfirewall firewall set rule name=`"WinRM in`" new action=allow"
+  Test-Command -Description "netsh allow WinRM in" -Command {
+    & netsh advfirewall firewall set rule name="WinRM in" new action=allow
+  }
 }
 
 function Rename-User {
@@ -463,36 +486,57 @@ function Clone-Watchmaker {
   $GitRepo = "${git_repo}"
   $GitRef = "${git_ref}"
 
-  Test-Command "Remove-Item -force -recurse watchmaker -ErrorAction SilentlyContinue; git clone `"$GitRepo`" --recursive" -Tries 5
+  Test-Command -Description "git clone $GitRepo --recursive" -Tries 5 -Command {
+    Remove-Item -force -recurse watchmaker -ErrorAction SilentlyContinue
+    & git clone "$GitRepo" --recursive
+  }
   cd watchmaker
   if ($GitRef) {
     if ($GitRef -match "^[0-9]+$") {
-      Test-Command "git fetch origin +refs/pull/$${GitRef}/merge:$${GitRef}" -Tries 2
+      Test-Command -Description "git fetch origin +refs/pull/$${GitRef}/merge:$${GitRef}" -Tries 2 -Command {
+        & git fetch origin "+refs/pull/$${GitRef}/merge:$${GitRef}"
+      }
     }
     elseif ($GitRef -match "^refs/pull/.*") {
-      Test-Command "git fetch origin +$${GitRef}:$${GitRef}" -Tries 2
+      Test-Command -Description "git fetch origin +$${GitRef}:$${GitRef}" -Tries 2 -Command {
+        & git fetch origin "+$${GitRef}:$${GitRef}"
+      }
     }
-    Test-Command "git checkout $GitRef"
+    Test-Command -Description "git checkout $GitRef" -Command {
+      & git checkout $GitRef
+    }
   }
 
-  Test-Command "git submodule update"
+  Test-Command -Description "git submodule update" -Command {
+    & git submodule update
+  }
 }
 
 function Install-WatchmakerPrereqs {
-  Test-Command "python -m pip install --index-url=`"$PypiUrl`" --upgrade pip" -Tries 2
-  Test-Command "python -m pip --version" -Tries 1
-  Test-Command "python -m pip install --index-url=`"$PypiUrl`" --upgrade boto3" -Tries 2
+  Test-Command -Description "python -m pip install --index-url $PypiUrl --upgrade pip" -Tries 2 -Command {
+    & python -m pip install --index-url "$PypiUrl" --upgrade pip
+  }
+  Test-Command -Description "python -m pip --version" -Tries 1 -Command {
+    & python -m pip --version
+  }
+  Test-Command -Description "python -m pip install --index-url $PypiUrl --upgrade boto3" -Tries 2 -Command {
+    & python -m pip install --index-url "$PypiUrl" --upgrade boto3
+  }
 }
 
 function Install-Watchmaker {
   Install-WatchmakerPrereqs
-  Test-Command "python -m pip install --index-url `"$PypiUrl`" --editable ." -Tries 2
+  Test-Command -Description "python -m pip install --index-url $PypiUrl --editable ." -Tries 2 -Command {
+    & python -m pip install --index-url "$PypiUrl" --editable .
+  }
 }
 
 function Install-WatchmakerFromGitHubArtifact {
   Install-WatchmakerPrereqs
   $WheelPath = Install-SourceWheelFromGitHubArtifact
-  Test-Command "python -m pip install --index-url `"$PypiUrl`" `"$WheelPath`"" -Tries 2
+  Test-Command -Description "python -m pip install --index-url $PypiUrl $WheelPath" -Tries 2 -Command {
+    & python -m pip install --index-url "$PypiUrl" "$WheelPath"
+  }
 }
 
 try {
@@ -505,9 +549,6 @@ try {
   Close-Firewall
   $UserdataStatus = New-UserdataStatus -Code 1 -Message "Error: Build not completed (should never see this error)"
   [Net.ServicePointManager]::SecurityProtocol = "Tls12, Tls13"
-  Test-Command "Invoke-WebRequest -Uri '${url_7zip}' -OutFile '$TempDir\7z-install.exe' -UseBasicParsing" -Tries 5
-  Invoke-Expression -Command "$TempDir\7z-install.exe /S /D='C:\Program Files\7-Zip'" -ErrorAction Continue
-
   Check-Metadata
   Write-Tfi "Start Build ============"
 
@@ -520,29 +561,45 @@ try {
   Install-PythonGit
   Clone-Watchmaker
 
-  Test-Command "python -m pip install --index-url=`"$PypiUrl`" -r requirements\basics.txt" -Tries 2
+  Test-Command -Description "python -m pip install --index-url $PypiUrl -r requirements\\basics.txt" -Tries 2 -Command {
+    & python -m pip install --index-url "$PypiUrl" -r requirements\basics.txt
+  }
 
   $VirtualEnvDir = ".\venv"
-  Test-Command "python -m venv $VirtualEnvDir"
-  Test-Command "$${VirtualEnvDir}\Scripts\activate"
+  Test-Command -Description "python -m venv $VirtualEnvDir" -Command {
+    & python -m venv $VirtualEnvDir
+  }
+  Test-Command -Description "$${VirtualEnvDir}\Scripts\activate" -Command {
+    & "$${VirtualEnvDir}\Scripts\activate"
+  }
 
 %{~ if standalone_builder == "pyapp" }
   Write-Tfi "Using PyApp build..."
   choco install rust -y --force
-  Test-Command "pwsh ci\build_pyapp.ps1" -Tries 2
+  Test-Command -Description "pwsh ci\\build_pyapp.ps1" -Tries 2 -Command {
+    & pwsh ci\build_pyapp.ps1
+  }
   $STAGING_DIR = ".pyapp\dist"
 %{~ else }
   Write-Tfi "Using PyInstaller build..."
-  Test-Command "pwsh ci\build.ps1" -Tries 2
+  Test-Command -Description "pwsh ci\\build.ps1" -Tries 2 -Command {
+    & pwsh ci\build.ps1
+  }
   $STAGING_DIR = ".pyinstaller\dist"
 %{~ endif }
 
   if (Test-Path ".\$STAGING_DIR\latest") {
-    Test-Command "Remove-Item -Path `".\$STAGING_DIR\latest`" -Force  -Recurse" -Tries 3
+    Test-Command -Description "Remove-Item .\\$STAGING_DIR\\latest" -Tries 3 -Command {
+      Remove-Item -Path ".\$STAGING_DIR\latest" -Force -Recurse
+    }
   }
 
-  Test-Command "Get-ChildItem -Path `".\$STAGING_DIR\*`" | Rename-Item -NewName latest" -Tries 3
-  Test-Command "Get-Item -Path `".\$STAGING_DIR\latest\watchmaker-*-standalone-windows-amd64.exe`" | Rename-Item -NewName watchmaker-latest-standalone-windows-amd64.exe" -Tries 3
+  Test-Command -Description "Rename dist directory to latest" -Tries 3 -Command {
+    Get-ChildItem -Path ".\$STAGING_DIR\*" | Rename-Item -NewName latest
+  }
+  Test-Command -Description "Rename standalone executable to watchmaker-latest-standalone-windows-amd64.exe" -Tries 3 -Command {
+    Get-Item -Path ".\$STAGING_DIR\latest\watchmaker-*-standalone-windows-amd64.exe" | Rename-Item -NewName watchmaker-latest-standalone-windows-amd64.exe
+  }
 
   Write-S3Object -BucketName "$BuildBucket" -KeyPrefix "$${BuildKeyPrefix}/${release_prefix}" -Folder ".\$STAGING_DIR" -Recurse
   Test-DisplayResult "Copied standalone to $${BuildBucket}/$${BuildKeyPrefix}/${release_prefix}" $?
@@ -609,7 +666,9 @@ try {
   Read-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${Standalone}" -File "$${DownloadDir}\watchmaker.exe"
   $ExecutablePath = "$${DownloadDir}\watchmaker.exe"
 %{~ endif }
-  Test-Command "$ExecutablePath ${args}"
+  Test-Command -Description "$ExecutablePath ${args}" -Command {
+    & "$ExecutablePath" ${args}
+  }
   $UserdataStatus = New-UserdataStatus -Code 0 -Message "Success"
 
 %{~ else }
@@ -624,7 +683,9 @@ try {
     Install-Watchmaker
   }
 
-  Test-Command "watchmaker ${args}"
+  Test-Command -Description "watchmaker ${args}" -Command {
+    & watchmaker ${args}
+  }
   $UserdataStatus = New-UserdataStatus -Code 0 -Message "Success"
 
 %{~ endif }
