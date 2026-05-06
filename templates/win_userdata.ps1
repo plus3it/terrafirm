@@ -18,6 +18,7 @@ $GitHubArtifactTokenSsmParameter = "${github_artifact_token_ssm_parameter}"
 $WinUser = "${user}"
 $PypiUrl = "${url_pypi}"
 $DebugMode = "${debug}"
+$UserdataLogS3Prefix = "s3://$BuildBucket/$BuildKeyPrefix/$BuildLabel"
 
 Set-DefaultAWSRegion -Region "${aws_region}"
 $Env:AWS_DEFAULT_REGION = "${aws_region}"
@@ -149,6 +150,7 @@ function Publish-Artifacts {
 
   # Userdata execution artifacts
   Invoke-Expression -Command "mkdir $ArtifactDir\cloud" -ErrorAction SilentlyContinue
+  Invoke-Expression -Command "mkdir $ArtifactDir\sys" -ErrorAction SilentlyContinue
   Copy-Item "C:\Windows\TEMP\*.tmp" -Destination "$ArtifactDir\cloud" -Recurse -Force
   Copy-Item "C:\Program Files\Amazon\Ec2ConfigService\Scripts\User*ps1" -Destination "$ArtifactDir\cloud" -Recurse -Force
   Copy-Item "C:\Windows\Temp\UserScript.ps1" -Destination "$ArtifactDir\cloud\UserScript.ps1" -Recurse -Force
@@ -332,9 +334,48 @@ function Test-DisplayResult {
 }
 
 function Write-UserdataStatus {
-  param ($UserdataStatus)
-  $UserdataStatus | Out-File "${userdata_status_file}"
+  param (
+    [Parameter(Mandatory = $true)]$UserdataStatus
+  )
+
+  $StatusJson = $UserdataStatus | ConvertTo-Json -Compress
+  $StatusJson | Out-File "${userdata_status_file}" -Encoding utf8
   Write-Tfi "Write userdata status file" $?
+}
+
+function New-UserdataStatus {
+  param (
+    [Parameter(Mandatory = $true)][int]$Code,
+    [Parameter(Mandatory = $true)][string]$Message
+  )
+
+  return [ordered]@{
+    code      = $Code
+    message   = $Message
+    timestamp = (Get-Date).ToString("o")
+    log_path  = $UserdataLogFile
+    s3_prefix = $UserdataLogS3Prefix
+  }
+}
+
+function Invoke-PostStep {
+  param (
+    [Parameter(Mandatory = $true)][string]$Name,
+    [Parameter(Mandatory = $true)][scriptblock]$Script,
+    [Parameter(Mandatory = $false)][bool]$FailBuild = $true
+  )
+
+  try {
+    & $Script
+    Write-Tfi "Post-step [$Name] succeeded" $true
+  }
+  catch {
+    $StepError = [String]$_.Exception + " Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
+    Write-Tfi "Post-step [$Name] failed: $StepError"
+    if ($FailBuild -and ($UserdataStatus.code -eq 0)) {
+      $script:UserdataStatus = New-UserdataStatus -Code 1 -Message "Post-step '$Name' failed: $([String]$_.Exception.Message)"
+    }
+  }
 }
 
 function Open-WinRM {
@@ -462,7 +503,7 @@ try {
 
   Set-Password -User "Administrator" -Pass "${password}"
   Close-Firewall
-  $UserdataStatus = @(1, "Error: Build not completed (should never see this error)")
+  $UserdataStatus = New-UserdataStatus -Code 1 -Message "Error: Build not completed (should never see this error)"
   [Net.ServicePointManager]::SecurityProtocol = "Tls12, Tls13"
   Test-Command "Invoke-WebRequest -Uri '${url_7zip}' -OutFile '$TempDir\7z-install.exe' -UseBasicParsing" -Tries 5
   Invoke-Expression -Command "$TempDir\7z-install.exe /S /D='C:\Program Files\7-Zip'" -ErrorAction Continue
@@ -506,7 +547,7 @@ try {
   Write-S3Object -BucketName "$BuildBucket" -KeyPrefix "$${BuildKeyPrefix}/${release_prefix}" -Folder ".\$STAGING_DIR" -Recurse
   Test-DisplayResult "Copied standalone to $${BuildBucket}/$${BuildKeyPrefix}/${release_prefix}" $?
 
-  $UserdataStatus = @(0, "Success")
+  $UserdataStatus = New-UserdataStatus -Code 0 -Message "Success"
 
 %{~ else }
 %{~ if build_type == build_type_standalone }
@@ -569,7 +610,7 @@ try {
   $ExecutablePath = "$${DownloadDir}\watchmaker.exe"
 %{~ endif }
   Test-Command "$ExecutablePath ${args}"
-  $UserdataStatus = @(0, "Success")
+  $UserdataStatus = New-UserdataStatus -Code 0 -Message "Success"
 
 %{~ else }
   Write-Tfi "Installing Watchmaker from source..."
@@ -584,7 +625,7 @@ try {
   }
 
   Test-Command "watchmaker ${args}"
-  $UserdataStatus = @(0, "Success")
+  $UserdataStatus = New-UserdataStatus -Code 0 -Message "Success"
 
 %{~ endif }
 %{~ endif }
@@ -607,19 +648,35 @@ catch {
 %{~ endif }
 
   $ErrCode = 1
-  $UserdataStatus = @($ErrCode, "Error [$ErrorMessage]")
+  $UserdataStatus = New-UserdataStatus -Code $ErrCode -Message "Error [$([String]$_.Exception.Message)]"
 }
 
 $EndDate = Get-Date
 Write-Tfi "End Build =============="
 Write-Tfi ("Build took {0} seconds." -f [math]::Round(($EndDate - $StartDate).TotalSeconds))
 
-Rename-User -From "Administrator" -To "$WinUser"
-Open-WinRM
-Write-UserdataStatus -UserdataStatus $UserdataStatus
-Publish-Artifacts
-Open-Firewall
+Invoke-PostStep -Name "Rename-User" -Script {
+  Rename-User -From "Administrator" -To "$WinUser"
+}
+Invoke-PostStep -Name "Open-WinRM" -Script {
+  Open-WinRM
+}
+Invoke-PostStep -Name "Write-UserdataStatus" -Script {
+  Write-UserdataStatus -UserdataStatus $UserdataStatus
+}
+
+Invoke-PostStep -Name "Publish-Artifacts" -FailBuild $false -Script {
+  Publish-Artifacts
+}
+
+Invoke-PostStep -Name "Open-Firewall" -Script {
+  Open-Firewall
+}
 
 if (($BuildType -eq $BuildTypeSource) -and ("${scan_slug}" -ne "")) {
-  Publish-SCAP-Scan
+  Invoke-PostStep -Name "Publish-SCAP-Scan" -FailBuild $false -Script {
+    Publish-SCAP-Scan
+  }
 }
+
+exit ([int]$UserdataStatus.code)
