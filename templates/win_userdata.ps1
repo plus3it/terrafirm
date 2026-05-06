@@ -3,6 +3,7 @@ $BuildType = "${build_type}"
 $BuildLabel = "${build_label}"
 $BuildTypeStandalone = "${build_type_standalone}"
 $BuildTypeSource = "${build_type_source}"
+$SourceSource = "${source_source}"
 $StandaloneSource = "${standalone_source}"
 
 $BuildSlug = "${build_slug}"
@@ -271,6 +272,53 @@ function Install-StandaloneFromGitHubArtifact {
   return $Destination
 }
 
+function Install-SourceWheelFromGitHubArtifact {
+  $ArtifactName = "dists"
+  $Token        = Get-GitHubToken
+  $Headers = @{
+    Authorization = "Bearer $Token"
+    Accept        = "application/vnd.github+json"
+
+    "X-GitHub-Api-Version" = "2022-11-28"
+  }
+
+  if ([string]::IsNullOrEmpty($GitHubArtifactRunId)) {
+    throw "github_artifact_run_id must be set when source_source is github_actions_artifact"
+  }
+
+  $ArtifactsUri = "https://api.github.com/repos/$GitHubArtifactRepoOwner/$GitHubArtifactRepoName/actions/runs/$GitHubArtifactRunId/artifacts"
+  Write-Tfi "Querying GitHub artifact metadata from $ArtifactsUri"
+  $ArtifactsResponse = Invoke-RestMethod -Headers $Headers -Uri $ArtifactsUri -Method Get
+  $Artifact = $ArtifactsResponse.artifacts | Where-Object { $_.name -eq $ArtifactName } | Select-Object -First 1
+
+  if ($null -eq $Artifact) {
+    throw "GitHub artifact '$ArtifactName' was not found for run $GitHubArtifactRunId"
+  }
+
+  $DownloadDir = "${download_dir}"
+  if (-not (Test-Path $DownloadDir)) {
+    New-Item -ItemType Directory -Force -Path $DownloadDir | Out-Null
+  }
+
+  $ArtifactZip = Join-Path $DownloadDir "$ArtifactName.zip"
+  $ArtifactExtractDir = Join-Path $DownloadDir $ArtifactName
+  Remove-Item -Path $ArtifactZip -Force -ErrorAction SilentlyContinue
+  Remove-Item -Path $ArtifactExtractDir -Force -Recurse -ErrorAction SilentlyContinue
+
+  Write-Tfi "Downloading GitHub artifact '$ArtifactName'"
+  Invoke-WebRequest -Headers $Headers -Uri $Artifact.archive_download_url -OutFile $ArtifactZip
+
+  Write-Tfi "Extracting GitHub artifact '$ArtifactName'"
+  Expand-Archive -Path $ArtifactZip -DestinationPath $ArtifactExtractDir -Force
+
+  $Wheel = Get-ChildItem -Path $ArtifactExtractDir -Filter "watchmaker-*-py3-none-any.whl" -File -Recurse | Select-Object -First 1
+  if ($null -eq $Wheel) {
+    throw "No wheel distribution was found in artifact '$ArtifactName'"
+  }
+
+  return $Wheel.FullName
+}
+
 function Test-DisplayResult {
   param (
     [String]$Msg,
@@ -389,11 +437,21 @@ function Clone-Watchmaker {
   Test-Command "git submodule update"
 }
 
-function Install-Watchmaker {
-  Test-Command "python -m pip install --index-url=`"$PypiUrl`" -r requirements\basics.txt" -Tries 2
+function Install-WatchmakerPrereqs {
+  Test-Command "python -m pip install --index-url=`"$PypiUrl`" --upgrade pip" -Tries 2
+  Test-Command "python -m pip --version" -Tries 1
   Test-Command "python -m pip install --index-url=`"$PypiUrl`" --upgrade boto3" -Tries 2
+}
 
+function Install-Watchmaker {
+  Install-WatchmakerPrereqs
   Test-Command "python -m pip install --index-url `"$PypiUrl`" --editable ." -Tries 2
+}
+
+function Install-WatchmakerFromGitHubArtifact {
+  Install-WatchmakerPrereqs
+  $WheelPath = Install-SourceWheelFromGitHubArtifact
+  Test-Command "python -m pip install --index-url `"$PypiUrl`" `"$WheelPath`"" -Tries 2
 }
 
 try {
@@ -516,8 +574,15 @@ try {
 %{~ else }
   Write-Tfi "Installing Watchmaker from source..."
   Install-PythonGit
-  Clone-Watchmaker
-  Install-Watchmaker
+
+  if ($SourceSource -eq "github_actions_artifact") {
+    Install-WatchmakerFromGitHubArtifact
+  }
+  else {
+    Clone-Watchmaker
+    Install-Watchmaker
+  }
+
   Test-Command "watchmaker ${args}"
   $UserdataStatus = @(0, "Success")
 

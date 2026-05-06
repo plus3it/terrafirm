@@ -48,6 +48,7 @@ locals {
   resource_name                    = "${local.name_prefix}-${local.build_id}"
   scan_slug                        = var.scan_s3_url
   security_group_description       = "Used by Terrafirm (${local.resource_name})"
+  source_source                    = var.source_source
   standalone_source                = var.standalone_source
   timestamp                        = timestamp()
   url_bootstrap                    = "https://raw.githubusercontent.com/plus3it/watchmaker/main/docs/files/bootstrap/watchmaker-bootstrap.ps1"
@@ -222,6 +223,7 @@ locals {
       git_repo                            = local.git_repo
       release_prefix                      = local.release_prefix
       scan_slug                           = local.scan_slug
+      source_source                       = local.source_source
       standalone_builder                  = var.standalone_builder
       standalone_source                   = local.standalone_source
       url_bootstrap                       = local.url_bootstrap

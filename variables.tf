@@ -137,6 +137,16 @@ variable "standalone_source" {
   }
 }
 
+variable "source_source" {
+  default = "git"
+  type    = string
+
+  validation {
+    condition     = contains(["git", "github_actions_artifact"], var.source_source)
+    error_message = "The source_source value must be \"git\" or \"github_actions_artifact\"."
+  }
+}
+
 variable "github_artifact_repo_owner" {
   default = "plus3it"
   type    = string
