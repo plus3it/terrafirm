@@ -73,7 +73,13 @@ function Write-Tfi {
   "$(Get-Date): $Msg $OutResult" | Out-File "$UserdataLogFile" -Append -Encoding utf8
 
   if ("$DebugMode" -ne "false" ) {
-    Debug-2S3 "$Msg $OutResult"
+    try {
+      Debug-2S3 "$Msg $OutResult"
+    }
+    catch {
+      $DebugError = [String]$_.Exception
+      "$(Get-Date): Debug-2S3 failed: $DebugError" | Out-File "$UserdataLogFile" -Append -Encoding utf8
+    }
   }
 }
 
@@ -576,10 +582,18 @@ try {
   Write-Tfi "Start Build ============"
 
 %{~ if build_type == build_type_builder }
-  Set-ExecutionPolicy Bypass -Scope Process -Force
-  Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-  choco install jq -y --force
-  choco install pwsh -y --force
+  Test-Command -Description "Set-ExecutionPolicy Bypass -Scope Process -Force" -Command {
+    Set-ExecutionPolicy Bypass -Scope Process -Force
+  }
+  Test-Command -Description "Install Chocolatey bootstrap script" -Command {
+    Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+  }
+  Test-Command -Description "choco install jq -y --force" -Command {
+    & choco install jq -y --force
+  }
+  Test-Command -Description "choco install pwsh -y --force" -Command {
+    & choco install pwsh -y --force
+  }
 
   Install-PythonGit
   Clone-Watchmaker
@@ -598,7 +612,9 @@ try {
 
 %{~ if standalone_builder == "pyapp" }
   Write-Tfi "Using PyApp build..."
-  choco install rust -y --force
+  Test-Command -Description "choco install rust -y --force" -Command {
+    & choco install rust -y --force
+  }
   Test-Command -Description "pwsh ci\\build_pyapp.ps1" -Tries 2 -Command {
     & pwsh ci\build_pyapp.ps1
   }
@@ -624,7 +640,9 @@ try {
     Get-Item -Path ".\$STAGING_DIR\latest\watchmaker-*-standalone-windows-amd64.exe" | Rename-Item -NewName watchmaker-latest-standalone-windows-amd64.exe
   }
 
-  Write-S3Object -BucketName "$BuildBucket" -KeyPrefix "$${BuildKeyPrefix}/${release_prefix}" -Folder ".\$STAGING_DIR" -Recurse
+  Test-Command -Description "Write-S3Object standalone release to $${BuildBucket}/$${BuildKeyPrefix}/${release_prefix}" -Command {
+    Write-S3Object -BucketName "$BuildBucket" -KeyPrefix "$${BuildKeyPrefix}/${release_prefix}" -Folder ".\$STAGING_DIR" -Recurse
+  }
   Test-DisplayResult "Copied standalone to $${BuildBucket}/$${BuildKeyPrefix}/${release_prefix}" $?
 
   $UserdataStatus = New-UserdataStatus -Code 0 -Message "Success"
@@ -638,14 +656,23 @@ try {
   $ExecutablePath = Install-StandaloneFromGitHubArtifact
 %{~ else }
   $SleepTime = 20
+  $MaxWaitSeconds = 600
+  $StandaloneWaitDeadline = (Get-Date).AddSeconds($MaxWaitSeconds)
   $Standalone = "${executable}"
   $ErrorKey = $StandaloneErrorSignalFile
 
   Write-Tfi "Looking for standalone executable at $BuildSlug/$Standalone"
   Write-Tfi "Looking for error signal at $BuildSlug/$ErrorKey"
+  Write-Tfi "Waiting up to $MaxWaitSeconds second(s) for standalone artifact readiness"
 
   #block until executable exists, an error, or timeout
   while ($true) {
+    if ((Get-Date) -gt $StandaloneWaitDeadline) {
+      $ErrorMsg = "Timed out waiting for standalone executable after $MaxWaitSeconds second(s): $BuildSlug/$Standalone"
+      Write-Tfi $ErrorMsg
+      throw $ErrorMsg
+    }
+
     # find out what's happening with the builder
     $Exists = $true
     $SignaledError = $true
@@ -671,7 +698,6 @@ try {
       $ErrorMsg = "Error signaled by the builder (Error file found at $BuildSlug/$ErrorKey)"
       Write-Tfi $ErrorMsg
       throw $ErrorMsg
-      break
     }
     else {
       if ($Exists) {
@@ -686,7 +712,9 @@ try {
   } # end of while($true)
 
   $DownloadDir = "${download_dir}"
-  Read-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${Standalone}" -File "$${DownloadDir}\watchmaker.exe"
+  Test-Command -Description "Read-S3Object standalone executable from $${BuildBucket}/$${BuildKeyPrefix}/$${Standalone}" -Command {
+    Read-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${Standalone}" -File "$${DownloadDir}\watchmaker.exe"
+  }
   $ExecutablePath = "$${DownloadDir}\watchmaker.exe"
 %{~ endif }
   Test-Command -Description "$ExecutablePath ${args}" -Command {
@@ -727,8 +755,15 @@ catch {
   }
   $Msg = "$ErrorMessage (For more information on the error, see the win_builder/userdata.log file.)"
   "$(Get-Date): $Msg" | Out-File "$StandaloneErrorSignalFile" -Append -Encoding utf8
-  Write-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${StandaloneErrorSignalFile}" -File "$StandaloneErrorSignalFile"
-  Write-Tfi "Signal error to S3" $?
+  try {
+    Test-Command -Description "Write-S3Object standalone error signal to $${BuildBucket}/$${BuildKeyPrefix}/$${StandaloneErrorSignalFile}" -Command {
+      Write-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${StandaloneErrorSignalFile}" -File "$StandaloneErrorSignalFile"
+    }
+    Write-Tfi "Signal error to S3" $true
+  }
+  catch {
+    Write-Tfi "Signal error to S3 failed: $([String]$_.Exception.Message)"
+  }
 %{~ endif }
 
   $ErrCode = 1
