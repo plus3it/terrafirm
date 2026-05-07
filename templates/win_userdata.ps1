@@ -18,6 +18,7 @@ $GitHubArtifactTokenSsmParameter = "${github_artifact_token_ssm_parameter}"
 $WinUser = "${user}"
 $PypiUrl = "${url_pypi}"
 $DebugMode = "${debug}"
+$UserdataLogS3Prefix = "s3://$BuildBucket/$BuildKeyPrefix/$BuildLabel"
 
 Set-DefaultAWSRegion -Region "${aws_region}"
 $Env:AWS_DEFAULT_REGION = "${aws_region}"
@@ -46,11 +47,11 @@ function Debug-2S3 {
 
 function Check-Metadata {
   $MetadataLoopbackAZ = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
-  $MetadataCommand = "Invoke-WebRequest -Uri $MetadataLoopbackAZ -UseBasicParsing | Select-Object -ExpandProperty Content"
+  Test-Command -Description "Check metadata endpoint availability" -Tries 50 -Command {
+    Invoke-WebRequest -Uri $MetadataLoopbackAZ -UseBasicParsing | Out-Null
+  }
 
-  Test-Command $MetadataCommand 50
-
-  Invoke-Expression -Command $MetadataCommand -OutVariable availability_zone
+  $availability_zone = Invoke-WebRequest -Uri $MetadataLoopbackAZ -UseBasicParsing | Select-Object -ExpandProperty Content
   Write-Tfi "Connect to EC2 metadata (Availability zone is $availability_zone)" $?
 }
 
@@ -72,27 +73,39 @@ function Write-Tfi {
   "$(Get-Date): $Msg $OutResult" | Out-File "$UserdataLogFile" -Append -Encoding utf8
 
   if ("$DebugMode" -ne "false" ) {
-    Debug-2S3 "$Msg $OutResult"
+    try {
+      Debug-2S3 "$Msg $OutResult"
+    }
+    catch {
+      $DebugError = [String]$_.Exception
+      "$(Get-Date): Debug-2S3 failed: $DebugError" | Out-File "$UserdataLogFile" -Append -Encoding utf8
+    }
   }
 }
 
 function Test-Command {
   param (
-    [Parameter(Mandatory = $true)][string]$Test,
+    [Parameter(Mandatory = $true)][scriptblock]$Command,
+    [Parameter(Mandatory = $false)][string]$Description = $Command.ToString().Trim(),
     [Parameter(Mandatory = $false)][int]$Tries = 1,
     [Parameter(Mandatory = $false)][int]$SecondsDelay = 2
   )
   $TryCount = 0
   $Completed = $false
-  $MsgFailed = "Command [{0}] failed" -f $Test
-  $MsgSucceeded = "Command [{0}] succeeded." -f $Test
+  $MsgFailed = "Command [{0}] failed" -f $Description
+  $MsgSucceeded = "Command [{0}] succeeded." -f $Description
+  $OriginalErrorActionPreference = $ErrorActionPreference
 
   while (-not $Completed) {
     try {
-      $Result = @{}
-      # Invokes command and captures the $? and $LastExitCode
-      Invoke-Expression -Command ($Test + ';$Result = @{ Success = $?; ExitCode = $LastExitCode }')
-      if (($False -eq $Result.Success) -Or ((($Result.ExitCode) -ne $null) -And (0 -ne ($Result.ExitCode)) )) {
+      $ErrorActionPreference = "Stop"
+      $global:LASTEXITCODE = 0
+      & $Command
+      $Result = @{
+        Success  = $?
+        ExitCode = $LASTEXITCODE
+      }
+      if (($False -eq $Result.Success) -Or (0 -ne $Result.ExitCode)) {
         throw $MsgFailed
       }
       else {
@@ -104,17 +117,42 @@ function Test-Command {
       $TryCount++
       if ($TryCount -ge $Tries) {
         $Completed = $true
-        $ErrorMessage = [String]$_.Exception + "Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
+        $ErrorMessage = [String]$_.Exception + " Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
         Write-Tfi $ErrorMessage
-        Write-Tfi ("Command [{0}] failed the maximum number of {1} time(s)." -f $Test, $Tries)
+        Write-Tfi ("Command [{0}] failed the maximum number of {1} time(s)." -f $Description, $Tries)
         Write-Tfi ("Error code (if available): {0}" -f ($Result.ExitCode))
-        throw ("Command [{0}] failed" -f $Test)
+        throw ("Command [{0}] failed" -f $Description)
       }
       else {
-        Write-Tfi ("Command [{0}] failed. Retrying in {1} second(s)." -f $Test, $SecondsDelay)
+        Write-Tfi ("Command [{0}] failed. Retrying in {1} second(s)." -f $Description, $SecondsDelay)
         Start-Sleep $SecondsDelay
       }
     }
+    finally {
+      $ErrorActionPreference = $OriginalErrorActionPreference
+    }
+  }
+}
+
+function Copy-OptionalArtifact {
+  param (
+    [Parameter(Mandatory = $true)][string]$Source,
+    [Parameter(Mandatory = $true)][string]$Destination,
+    [Parameter(Mandatory = $true)][string]$Label
+  )
+
+  if (-not (Test-Path -Path $Source)) {
+    Write-Tfi "Artifact [$Label] missing at $Source (skipping)"
+    return
+  }
+
+  try {
+    Copy-Item -Path $Source -Destination $Destination -Recurse -Force
+    Write-Tfi "Artifact [$Label] copied from $Source to $Destination" $true
+  }
+  catch {
+    $CopyError = [String]$_.Exception + " Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
+    Write-Tfi "Artifact [$Label] copy failed: $CopyError"
   }
 }
 
@@ -122,37 +160,38 @@ function Publish-Artifacts {
   ## Upload files to s3 related to the build
   $ErrorActionPreference = "Continue"
   $ArtifactDir = "$TempDir\build-artifacts"
-  Invoke-Expression -Command "mkdir $ArtifactDir" -ErrorAction SilentlyContinue
+  New-Item -Path $ArtifactDir -ItemType Directory -Force | Out-Null
 
   # Watchmaker logs and SCAP results
-  Invoke-Expression -Command "mkdir $ArtifactDir\watchmaker" -ErrorAction SilentlyContinue
-  Copy-Item "C:\Watchmaker\Logs\*log" -Destination "$ArtifactDir\watchmaker" -Recurse -Force
-  Copy-Item "C:\Watchmaker\SCAP" -Destination "$ArtifactDir\scap" -Recurse -Force
+  New-Item -Path "$ArtifactDir\watchmaker" -ItemType Directory -Force | Out-Null
+  Copy-OptionalArtifact -Source "C:\Watchmaker\Logs\*log" -Destination "$ArtifactDir\watchmaker" -Label "watchmaker logs"
+  Copy-OptionalArtifact -Source "C:\Watchmaker\SCAP" -Destination "$ArtifactDir\scap" -Label "watchmaker scap"
 
   # AWS EC2 Launch mechanisms (userdata execution logs)
-  Copy-Item "C:\ProgramData\Amazon\EC2Launch\Log" -Destination "$ArtifactDir\ec2launchv2" -Recurse -Force
-  Copy-Item "C:\ProgramData\Amazon\EC2-Windows\Launch\Log" -Destination "$ArtifactDir\ec2launch" -Recurse -Force
-  Copy-Item "C:\Program Files\Amazon\Ec2ConfigService\Logs" -Destination "$ArtifactDir\ec2config" -Recurse -Force
+  Copy-OptionalArtifact -Source "C:\ProgramData\Amazon\EC2Launch\Log" -Destination "$ArtifactDir\ec2launchv2" -Label "ec2launchv2 logs"
+  Copy-OptionalArtifact -Source "C:\ProgramData\Amazon\EC2-Windows\Launch\Log" -Destination "$ArtifactDir\ec2launch" -Label "ec2launch logs"
+  Copy-OptionalArtifact -Source "C:\Program Files\Amazon\Ec2ConfigService\Logs" -Destination "$ArtifactDir\ec2config" -Label "ec2config logs"
 
   # AWS Systems Manager logs
-  Copy-Item "C:\ProgramData\Amazon\SSM\Logs" -Destination "$ArtifactDir\ssm" -Recurse -Force
+  Copy-OptionalArtifact -Source "C:\ProgramData\Amazon\SSM\Logs" -Destination "$ArtifactDir\ssm" -Label "ssm logs"
 
   # CloudFormation logs (cfn-init, cfn-hup, cfn-signal)
-  Copy-Item "C:\cfn\log" -Destination "$ArtifactDir\cfn" -Recurse -Force
+  Copy-OptionalArtifact -Source "C:\cfn\log" -Destination "$ArtifactDir\cfn" -Label "cloudformation logs"
 
   # Windows Event Logs (Application, System, Security for troubleshooting)
-  Invoke-Expression -Command "mkdir $ArtifactDir\eventlogs" -ErrorAction SilentlyContinue
+  New-Item -Path "$ArtifactDir\eventlogs" -ItemType Directory -Force | Out-Null
   wevtutil epl Application "$ArtifactDir\eventlogs\Application.evtx"
   wevtutil epl System "$ArtifactDir\eventlogs\System.evtx"
   wevtutil epl Security "$ArtifactDir\eventlogs\Security.evtx"
   wevtutil epl "Microsoft-Windows-PowerShell/Operational" "$ArtifactDir\eventlogs\PowerShell-Operational.evtx"
 
   # Userdata execution artifacts
-  Invoke-Expression -Command "mkdir $ArtifactDir\cloud" -ErrorAction SilentlyContinue
-  Copy-Item "C:\Windows\TEMP\*.tmp" -Destination "$ArtifactDir\cloud" -Recurse -Force
-  Copy-Item "C:\Program Files\Amazon\Ec2ConfigService\Scripts\User*ps1" -Destination "$ArtifactDir\cloud" -Recurse -Force
-  Copy-Item "C:\Windows\Temp\UserScript.ps1" -Destination "$ArtifactDir\cloud\UserScript.ps1" -Recurse -Force
-  Copy-Item "C:\Windows\system32\config\systemprofile\AppData\Local\Temp\EC2Launch*" -Destination "$ArtifactDir\cloud\" -Recurse -Force
+  New-Item -Path "$ArtifactDir\cloud" -ItemType Directory -Force | Out-Null
+  New-Item -Path "$ArtifactDir\sys" -ItemType Directory -Force | Out-Null
+  Copy-OptionalArtifact -Source "C:\Windows\TEMP\*.tmp" -Destination "$ArtifactDir\cloud" -Label "temp tmp files"
+  Copy-OptionalArtifact -Source "C:\Program Files\Amazon\Ec2ConfigService\Scripts\User*ps1" -Destination "$ArtifactDir\cloud" -Label "ec2config user scripts"
+  Copy-OptionalArtifact -Source "C:\Windows\Temp\UserScript.ps1" -Destination "$ArtifactDir\cloud\UserScript.ps1" -Label "userscript.ps1"
+  Copy-OptionalArtifact -Source "C:\Windows\system32\config\systemprofile\AppData\Local\Temp\EC2Launch*" -Destination "$ArtifactDir\cloud\" -Label "ec2launch temp artifacts"
 
   # System information for troubleshooting
   Get-ChildItem Env: | Out-File "$ArtifactDir\sys\environment_variables.log" -Append -Encoding utf8
@@ -175,8 +214,10 @@ function Publish-Artifacts {
   $BuildSlugZipName = "$BuildSlug" -replace '/', '-'
   $ZipFile = "$${TempDir}\$${BuildSlugZipName}-$${BuildLabel}.zip"
   $ZipFileName = Split-Path $ZipFile -Leaf
-  cd 'C:\Program Files\7-Zip'
-  Test-Command ".\7z a -y -tzip $ZipFile -r $ArtifactDir\*"
+  Test-Command -Description "Compress-Archive $ArtifactDir\* -> $ZipFile" -Command {
+    Compress-Archive -Path "$ArtifactDir\*" -DestinationPath $ZipFile -Force
+  }
+
   Write-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${ZipFileName}" -File "$ZipFile"
 }
 
@@ -188,7 +229,7 @@ function Publish-SCAP-Scan {
   Write-Tfi "Writing SCAP scan to ${scan_slug}/$BuildOS..."
   $ErrorActionPreference = "Continue"
   $ScanDir = "$TempDir\terrafirm\scan"
-  Invoke-Expression -Command "mkdir $ScanDir" -ErrorAction SilentlyContinue
+  New-Item -Path $ScanDir -ItemType Directory -Force | Out-Null
   Copy-Item "C:\Watchmaker\SCAP" -Destination "$ScanDir" -Recurse -Force
   Write-S3Object -BucketName "$ScanBucket" -KeyPrefix "$${ScanKeyPrefix}/$${BuildOS}" -Folder "$${ScanDir}\SCAP\Sessions" -Recurse
   Write-Tfi "Wrote SCAP scan to ${scan_slug}/$BuildOS" $?
@@ -332,47 +373,99 @@ function Test-DisplayResult {
 }
 
 function Write-UserdataStatus {
-  param ($UserdataStatus)
-  $UserdataStatus | Out-File "${userdata_status_file}"
+  param (
+    [Parameter(Mandatory = $true)]$UserdataStatus
+  )
+
+  $StatusJson = $UserdataStatus | ConvertTo-Json -Compress
+  $StatusJson | Out-File "${userdata_status_file}" -Encoding utf8
   Write-Tfi "Write userdata status file" $?
 }
 
-function Open-WinRM {
-  Test-Command "Start-Process -FilePath `"winrm`" -ArgumentList `"quickconfig -q`""
-  Test-Command "Start-Process -FilePath `"winrm`" -ArgumentList `"set winrm/config/service @{AllowUnencrypted=```"true```"}`" -Wait"
-  Test-Command "Start-Process -FilePath `"winrm`" -ArgumentList `"set winrm/config/service/auth @{Basic=```"true```"}`" -Wait"
-  Test-Command "Start-Process -FilePath `"winrm`" -ArgumentList `"set winrm/config @{MaxTimeoutms=```"1900000```"}`""
+function New-UserdataStatus {
+  param (
+    [Parameter(Mandatory = $true)][int]$Code,
+    [Parameter(Mandatory = $true)][string]$Message
+  )
 
+  return [ordered]@{
+    code      = $Code
+    message   = $Message
+    timestamp = (Get-Date).ToString("o")
+    log_path  = $UserdataLogFile
+    s3_prefix = $UserdataLogS3Prefix
+  }
+}
+
+function Invoke-PostStep {
+  param (
+    [Parameter(Mandatory = $true)][string]$Name,
+    [Parameter(Mandatory = $true)][scriptblock]$Script,
+    [Parameter(Mandatory = $false)][bool]$FailBuild = $true
+  )
+
+  try {
+    & $Script
+    Write-Tfi "Post-step [$Name] succeeded" $true
+  }
+  catch {
+    $StepError = [String]$_.Exception + " Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
+    Write-Tfi "Post-step [$Name] failed: $StepError"
+    if ($FailBuild -and ($UserdataStatus.code -eq 0)) {
+      $script:UserdataStatus = New-UserdataStatus -Code 1 -Message "Post-step '$Name' failed: $([String]$_.Exception.Message)"
+    }
+  }
+}
+
+function Open-WinRM {
+  Test-Command -Description "winrm quickconfig -q" -Command {
+    & winrm quickconfig -q
+  }
   $SaltCall = "C:\Program Files\Salt Project\salt\salt-call.exe"
   if (Test-Path -path "C:\Program Files\Salt Project\salt\salt-call.bat") {
     $SaltCall = "C:\Program Files\Salt Project\salt\salt-call.bat"
-  }
-  elseif (Test-Path -path "C:\salt\salt-call.bat") {
+  } elseif (Test-Path -path "C:\salt\salt-call.bat") {
     $SaltCall = "C:\salt\salt-call.bat"
   }
 
   if (Test-Path -path $SaltCall) {
     # fix the lgpos to allow winrm
-    & $SaltCall --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value `
-      key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowBasic' `
-      value='1' `
-      vtype='REG_DWORD'
-    Write-Tfi "Command [salt-call --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value key='AllowBasic'...]" $?
+    Test-Command -Description "salt-call set WinRM AllowBasic policy" -Command {
+      & $SaltCall --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value `
+        key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowBasic' `
+        value='1' `
+        vtype='REG_DWORD'
+    }
 
-    & $SaltCall --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value `
-      key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowUnencryptedTraffic' `
-      value='1' `
-      vtype='REG_DWORD'
-    Write-Tfi "Command [salt-call --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value key='AllowUnencryptedTraffic'...]" $?
+    Test-Command -Description "salt-call set WinRM AllowUnencryptedTraffic policy" -Command {
+      & $SaltCall --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value `
+        key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowUnencryptedTraffic' `
+        value='1' `
+        vtype='REG_DWORD'
+    }
+  }
+
+  Test-Command -Description "winrm set service AllowUnencrypted=true" -Command {
+    & winrm set winrm/config/service '@{AllowUnencrypted="true"}'
+  }
+  Test-Command -Description "winrm set auth Basic=true" -Command {
+    & winrm set winrm/config/service/auth '@{Basic="true"}'
+  }
+  Test-Command -Description "winrm set MaxTimeoutms=1900000" -Command {
+    & winrm set winrm/config '@{MaxTimeoutms="1900000"}'
   }
 }
 
 function Close-Firewall {
-  Test-Command "netsh advfirewall firewall add rule name=`"WinRM in`" protocol=tcp dir=in profile=any localport=5985 remoteip=any localip=any action=block"
+  Test-Command -Description "netsh block WinRM in" -Command {
+    & netsh advfirewall firewall add rule name="WinRM in" protocol=tcp dir=in profile=any localport=5985 remoteip=any localip=any action=block
+  }
 }
 
 function Open-Firewall {
-  Test-Command "netsh advfirewall firewall set rule name=`"WinRM in`" new action=allow"
+  Test-Command -Description "netsh allow WinRM in" -Command {
+    & netsh advfirewall firewall set rule name="WinRM in" new action=allow
+  }
 }
 
 function Rename-User {
@@ -422,36 +515,57 @@ function Clone-Watchmaker {
   $GitRepo = "${git_repo}"
   $GitRef = "${git_ref}"
 
-  Test-Command "Remove-Item -force -recurse watchmaker -ErrorAction SilentlyContinue; git clone `"$GitRepo`" --recursive" -Tries 5
+  Test-Command -Description "git clone $GitRepo --recursive" -Tries 5 -Command {
+    Remove-Item -force -recurse watchmaker -ErrorAction SilentlyContinue
+    & git clone "$GitRepo" --recursive
+  }
   cd watchmaker
   if ($GitRef) {
     if ($GitRef -match "^[0-9]+$") {
-      Test-Command "git fetch origin +refs/pull/$${GitRef}/merge:$${GitRef}" -Tries 2
+      Test-Command -Description "git fetch origin +refs/pull/$${GitRef}/merge:$${GitRef}" -Tries 2 -Command {
+        & git fetch origin "+refs/pull/$${GitRef}/merge:$${GitRef}"
+      }
     }
     elseif ($GitRef -match "^refs/pull/.*") {
-      Test-Command "git fetch origin +$${GitRef}:$${GitRef}" -Tries 2
+      Test-Command -Description "git fetch origin +$${GitRef}:$${GitRef}" -Tries 2 -Command {
+        & git fetch origin "+$${GitRef}:$${GitRef}"
+      }
     }
-    Test-Command "git checkout $GitRef"
+    Test-Command -Description "git checkout $GitRef" -Command {
+      & git checkout $GitRef
+    }
   }
 
-  Test-Command "git submodule update"
+  Test-Command -Description "git submodule update" -Command {
+    & git submodule update
+  }
 }
 
 function Install-WatchmakerPrereqs {
-  Test-Command "python -m pip install --index-url=`"$PypiUrl`" --upgrade pip" -Tries 2
-  Test-Command "python -m pip --version" -Tries 1
-  Test-Command "python -m pip install --index-url=`"$PypiUrl`" --upgrade boto3" -Tries 2
+  Test-Command -Description "python -m pip install --index-url $PypiUrl --upgrade pip" -Tries 2 -Command {
+    & python -m pip install --index-url "$PypiUrl" --upgrade pip
+  }
+  Test-Command -Description "python -m pip --version" -Tries 1 -Command {
+    & python -m pip --version
+  }
+  Test-Command -Description "python -m pip install --index-url $PypiUrl --upgrade boto3" -Tries 2 -Command {
+    & python -m pip install --index-url "$PypiUrl" --upgrade boto3
+  }
 }
 
 function Install-Watchmaker {
   Install-WatchmakerPrereqs
-  Test-Command "python -m pip install --index-url `"$PypiUrl`" --editable ." -Tries 2
+  Test-Command -Description "python -m pip install --index-url $PypiUrl --editable ." -Tries 2 -Command {
+    & python -m pip install --index-url "$PypiUrl" --editable .
+  }
 }
 
 function Install-WatchmakerFromGitHubArtifact {
   Install-WatchmakerPrereqs
   $WheelPath = Install-SourceWheelFromGitHubArtifact
-  Test-Command "python -m pip install --index-url `"$PypiUrl`" `"$WheelPath`"" -Tries 2
+  Test-Command -Description "python -m pip install --index-url $PypiUrl $WheelPath" -Tries 2 -Command {
+    & python -m pip install --index-url "$PypiUrl" "$WheelPath"
+  }
 }
 
 try {
@@ -462,51 +576,76 @@ try {
 
   Set-Password -User "Administrator" -Pass "${password}"
   Close-Firewall
-  $UserdataStatus = @(1, "Error: Build not completed (should never see this error)")
+  $UserdataStatus = New-UserdataStatus -Code 1 -Message "Error: Build not completed (should never see this error)"
   [Net.ServicePointManager]::SecurityProtocol = "Tls12, Tls13"
-  Test-Command "Invoke-WebRequest -Uri '${url_7zip}' -OutFile '$TempDir\7z-install.exe' -UseBasicParsing" -Tries 5
-  Invoke-Expression -Command "$TempDir\7z-install.exe /S /D='C:\Program Files\7-Zip'" -ErrorAction Continue
-
   Check-Metadata
   Write-Tfi "Start Build ============"
 
 %{~ if build_type == build_type_builder }
-  Set-ExecutionPolicy Bypass -Scope Process -Force
-  Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-  choco install jq -y --force
-  choco install pwsh -y --force
+  Test-Command -Description "Set-ExecutionPolicy Bypass -Scope Process -Force" -Command {
+    Set-ExecutionPolicy Bypass -Scope Process -Force
+  }
+  Test-Command -Description "Install Chocolatey bootstrap script" -Command {
+    Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+  }
+  Test-Command -Description "choco install jq -y --force" -Command {
+    & choco install jq -y --force
+  }
+  Test-Command -Description "choco install pwsh -y --force" -Command {
+    & choco install pwsh -y --force
+  }
 
   Install-PythonGit
   Clone-Watchmaker
 
-  Test-Command "python -m pip install --index-url=`"$PypiUrl`" -r requirements\basics.txt" -Tries 2
+  Test-Command -Description "python -m pip install --index-url $PypiUrl -r requirements\\basics.txt" -Tries 2 -Command {
+    & python -m pip install --index-url "$PypiUrl" -r requirements\basics.txt
+  }
 
   $VirtualEnvDir = ".\venv"
-  Test-Command "python -m venv $VirtualEnvDir"
-  Test-Command "$${VirtualEnvDir}\Scripts\activate"
+  Test-Command -Description "python -m venv $VirtualEnvDir" -Command {
+    & python -m venv $VirtualEnvDir
+  }
+  Test-Command -Description "$${VirtualEnvDir}\Scripts\activate" -Command {
+    . "$${VirtualEnvDir}\Scripts\Activate.ps1"
+  }
 
 %{~ if standalone_builder == "pyapp" }
   Write-Tfi "Using PyApp build..."
-  choco install rust -y --force
-  Test-Command "pwsh ci\build_pyapp.ps1" -Tries 2
+  Test-Command -Description "choco install rust -y --force" -Command {
+    & choco install rust -y --force
+  }
+  Test-Command -Description "pwsh ci\\build_pyapp.ps1" -Tries 2 -Command {
+    & pwsh ci\build_pyapp.ps1
+  }
   $STAGING_DIR = ".pyapp\dist"
 %{~ else }
   Write-Tfi "Using PyInstaller build..."
-  Test-Command "pwsh ci\build.ps1" -Tries 2
+  Test-Command -Description "pwsh ci\\build.ps1" -Tries 2 -Command {
+    & pwsh ci\build.ps1
+  }
   $STAGING_DIR = ".pyinstaller\dist"
 %{~ endif }
 
   if (Test-Path ".\$STAGING_DIR\latest") {
-    Test-Command "Remove-Item -Path `".\$STAGING_DIR\latest`" -Force  -Recurse" -Tries 3
+    Test-Command -Description "Remove-Item .\\$STAGING_DIR\\latest" -Tries 3 -Command {
+      Remove-Item -Path ".\$STAGING_DIR\latest" -Force -Recurse
+    }
   }
 
-  Test-Command "Get-ChildItem -Path `".\$STAGING_DIR\*`" | Rename-Item -NewName latest" -Tries 3
-  Test-Command "Get-Item -Path `".\$STAGING_DIR\latest\watchmaker-*-standalone-windows-amd64.exe`" | Rename-Item -NewName watchmaker-latest-standalone-windows-amd64.exe" -Tries 3
+  Test-Command -Description "Rename dist directory to latest" -Tries 3 -Command {
+    Get-ChildItem -Path ".\$STAGING_DIR\*" | Rename-Item -NewName latest
+  }
+  Test-Command -Description "Rename standalone executable to watchmaker-latest-standalone-windows-amd64.exe" -Tries 3 -Command {
+    Get-Item -Path ".\$STAGING_DIR\latest\watchmaker-*-standalone-windows-amd64.exe" | Rename-Item -NewName watchmaker-latest-standalone-windows-amd64.exe
+  }
 
-  Write-S3Object -BucketName "$BuildBucket" -KeyPrefix "$${BuildKeyPrefix}/${release_prefix}" -Folder ".\$STAGING_DIR" -Recurse
+  Test-Command -Description "Write-S3Object standalone release to $${BuildBucket}/$${BuildKeyPrefix}/${release_prefix}" -Command {
+    Write-S3Object -BucketName "$BuildBucket" -KeyPrefix "$${BuildKeyPrefix}/${release_prefix}" -Folder ".\$STAGING_DIR" -Recurse
+  }
   Test-DisplayResult "Copied standalone to $${BuildBucket}/$${BuildKeyPrefix}/${release_prefix}" $?
 
-  $UserdataStatus = @(0, "Success")
+  $UserdataStatus = New-UserdataStatus -Code 0 -Message "Success"
 
 %{~ else }
 %{~ if build_type == build_type_standalone }
@@ -517,14 +656,23 @@ try {
   $ExecutablePath = Install-StandaloneFromGitHubArtifact
 %{~ else }
   $SleepTime = 20
+  $MaxWaitSeconds = 600
+  $StandaloneWaitDeadline = (Get-Date).AddSeconds($MaxWaitSeconds)
   $Standalone = "${executable}"
   $ErrorKey = $StandaloneErrorSignalFile
 
   Write-Tfi "Looking for standalone executable at $BuildSlug/$Standalone"
   Write-Tfi "Looking for error signal at $BuildSlug/$ErrorKey"
+  Write-Tfi "Waiting up to $MaxWaitSeconds second(s) for standalone artifact readiness"
 
   #block until executable exists, an error, or timeout
   while ($true) {
+    if ((Get-Date) -gt $StandaloneWaitDeadline) {
+      $ErrorMsg = "Timed out waiting for standalone executable after $MaxWaitSeconds second(s): $BuildSlug/$Standalone"
+      Write-Tfi $ErrorMsg
+      throw $ErrorMsg
+    }
+
     # find out what's happening with the builder
     $Exists = $true
     $SignaledError = $true
@@ -550,7 +698,6 @@ try {
       $ErrorMsg = "Error signaled by the builder (Error file found at $BuildSlug/$ErrorKey)"
       Write-Tfi $ErrorMsg
       throw $ErrorMsg
-      break
     }
     else {
       if ($Exists) {
@@ -565,11 +712,15 @@ try {
   } # end of while($true)
 
   $DownloadDir = "${download_dir}"
-  Read-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${Standalone}" -File "$${DownloadDir}\watchmaker.exe"
+  Test-Command -Description "Read-S3Object standalone executable from $${BuildBucket}/$${BuildKeyPrefix}/$${Standalone}" -Command {
+    Read-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${Standalone}" -File "$${DownloadDir}\watchmaker.exe"
+  }
   $ExecutablePath = "$${DownloadDir}\watchmaker.exe"
 %{~ endif }
-  Test-Command "$ExecutablePath ${args}"
-  $UserdataStatus = @(0, "Success")
+  Test-Command -Description "$ExecutablePath ${args}" -Command {
+    & "$ExecutablePath" ${args}
+  }
+  $UserdataStatus = New-UserdataStatus -Code 0 -Message "Success"
 
 %{~ else }
   Write-Tfi "Installing Watchmaker from source..."
@@ -583,15 +734,17 @@ try {
     Install-Watchmaker
   }
 
-  Test-Command "watchmaker ${args}"
-  $UserdataStatus = @(0, "Success")
+  Test-Command -Description "watchmaker ${args}" -Command {
+    & watchmaker ${args}
+  }
+  $UserdataStatus = New-UserdataStatus -Code 0 -Message "Success"
 
 %{~ endif }
 %{~ endif }
 
 }
 catch {
-  $ErrorMessage = [String]$_.Exception + "Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
+  $ErrorMessage = [String]$_.Exception + " Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
   Write-Tfi "*** ERROR caught ***"
   Write-Tfi $ErrorMessage
 
@@ -602,24 +755,47 @@ catch {
   }
   $Msg = "$ErrorMessage (For more information on the error, see the win_builder/userdata.log file.)"
   "$(Get-Date): $Msg" | Out-File "$StandaloneErrorSignalFile" -Append -Encoding utf8
-  Write-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${StandaloneErrorSignalFile}" -File "$StandaloneErrorSignalFile"
-  Write-Tfi "Signal error to S3" $?
+  try {
+    Test-Command -Description "Write-S3Object standalone error signal to $${BuildBucket}/$${BuildKeyPrefix}/$${StandaloneErrorSignalFile}" -Command {
+      Write-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${StandaloneErrorSignalFile}" -File "$StandaloneErrorSignalFile"
+    }
+    Write-Tfi "Signal error to S3" $true
+  }
+  catch {
+    Write-Tfi "Signal error to S3 failed: $([String]$_.Exception.Message)"
+  }
 %{~ endif }
 
   $ErrCode = 1
-  $UserdataStatus = @($ErrCode, "Error [$ErrorMessage]")
+  $UserdataStatus = New-UserdataStatus -Code $ErrCode -Message "Error [$([String]$_.Exception.Message)]"
 }
 
 $EndDate = Get-Date
 Write-Tfi "End Build =============="
 Write-Tfi ("Build took {0} seconds." -f [math]::Round(($EndDate - $StartDate).TotalSeconds))
 
-Rename-User -From "Administrator" -To "$WinUser"
-Open-WinRM
-Write-UserdataStatus -UserdataStatus $UserdataStatus
-Publish-Artifacts
-Open-Firewall
+Invoke-PostStep -Name "Rename-User" -Script {
+  Rename-User -From "Administrator" -To "$WinUser"
+}
+Invoke-PostStep -Name "Open-WinRM" -Script {
+  Open-WinRM
+}
+Invoke-PostStep -Name "Write-UserdataStatus" -Script {
+  Write-UserdataStatus -UserdataStatus $UserdataStatus
+}
+
+Invoke-PostStep -Name "Publish-Artifacts" -FailBuild $false -Script {
+  Publish-Artifacts
+}
+
+Invoke-PostStep -Name "Open-Firewall" -Script {
+  Open-Firewall
+}
 
 if (($BuildType -eq $BuildTypeSource) -and ("${scan_slug}" -ne "")) {
-  Publish-SCAP-Scan
+  Invoke-PostStep -Name "Publish-SCAP-Scan" -FailBuild $false -Script {
+    Publish-SCAP-Scan
+  }
 }
+
+exit ([int]$UserdataStatus.code)
