@@ -37,35 +37,37 @@ parse_userdata_status() {
     return
   fi
 
-  local parsed
-  parsed=$(jq -r '
-    [
-      (.code // 1),
-      (.message // "No status returned by userdata"),
-      (.log_path // ""),
-      (.s3_prefix // "")
-    ] | .[]
-  ' "$ud_path" 2>/dev/null || true)
+  local parsed_code
+  local parsed_message
+  local parsed_log_path
+  local parsed_s3_prefix
+  if jq -e . "$ud_path" > /dev/null 2>&1; then
+    parsed_code=$(jq -er '.code // 1' "$ud_path")
+    parsed_message=$(jq -er '.message // "No status returned by userdata"' "$ud_path")
+    parsed_log_path=$(jq -er '.log_path // ""' "$ud_path")
+    parsed_s3_prefix=$(jq -er '.s3_prefix // ""' "$ud_path")
 
-  if [[ -n "$parsed" ]]; then
-    local parsed_code
-    local parsed_message
-    local parsed_log_path
-    local parsed_s3_prefix
-    parsed_code=$(printf '%s\n' "$parsed" | sed -n '1p')
-    parsed_message=$(printf '%s\n' "$parsed" | sed -n '2p')
-    parsed_log_path=$(printf '%s\n' "$parsed" | sed -n '3p')
-    parsed_s3_prefix=$(printf '%s\n' "$parsed" | sed -n '4p')
+    if [[ "$parsed_code" =~ ^-?[0-9]+$ ]]; then
+      userdata_status_code="$parsed_code"
+      if [[ -n "$parsed_message" ]]; then
+        userdata_status_message="$parsed_message"
+      else
+        userdata_status_message="No status returned by userdata"
+      fi
+      if [[ -n "$parsed_log_path" ]]; then
+        userdata_log="$parsed_log_path"
+      fi
+      if [[ -n "$parsed_s3_prefix" ]]; then
+        userdata_s3_prefix="$parsed_s3_prefix"
+      fi
+      return
+    fi
 
-    userdata_status_code="$parsed_code"
-    userdata_status_message="$parsed_message"
-    if [[ -n "$parsed_log_path" ]]; then
-      userdata_log="$parsed_log_path"
-    fi
-    if [[ -n "$parsed_s3_prefix" ]]; then
-      userdata_s3_prefix="$parsed_s3_prefix"
-    fi
-    return
+    echo "Userdata status JSON had non-numeric code; falling back to legacy format"
+  else
+    local jq_error
+    jq_error=$(jq -e . "$ud_path" 2>&1 || true)
+    echo "Userdata status JSON parse failed; falling back to legacy format: $jq_error"
   fi
 
   # Legacy fallback format: one line for status code and one line for message.

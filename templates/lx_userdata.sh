@@ -97,7 +97,7 @@ try_cmd() {
   local n=0
   local try=$1
   local result=1
-  local command_output="None"
+  local ERREXIT=0
   [[ $# -le 1 ]] && {
     echo "Usage $0 <number_of_attempts> <Command>"
     exit $result
@@ -111,20 +111,21 @@ try_cmd() {
 
   if [[ "$SHELLOPTS" == *":errexit:"* ]]; then
     set +e
-    local ERREXIT=1
+    ERREXIT=1
   fi
 
   until [[ $n -ge $try ]]; do
     sleep $n
-    command_output=$("$@" 2>&1)
+    write-tfi "Running command :: $*"
+    "$@"
     result=$?
-    write-tfi "$* :: code $result :: output: $command_output" --result $result
+    write-tfi "$* :: code $result :: output streamed to $userdata_log" --result "$result"
     if [[ $result -eq 0 ]]; then
       break
     else
       ((n++))
       write-tfi "Attempt $n, command failed :: $*"
-      fail_snippet="Command ($*) failed :: code $result :: output: $command_output"
+      fail_snippet="Command ($*) failed :: code $result :: see $userdata_log for output"
     fi
   done
 
@@ -171,6 +172,10 @@ open-ssh() {
 
 # shellcheck disable=SC2329
 publish-artifacts() {
+  local logs_rc=0
+  local zip_rc=0
+  local rc=0
+
   # stage, zip, upload artifacts to s3
 
   # create a directory with all the build artifacts
@@ -191,14 +196,31 @@ publish-artifacts() {
   artifact_dest="s3://$build_slug/$build_label"
   cp "$userdata_log" "$artifact_dir"
   try_cmd 3 aws s3 cp "$artifact_dir" "$artifact_dest" --recursive
-  write-tfi "Uploaded logs to $artifact_dest" --result $?
+  logs_rc=$?
+  write-tfi "Uploaded logs to $artifact_dest" --result "$logs_rc"
+  if [[ "$logs_rc" -ne 0 ]]; then
+    rc="$logs_rc"
+  fi
 
   # creates compressed archive to upload to s3
   zip_file="$artifact_base/$${build_slug//\//-}-$build_label.tgz"
   cd "$artifact_dir"
   try_cmd 2 tar -cvzf "$zip_file" .
-  try_cmd 3 aws s3 cp "$zip_file" "s3://$build_slug/"
-  write-tfi "Uploaded artifact zip to S3" --result $?
+  zip_rc=$?
+  if [[ "$zip_rc" -eq 0 ]]; then
+    try_cmd 3 aws s3 cp "$zip_file" "s3://$build_slug/"
+    zip_rc=$?
+  fi
+  if [[ "$zip_rc" -eq 0 ]]; then
+    write-tfi "Uploaded artifact zip to S3" --result "$zip_rc"
+  else
+    write-tfi "Failed to upload artifact zip to S3" --result "$zip_rc"
+  fi
+  if [[ "$rc" -eq 0 && "$zip_rc" -ne 0 ]]; then
+    rc="$zip_rc"
+  fi
+
+  return "$rc"
 }
 
 github-artifact-name() {
@@ -338,6 +360,8 @@ install-source-wheel-from-github-artifact() {
 
 # shellcheck disable=SC2329
 publish-scap-scan() {
+  local rc=0
+
   # create a directory with scap scan output
   scan_dir="$temp_dir/terrafirm/scan"
   mkdir -p "$scan_dir"
@@ -345,14 +369,21 @@ publish-scap-scan() {
 
   # move scan output to s3
   scan_dest="$scan_slug/$build_os"
-  aws s3 cp "$scan_dir" "$scan_dest" --recursive
-  write-tfi "Uploaded scap scan to $scan_dest" --result $?
+  try_cmd 3 aws s3 cp "$scan_dir" "$scan_dest" --recursive
+  rc=$?
+  if [[ "$rc" -eq 0 ]]; then
+    write-tfi "Uploaded scap scan to $scan_dest" --result "$rc"
+  else
+    write-tfi "Failed to upload scap scan to $scan_dest" --result "$rc"
+  fi
+  return "$rc"
 }
 
 # shellcheck disable=SC2329
 write-userdata-status() {
   local code="$1"
   local message="$2"
+  local rc=0
 
   jq -cn \
     --argjson code "$code" \
@@ -362,8 +393,10 @@ write-userdata-status() {
     --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
     '{code:$code, message:$message, timestamp:$timestamp, log_path:$log_path, s3_prefix:$s3_prefix}' \
     > "$userdata_status_file"
+  rc=$?
 
-  write-tfi "Write userdata status file" --result $?
+  write-tfi "Write userdata status file" --result "$rc"
+  return "$rc"
 }
 
 # shellcheck disable=SC2329
@@ -374,14 +407,27 @@ write-current-userdata-status() {
 invoke-post-step() {
   local name="$1"
   local fail_build="$2"
+  local errexit_enabled=0
+  local rc=0
   shift 2
 
-  if "$@"; then
+  if [[ "$SHELLOPTS" == *":errexit:"* ]]; then
+    set +e
+    errexit_enabled=1
+  fi
+
+  "$@"
+  rc=$?
+
+  if [[ "$errexit_enabled" == "1" ]]; then
+    set -e
+  fi
+
+  if [[ "$rc" -eq 0 ]]; then
     write-tfi "Post-step [$name] succeeded" --result 0
     return 0
   fi
 
-  local rc=$?
   write-tfi "Post-step [$name] failed with exit code $rc" --result "$rc"
   if [[ "$fail_build" == "true" && "$userdata_status_code" == "0" ]]; then
     userdata_status_code="$rc"
@@ -391,6 +437,9 @@ invoke-post-step() {
 }
 
 finally() {
+  # Prevent EXIT trap re-entry when finally exits explicitly.
+  trap - EXIT
+
   # time it took to install
   end=$(date +%s)
   runtime=$((end-start))
@@ -533,9 +582,9 @@ handle_builder_exit() {
     artifact_dest="s3://$build_slug/$standalone_error_signal_file"
     write-tfi "Signaling error at $artifact_dest"
     if aws s3 cp "$temp_dir/error.log" "$artifact_dest"; then
-      write-tfi "Upload error signal" --result 0
+      write-tfi "Uploaded error signal" --result 0
     else
-      write-tfi "Upload error signal" --result $?
+      write-tfi "Failed to upload error signal" --result $?
     fi
 
     catch "$@"
