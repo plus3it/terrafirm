@@ -128,6 +128,28 @@ function Test-Command {
   }
 }
 
+function Copy-OptionalArtifact {
+  param (
+    [Parameter(Mandatory = $true)][string]$Source,
+    [Parameter(Mandatory = $true)][string]$Destination,
+    [Parameter(Mandatory = $true)][string]$Label
+  )
+
+  if (-not (Test-Path -Path $Source)) {
+    Write-Tfi "Artifact [$Label] missing at $Source (skipping)"
+    return
+  }
+
+  try {
+    Copy-Item -Path $Source -Destination $Destination -Recurse -Force
+    Write-Tfi "Artifact [$Label] copied from $Source to $Destination" $true
+  }
+  catch {
+    $CopyError = [String]$_.Exception + " Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
+    Write-Tfi "Artifact [$Label] copy failed: $CopyError"
+  }
+}
+
 function Publish-Artifacts {
   ## Upload files to s3 related to the build
   $ErrorActionPreference = "Continue"
@@ -136,19 +158,19 @@ function Publish-Artifacts {
 
   # Watchmaker logs and SCAP results
   New-Item -Path "$ArtifactDir\watchmaker" -ItemType Directory -Force | Out-Null
-  Copy-Item "C:\Watchmaker\Logs\*log" -Destination "$ArtifactDir\watchmaker" -Recurse -Force
-  Copy-Item "C:\Watchmaker\SCAP" -Destination "$ArtifactDir\scap" -Recurse -Force
+  Copy-OptionalArtifact -Source "C:\Watchmaker\Logs\*log" -Destination "$ArtifactDir\watchmaker" -Label "watchmaker logs"
+  Copy-OptionalArtifact -Source "C:\Watchmaker\SCAP" -Destination "$ArtifactDir\scap" -Label "watchmaker scap"
 
   # AWS EC2 Launch mechanisms (userdata execution logs)
-  Copy-Item "C:\ProgramData\Amazon\EC2Launch\Log" -Destination "$ArtifactDir\ec2launchv2" -Recurse -Force
-  Copy-Item "C:\ProgramData\Amazon\EC2-Windows\Launch\Log" -Destination "$ArtifactDir\ec2launch" -Recurse -Force
-  Copy-Item "C:\Program Files\Amazon\Ec2ConfigService\Logs" -Destination "$ArtifactDir\ec2config" -Recurse -Force
+  Copy-OptionalArtifact -Source "C:\ProgramData\Amazon\EC2Launch\Log" -Destination "$ArtifactDir\ec2launchv2" -Label "ec2launchv2 logs"
+  Copy-OptionalArtifact -Source "C:\ProgramData\Amazon\EC2-Windows\Launch\Log" -Destination "$ArtifactDir\ec2launch" -Label "ec2launch logs"
+  Copy-OptionalArtifact -Source "C:\Program Files\Amazon\Ec2ConfigService\Logs" -Destination "$ArtifactDir\ec2config" -Label "ec2config logs"
 
   # AWS Systems Manager logs
-  Copy-Item "C:\ProgramData\Amazon\SSM\Logs" -Destination "$ArtifactDir\ssm" -Recurse -Force
+  Copy-OptionalArtifact -Source "C:\ProgramData\Amazon\SSM\Logs" -Destination "$ArtifactDir\ssm" -Label "ssm logs"
 
   # CloudFormation logs (cfn-init, cfn-hup, cfn-signal)
-  Copy-Item "C:\cfn\log" -Destination "$ArtifactDir\cfn" -Recurse -Force
+  Copy-OptionalArtifact -Source "C:\cfn\log" -Destination "$ArtifactDir\cfn" -Label "cloudformation logs"
 
   # Windows Event Logs (Application, System, Security for troubleshooting)
   New-Item -Path "$ArtifactDir\eventlogs" -ItemType Directory -Force | Out-Null
@@ -160,10 +182,10 @@ function Publish-Artifacts {
   # Userdata execution artifacts
   New-Item -Path "$ArtifactDir\cloud" -ItemType Directory -Force | Out-Null
   New-Item -Path "$ArtifactDir\sys" -ItemType Directory -Force | Out-Null
-  Copy-Item "C:\Windows\TEMP\*.tmp" -Destination "$ArtifactDir\cloud" -Recurse -Force
-  Copy-Item "C:\Program Files\Amazon\Ec2ConfigService\Scripts\User*ps1" -Destination "$ArtifactDir\cloud" -Recurse -Force
-  Copy-Item "C:\Windows\Temp\UserScript.ps1" -Destination "$ArtifactDir\cloud\UserScript.ps1" -Recurse -Force
-  Copy-Item "C:\Windows\system32\config\systemprofile\AppData\Local\Temp\EC2Launch*" -Destination "$ArtifactDir\cloud\" -Recurse -Force
+  Copy-OptionalArtifact -Source "C:\Windows\TEMP\*.tmp" -Destination "$ArtifactDir\cloud" -Label "temp tmp files"
+  Copy-OptionalArtifact -Source "C:\Program Files\Amazon\Ec2ConfigService\Scripts\User*ps1" -Destination "$ArtifactDir\cloud" -Label "ec2config user scripts"
+  Copy-OptionalArtifact -Source "C:\Windows\Temp\UserScript.ps1" -Destination "$ArtifactDir\cloud\UserScript.ps1" -Label "userscript.ps1"
+  Copy-OptionalArtifact -Source "C:\Windows\system32\config\systemprofile\AppData\Local\Temp\EC2Launch*" -Destination "$ArtifactDir\cloud\" -Label "ec2launch temp artifacts"
 
   # System information for troubleshooting
   Get-ChildItem Env: | Out-File "$ArtifactDir\sys\environment_variables.log" -Append -Encoding utf8
@@ -396,24 +418,25 @@ function Open-WinRM {
   $SaltCall = "C:\Program Files\Salt Project\salt\salt-call.exe"
   if (Test-Path -path "C:\Program Files\Salt Project\salt\salt-call.bat") {
     $SaltCall = "C:\Program Files\Salt Project\salt\salt-call.bat"
-  }
-  elseif (Test-Path -path "C:\salt\salt-call.bat") {
+  } elseif (Test-Path -path "C:\salt\salt-call.bat") {
     $SaltCall = "C:\salt\salt-call.bat"
   }
 
   if (Test-Path -path $SaltCall) {
     # fix the lgpos to allow winrm
-    & $SaltCall --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value `
-      key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowBasic' `
-      value='1' `
-      vtype='REG_DWORD'
-    Write-Tfi "Command [salt-call --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value key='AllowBasic'...]" $?
+    Test-Command -Description "salt-call set WinRM AllowBasic policy" -Command {
+      & $SaltCall --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value `
+        key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowBasic' `
+        value='1' `
+        vtype='REG_DWORD'
+    }
 
-    & $SaltCall --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value `
-      key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowUnencryptedTraffic' `
-      value='1' `
-      vtype='REG_DWORD'
-    Write-Tfi "Command [salt-call --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value key='AllowUnencryptedTraffic'...]" $?
+    Test-Command -Description "salt-call set WinRM AllowUnencryptedTraffic policy" -Command {
+      & $SaltCall --local -c C:\Watchmaker\salt\conf ash_lgpo.set_reg_value `
+        key='HKLM\SOFTWARE\Policies\Microsoft\Windows\WinRM\Service\AllowUnencryptedTraffic' `
+        value='1' `
+        vtype='REG_DWORD'
+    }
   }
 
   Test-Command -Description "winrm set service AllowUnencrypted=true" -Command {
@@ -693,7 +716,7 @@ try {
 
 }
 catch {
-  $ErrorMessage = [String]$_.Exception + "Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
+  $ErrorMessage = [String]$_.Exception + " Invocation Info: " + ($PSItem.InvocationInfo | Format-List * | Out-String)
   Write-Tfi "*** ERROR caught ***"
   Write-Tfi $ErrorMessage
 
