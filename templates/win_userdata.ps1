@@ -607,7 +607,7 @@ try {
     & python -m venv $VirtualEnvDir
   }
   Test-Command -Description "$${VirtualEnvDir}\Scripts\activate" -Command {
-    & "$${VirtualEnvDir}\Scripts\activate"
+    . "$${VirtualEnvDir}\Scripts\Activate.ps1"
   }
 
 %{~ if standalone_builder == "pyapp" }
