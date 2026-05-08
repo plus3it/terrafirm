@@ -666,11 +666,11 @@ try {
   Test-Command -Description "Install Chocolatey bootstrap script" -Command {
     Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
   }
-  Test-Command -Description "choco install jq -y --force" -Command {
-    & choco install jq -y --force
+  Test-Command -Description "choco install jq" -Tries 2 -Command {
+    & choco install jq -y --force --no-progress --limit-output --execution-timeout=600
   }
-  Test-Command -Description "choco install pwsh -y --force" -Command {
-    & choco install pwsh -y --force
+  Test-Command -Description "choco install pwsh" -Tries 2 -Command {
+    & choco install pwsh -y --force --no-progress --limit-output --execution-timeout=600
   }
 
   Install-PythonGit
@@ -690,8 +690,8 @@ try {
 
 %{~ if standalone_builder == "pyapp" }
   Write-Tfi "Using PyApp build..."
-  Test-Command -Description "choco install rust -y --force" -Command {
-    & choco install rust -y --force
+  Test-Command -Description "choco install rust -y --force --no-progress --limit-output --execution-timeout=600" -Command {
+    & choco install rust -y --force --no-progress --limit-output --execution-timeout=600
   }
   Test-Command -Description "pwsh ci\\build_pyapp.ps1" -Tries 2 -Command {
     & pwsh ci\build_pyapp.ps1
