@@ -28,9 +28,13 @@ temp_dir="${temp_dir}"
 url_pypi="${url_pypi}"
 userdata_log="${userdata_log}"
 userdata_status_file="${userdata_status_file}"
+userdata_log_s3_prefix="s3://$build_slug/$build_label"
 
 # Split args once and pass as a safe argv array where needed.
 read -r -a args <<< "${args}"
+
+# Default failure snippet for failures that occur outside try_cmd wrappers.
+fail_snippet="Unspecified command failure"
 
 exec &> "$userdata_log"
 
@@ -44,7 +48,7 @@ debug-2s3() {
   ## previously uploaded logs.
   local msg="$1"
 
-  debug_file="$temp_dir/debug.log"
+  local debug_file="$temp_dir/debug.log"
   echo "$msg" >> "$debug_file"
   aws s3 cp "$debug_file" "s3://$build_slug/$build_label/" > /dev/null 2>&1 || true
   aws s3 cp "$userdata_log" "s3://$build_slug/$build_label/" > /dev/null 2>&1 || true
@@ -93,7 +97,7 @@ try_cmd() {
   local n=0
   local try=$1
   local result=1
-  local command_output="None"
+  local ERREXIT=0
   [[ $# -le 1 ]] && {
     echo "Usage $0 <number_of_attempts> <Command>"
     exit $result
@@ -107,20 +111,21 @@ try_cmd() {
 
   if [[ "$SHELLOPTS" == *":errexit:"* ]]; then
     set +e
-    local ERREXIT=1
+    ERREXIT=1
   fi
 
   until [[ $n -ge $try ]]; do
     sleep $n
-    command_output=$("$@" 2>&1)
+    write-tfi "Running command :: $*"
+    "$@"
     result=$?
-    write-tfi "$* :: code $result :: output: $command_output" --result $result
+    write-tfi "$* :: code $result :: output streamed to $userdata_log" --result "$result"
     if [[ $result -eq 0 ]]; then
       break
     else
       ((n++))
       write-tfi "Attempt $n, command failed :: $*"
-      fail_snippet="Command ($*) failed :: code $result :: output: $command_output"
+      fail_snippet="Command ($*) failed :: code $result :: see $userdata_log for output"
     fi
   done
 
@@ -131,6 +136,7 @@ try_cmd() {
   return $result
 }  # ----------  end of function try_cmd  ----------
 
+# shellcheck disable=SC2329
 open-ssh() {
   # open firewall on rhel 7/8 and ubuntu, move ssh to non-standard
 
@@ -164,7 +170,12 @@ open-ssh() {
   fi
 }
 
+# shellcheck disable=SC2329
 publish-artifacts() {
+  local logs_rc=0
+  local zip_rc=0
+  local rc=0
+
   # stage, zip, upload artifacts to s3
 
   # create a directory with all the build artifacts
@@ -184,15 +195,32 @@ publish-artifacts() {
   # move logs to s3
   artifact_dest="s3://$build_slug/$build_label"
   cp "$userdata_log" "$artifact_dir"
-  aws s3 cp "$artifact_dir" "$artifact_dest" --recursive
-  write-tfi "Uploaded logs to $artifact_dest" --result $?
+  try_cmd 3 aws s3 cp "$artifact_dir" "$artifact_dest" --recursive
+  logs_rc=$?
+  write-tfi "Uploaded logs to $artifact_dest" --result "$logs_rc"
+  if [[ "$logs_rc" -ne 0 ]]; then
+    rc="$logs_rc"
+  fi
 
   # creates compressed archive to upload to s3
   zip_file="$artifact_base/$${build_slug//\//-}-$build_label.tgz"
   cd "$artifact_dir"
-  tar -cvzf "$zip_file" .
-  aws s3 cp "$zip_file" "s3://$build_slug/"
-  write-tfi "Uploaded artifact zip to S3" --result $?
+  try_cmd 2 tar -cvzf "$zip_file" .
+  zip_rc=$?
+  if [[ "$zip_rc" -eq 0 ]]; then
+    try_cmd 3 aws s3 cp "$zip_file" "s3://$build_slug/"
+    zip_rc=$?
+  fi
+  if [[ "$zip_rc" -eq 0 ]]; then
+    write-tfi "Uploaded artifact zip to S3" --result "$zip_rc"
+  else
+    write-tfi "Failed to upload artifact zip to S3" --result "$zip_rc"
+  fi
+  if [[ "$rc" -eq 0 && "$zip_rc" -ne 0 ]]; then
+    rc="$zip_rc"
+  fi
+
+  return "$rc"
 }
 
 github-artifact-name() {
@@ -330,7 +358,10 @@ install-source-wheel-from-github-artifact() {
   echo "$wheel_path"
 }
 
+# shellcheck disable=SC2329
 publish-scap-scan() {
+  local rc=0
+
   # create a directory with scap scan output
   scan_dir="$temp_dir/terrafirm/scan"
   mkdir -p "$scan_dir"
@@ -338,37 +369,105 @@ publish-scap-scan() {
 
   # move scan output to s3
   scan_dest="$scan_slug/$build_os"
-  aws s3 cp "$scan_dir" "$scan_dest" --recursive
-  write-tfi "Uploaded scap scan to $scan_dest" --result $?
+  try_cmd 3 aws s3 cp "$scan_dir" "$scan_dest" --recursive
+  rc=$?
+  if [[ "$rc" -eq 0 ]]; then
+    write-tfi "Uploaded scap scan to $scan_dest" --result "$rc"
+  else
+    write-tfi "Failed to upload scap scan to $scan_dest" --result "$rc"
+  fi
+  return "$rc"
+}
+
+# shellcheck disable=SC2329
+write-userdata-status() {
+  local code="$1"
+  local message="$2"
+  local rc=0
+
+  jq -cn \
+    --argjson code "$code" \
+    --arg message "$message" \
+    --arg log_path "$userdata_log" \
+    --arg s3_prefix "$userdata_log_s3_prefix" \
+    --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+    '{code:$code, message:$message, timestamp:$timestamp, log_path:$log_path, s3_prefix:$s3_prefix}' \
+    > "$userdata_status_file"
+  rc=$?
+
+  write-tfi "Write userdata status file" --result "$rc"
+  return "$rc"
+}
+
+# shellcheck disable=SC2329
+write-current-userdata-status() {
+  write-userdata-status "$userdata_status_code" "$userdata_status_message"
+}
+
+invoke-post-step() {
+  local name="$1"
+  local fail_build="$2"
+  local errexit_enabled=0
+  local rc=0
+  shift 2
+
+  if [[ "$SHELLOPTS" == *":errexit:"* ]]; then
+    set +e
+    errexit_enabled=1
+  fi
+
+  "$@"
+  rc=$?
+
+  if [[ "$errexit_enabled" == "1" ]]; then
+    set -e
+  fi
+
+  if [[ "$rc" -eq 0 ]]; then
+    write-tfi "Post-step [$name] succeeded" --result 0
+    return 0
+  fi
+
+  write-tfi "Post-step [$name] failed with exit code $rc" --result "$rc"
+  if [[ "$fail_build" == "true" && "$userdata_status_code" == "0" ]]; then
+    userdata_status_code="$rc"
+    userdata_status_message="Post-step '$name' failed"
+  fi
+  return 0
 }
 
 finally() {
+  # Prevent EXIT trap re-entry when finally exits explicitly.
+  trap - EXIT
+
   # time it took to install
   end=$(date +%s)
   runtime=$((end-start))
   write-tfi "WAM install took $runtime seconds."
-
-  printf "%s\n" "$${userdata_status[@]}" > "$userdata_status_file"
 
   # disable fapolicyd so it can't block aws-cli
   if systemctl is-active --quiet fapolicyd; then
     systemctl stop fapolicyd
   fi
 
-  open-ssh
-  publish-artifacts
+  # Write userdata status before opening firewall
+  invoke-post-step "Write-UserdataStatus" true write-current-userdata-status
+  invoke-post-step "Open-SSH" true open-ssh
+
+  invoke-post-step "Publish-Artifacts" false publish-artifacts
   if [[ "$build_type" == "$build_type_source" && "$scan_slug" != "" ]]; then
-    publish-scap-scan
+    invoke-post-step "Publish-SCAP-Scan" false publish-scap-scan
   fi
 
   # shellcheck disable=SC2242
-  exit "$${userdata_status[0]}"
+  exit "$userdata_status_code"
 }
 
 catch() {
   local exit_code="$${1:-1}"
   write-tfi "$0: line $2: exiting with status $1"
-  userdata_status=("$exit_code" "Userdata install error: $fail_snippet")
+  userdata_status_code="$exit_code"
+  userdata_status_message="Userdata install error: $fail_snippet"
   finally
 }
 
@@ -460,9 +559,9 @@ install-watchmaker-from-github-artifact() {
 # start time of install
 start=$(date +%s)
 
-# declare an array to hold the status (number and message)
-# shellcheck disable=SC2034
-userdata_status=(0 "Passed")
+# hold userdata status details for final reporting and status file output
+userdata_status_code=0
+userdata_status_message="Success"
 
 # shellcheck disable=SC1083,SC2288
 %{ if build_type == build_type_builder }
@@ -482,8 +581,11 @@ handle_builder_exit() {
 
     artifact_dest="s3://$build_slug/$standalone_error_signal_file"
     write-tfi "Signaling error at $artifact_dest"
-    aws s3 cp "$temp_dir/error.log" "$artifact_dest" || true
-    write-tfi "Upload error signal" --result $?
+    if aws s3 cp "$temp_dir/error.log" "$artifact_dest"; then
+      write-tfi "Uploaded error signal" --result 0
+    else
+      write-tfi "Failed to upload error signal" --result $?
+    fi
 
     catch "$@"
 
@@ -491,6 +593,10 @@ handle_builder_exit() {
     finally "$@"
   fi
 }
+
+# setup error trap to go to signal_error function
+set -eu -o pipefail
+trap 'handle_builder_exit $? $LINENO' EXIT
 
 try_cmd 3 apt-get -y update && apt-get -y install awscli
 
@@ -520,15 +626,12 @@ try_cmd 3 apt-get -y install \
   ca-certificates \
   curl \
   gnupg-agent \
+  jq \
   software-properties-common \
   python3-virtualenv \
   python3-venv \
   python3-pip \
   git
-
-# setup error trap to go to signal_error function
-set -e
-trap 'handle_builder_exit $? $LINENO' EXIT
 
 # start the firewall
 try_cmd 1 ufw enable
@@ -577,30 +680,42 @@ try_cmd 1 aws s3 cp "$STAGING_DIR" "$artifact_dest" --recursive
 
 # setup error trap to go to catch function
 
-
 check-metadata-availability
 
-set -e
+set -eu -o pipefail
 trap 'catch $? $LINENO' EXIT
+
+try_cmd 5 dnf -y install jq
 
 if [[ "$build_type" == "$build_type_standalone" ]]; then
   standalone_dest=/home/maintuser
 
   if [[ "$standalone_source" == "github_actions_artifact" ]]; then
-    try_cmd 5 yum -y install jq
     executable_path=$(install-standalone-from-github-artifact) || catch 1 "$LINENO"
     cp "$executable_path" "$standalone_dest/watchmaker"
   else
     standalone_location="s3://$build_slug/$executable"
     error_location="s3://$build_slug/$standalone_error_signal_file"
     sleep_time=20
+    max_wait_seconds=600
+    wait_start=$(date +%s)
     nonexistent_code="nonexistent"
     no_error_code="no_error"
 
     write-tfi "Looking for standalone executable at $standalone_location"
+    write-tfi "Looking for error signal at $error_location"
+    write-tfi "Waiting up to $max_wait_seconds second(s) for standalone artifact readiness"
 
     #block until executable exists, an error, or timeout
     while true; do
+
+      now=$(date +%s)
+      elapsed=$((now - wait_start))
+      if [[ $elapsed -ge $max_wait_seconds ]]; then
+        fail_snippet="Timed out waiting for standalone executable after $max_wait_seconds second(s): $standalone_location"
+        write-tfi "$fail_snippet"
+        catch 1 "$LINENO"
+      fi
 
       # aws s3 ls $standalone_location ==> exit 1, if it doesn't exist!
 
@@ -660,10 +775,9 @@ else
   python3 --version
 
   if [[ "$source_source" == "github_actions_artifact" ]]; then
-    try_cmd 5 yum -y install jq
     install-watchmaker-from-github-artifact
   else
-    try_cmd 5 yum -y install git
+    try_cmd 5 dnf -y install git
     install-watchmaker
   fi
 

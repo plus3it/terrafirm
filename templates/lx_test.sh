@@ -6,17 +6,93 @@ build_type="${build_type}"
 build_label="${build_label}"
 build_type_builder="${build_type_builder}"
 build_type_standalone="${build_type_standalone}"
+build_slug="${build_slug}"
+userdata_log="${userdata_log}"
 userdata_status_file="${userdata_status_file}"
+userdata_s3_prefix=""
+userdata_status_code=1
+userdata_status_message="No status returned by userdata"
+test_status_code=0
+test_status_message="Not run"
+
+print_userdata_log_tail() {
+  local log_file="$1"
+  local tail_lines="$${2:-120}"
+
+  if [[ -f "$log_file" ]]; then
+    echo "----------------------- userdata.log (last $${tail_lines} lines) -----------------------"
+    tail -n "$tail_lines" "$log_file" || true
+    echo "-----------------------------------------------------------------------------"
+  else
+    echo "Userdata log file not found at path: $log_file"
+  fi
+}
+
+parse_userdata_status() {
+  local ud_path="$1"
+
+  if [[ ! -f "$ud_path" ]]; then
+    userdata_status_code=1
+    userdata_status_message="No status returned by userdata"
+    return
+  fi
+
+  local parsed_code
+  local parsed_message
+  local parsed_log_path
+  local parsed_s3_prefix
+  if jq -e . "$ud_path" > /dev/null 2>&1; then
+    parsed_code=$(jq -er '.code // 1' "$ud_path")
+    parsed_message=$(jq -er '.message // "No status returned by userdata"' "$ud_path")
+    parsed_log_path=$(jq -er '.log_path // ""' "$ud_path")
+    parsed_s3_prefix=$(jq -er '.s3_prefix // ""' "$ud_path")
+
+    if [[ "$parsed_code" =~ ^-?[0-9]+$ ]]; then
+      userdata_status_code="$parsed_code"
+      if [[ -n "$parsed_message" ]]; then
+        userdata_status_message="$parsed_message"
+      else
+        userdata_status_message="No status returned by userdata"
+      fi
+      if [[ -n "$parsed_log_path" ]]; then
+        userdata_log="$parsed_log_path"
+      fi
+      if [[ -n "$parsed_s3_prefix" ]]; then
+        userdata_s3_prefix="$parsed_s3_prefix"
+      fi
+      return
+    fi
+
+    echo "Userdata status JSON had non-numeric code; falling back to legacy format"
+  else
+    local jq_error
+    jq_error=$(jq -e . "$ud_path" 2>&1 || true)
+    echo "Userdata status JSON parse failed; falling back to legacy format: $jq_error"
+  fi
+
+  # Legacy fallback format: one line for status code and one line for message.
+  userdata_status_code=$(sed -n '1p' "$ud_path")
+  userdata_status_message=$(sed -n '2p' "$ud_path")
+  if [[ -z "$userdata_status_code" ]]; then
+    userdata_status_code=1
+  fi
+  if [[ -z "$userdata_status_message" ]]; then
+    userdata_status_message="No status returned by userdata"
+  fi
+}
 
 finally() {
   local exit_code=0
-  local userdata_status_code="$${userdata_status[0]}"
-  local test_status_code="$${test_status[0]}"
-
   if [[ "$userdata_status_code" -ne 0 || "$test_status_code" -ne 0 ]]; then
     echo "........................................................FAILED!"
-    echo "Userdata Status: ($${userdata_status[0]}) $${userdata_status[1]}"
-    echo "Test Status    : ($${test_status[0]}) $${test_status[1]}"
+    echo "Userdata Status: ($userdata_status_code) $userdata_status_message"
+    if [[ -z "$userdata_s3_prefix" ]]; then
+      userdata_s3_prefix="s3://$build_slug/$build_label"
+    fi
+    echo "Userdata Logs S3 Prefix: $userdata_s3_prefix"
+    echo "Userdata Log Path: $userdata_log"
+    echo "Test Status    : ($test_status_code) $test_status_message"
+    print_userdata_log_tail "$userdata_log" 120
     ((exit_code=userdata_status_code+test_status_code))
 
     if [[ "$exit_code" -eq 0 ]]; then
@@ -32,8 +108,8 @@ finally() {
 # shellcheck disable=SC2317,SC2329
 catch() {
   local exit_code="$${1:-1}"
-
-  test_status=("$exit_code" "Testing error")
+  test_status_code="$exit_code"
+  test_status_message="Testing error"
 
   finally
 }
@@ -53,16 +129,7 @@ else
 fi
 
 ud_path="$userdata_status_file"
-
-if [[ -f "$ud_path" ]]; then
-  readarray -t userdata_status < "$ud_path"
-else
-  # shellcheck disable=SC2034
-  userdata_status=(1 "No status returned by userdata")
-fi
-
-test_status=(0 "Not run")
-userdata_status_code="$${userdata_status[0]}"
+parse_userdata_status "$ud_path"
 
 if [[ "$build_type" != "$build_type_builder" && "$userdata_status_code" -eq 0 ]]; then
   # ------------------------------------------------------------ WAM TESTS BEGIN
@@ -77,7 +144,7 @@ if [[ "$build_type" != "$build_type_builder" && "$userdata_status_code" -eq 0 ]]
   # ------------------------------------------------------------ WAM TESTS END
 fi
 
-# shellcheck disable=SC2034
-test_status=(0 "Passed")
+test_status_code=0
+test_status_message="Passed"
 
 finally
