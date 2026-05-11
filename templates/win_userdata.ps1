@@ -88,18 +88,91 @@ function Test-Command {
     [Parameter(Mandatory = $true)][scriptblock]$Command,
     [Parameter(Mandatory = $false)][string]$Description = $Command.ToString().Trim(),
     [Parameter(Mandatory = $false)][int]$Tries = 1,
-    [Parameter(Mandatory = $false)][int]$SecondsDelay = 2
+    [Parameter(Mandatory = $false)][int]$SecondsDelay = 2,
+    [Parameter(Mandatory = $false)][ValidateRange(1, 3600)][int]$HeartbeatSeconds = 20
   )
   $TryCount = 0
   $Completed = $false
-  $MsgFailed = "Command [{0}] failed" -f $Description
-  $MsgSucceeded = "Command [{0}] succeeded." -f $Description
+  $MsgFailed = "Command failed [{0}]" -f $Description
+  $MsgSucceeded = "Command succeeded [{0}]" -f $Description
   $OriginalErrorActionPreference = $ErrorActionPreference
 
   while (-not $Completed) {
+    $Attempt = $TryCount + 1
+    $HeartbeatJob = $null
+
     try {
       $ErrorActionPreference = "Stop"
       $global:LASTEXITCODE = 0
+
+      Write-Tfi ("Command started (attempt {1}/{2}) [{0}]" -f $Description, $Attempt, $Tries)
+
+      try {
+        $HeartbeatJob = Start-Job -ScriptBlock {
+          param (
+            [string]$LogPath,
+            [string]$CommandDescription,
+            [int]$AttemptNumber,
+            [int]$MaxAttempts,
+            [int]$IntervalSeconds,
+            [string]$S3Bucket,
+            [string]$S3Key
+          )
+
+          # Use a FileStream append with shared read/write access to reduce cross-process contention.
+          function Add-HeartbeatLogLine {
+            param (
+              [string]$Path,
+              [string]$Message
+            )
+            $RetryCount = 5
+            $RetryDelayMilliseconds = 200
+            $Bytes = [System.Text.Encoding]::UTF8.GetBytes($Message + [Environment]::NewLine)
+            for ($RetryAttempt = 1; $RetryAttempt -le $RetryCount; $RetryAttempt++) {
+              $FileStream = $null
+              try {
+                $FileStream = [System.IO.File]::Open($Path, [System.IO.FileMode]::Append, [System.IO.FileAccess]::Write, [System.IO.FileShare]::ReadWrite)
+                $FileStream.Write($Bytes, 0, $Bytes.Length)
+                $FileStream.Flush()
+                return
+              }
+              catch {
+                if ($RetryAttempt -eq $RetryCount) {
+                  throw
+                }
+                Start-Sleep -Milliseconds $RetryDelayMilliseconds
+              }
+              finally {
+                if ($null -ne $FileStream) {
+                  $FileStream.Dispose()
+                }
+              }
+            }
+          }
+
+          $HeartbeatCount = 0
+
+          while ($true) {
+            Start-Sleep -Seconds $IntervalSeconds
+            $HeartbeatCount++
+            $SecondsRunning = $HeartbeatCount * $IntervalSeconds
+
+            Add-HeartbeatLogLine -Path "$LogPath" -Message "$(Get-Date): Command still running at $${SecondsRunning}s (attempt $AttemptNumber/$MaxAttempts) [$CommandDescription]"
+
+            # Best effort: upload userdata log periodically so diagnostics survive instance termination.
+            try {
+              Write-S3Object -BucketName "$S3Bucket" -Key "$S3Key" -File "$LogPath" -ErrorAction Stop
+            }
+            catch {
+              # Intentionally continue heartbeat even when S3 sync is unavailable.
+            }
+          }
+        } -ArgumentList "$UserdataLogFile", "$Description", $Attempt, $Tries, $HeartbeatSeconds, "$BuildBucket", "$BuildKeyPrefix/$BuildLabel/$UserdataLogFileName"
+      }
+      catch {
+        Write-Tfi ("Unable to start heartbeat logger for command [{0}]: {1}" -f $Description, [String]$_.Exception.Message)
+      }
+
       & $Command
       $Result = @{
         Success  = $?
@@ -129,6 +202,11 @@ function Test-Command {
       }
     }
     finally {
+      if ($null -ne $HeartbeatJob) {
+        Stop-Job -Job $HeartbeatJob -ErrorAction SilentlyContinue | Out-Null
+        Remove-Job -Job $HeartbeatJob -Force -ErrorAction SilentlyContinue | Out-Null
+      }
+
       $ErrorActionPreference = $OriginalErrorActionPreference
     }
   }
@@ -588,11 +666,11 @@ try {
   Test-Command -Description "Install Chocolatey bootstrap script" -Command {
     Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
   }
-  Test-Command -Description "choco install jq -y --force" -Command {
-    & choco install jq -y --force
+  Test-Command -Description "choco install jq" -Tries 2 -Command {
+    & choco install jq -y --force --no-progress --limit-output --execution-timeout=600
   }
-  Test-Command -Description "choco install pwsh -y --force" -Command {
-    & choco install pwsh -y --force
+  Test-Command -Description "choco install pwsh" -Tries 2 -Command {
+    & choco install pwsh -y --force --no-progress --limit-output --execution-timeout=600
   }
 
   Install-PythonGit
@@ -612,8 +690,8 @@ try {
 
 %{~ if standalone_builder == "pyapp" }
   Write-Tfi "Using PyApp build..."
-  Test-Command -Description "choco install rust -y --force" -Command {
-    & choco install rust -y --force
+  Test-Command -Description "choco install rust -y --force --no-progress --limit-output --execution-timeout=600" -Command {
+    & choco install rust -y --force --no-progress --limit-output --execution-timeout=600
   }
   Test-Command -Description "pwsh ci\\build_pyapp.ps1" -Tries 2 -Command {
     & pwsh ci\build_pyapp.ps1
