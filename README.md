@@ -72,6 +72,9 @@ aws_instance.source_build["centos8stream"]: Still creating... [1m10s elapsed]
 | Name | Type |
 |------|------|
 | [aws_ami.amis](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ami) | data source |
+| [aws_caller_identity.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity) | data source |
+| [aws_iam_instance_profile.builds](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_instance_profile) | data source |
+| [aws_partition.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/partition) | data source |
 | [aws_subnet.tfi](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/subnet) | data source |
 | [aws_vpc.tfi](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/vpc) | data source |
 | [http_http.ip](https://registry.terraform.io/providers/hashicorp/http/latest/docs/data-sources/http) | data source |
@@ -120,6 +123,7 @@ aws_instance.source_build["centos8stream"]: Still creating... [1m10s elapsed]
 | <a name="output_build_id"></a> [build\_id](#output\_build\_id) | n/a |
 | <a name="output_build_slug"></a> [build\_slug](#output\_build\_slug) | n/a |
 | <a name="output_builders"></a> [builders](#output\_builders) | n/a |
+| <a name="output_firehose_delivery_stream_names"></a> [firehose\_delivery\_stream\_names](#output\_firehose\_delivery\_stream\_names) | Kinesis Firehose delivery stream names for flushing before destroy |
 | <a name="output_private_key"></a> [private\_key](#output\_private\_key) | n/a |
 | <a name="output_public_key"></a> [public\_key](#output\_public\_key) | n/a |
 | <a name="output_source_builds"></a> [source\_builds](#output\_source\_builds) | n/a |

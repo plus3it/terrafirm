@@ -67,6 +67,45 @@ runs:
         fi
         echo "ARTIFACT_LOCATION=${ARTIFACT_LOCATION}"
 
+        # Flush Firehose streams so all data is written to S3
+        FIREHOSE_STREAMS=$(terraform output -json firehose_delivery_stream_names 2>/dev/null | jq -r '.[] // empty' || true)
+
+        if [ -n "$FIREHOSE_STREAMS" ]; then
+          echo "Flushing Firehose streams..."
+
+          for stream_name in $FIREHOSE_STREAMS; do
+            echo "Reducing buffering interval for stream: $stream_name"
+
+            # Get current delivery stream config and version
+            STREAM_DESC=$(aws firehose describe-delivery-stream --delivery-stream-name "$stream_name" 2>/dev/null || true)
+
+            if [ -n "$STREAM_DESC" ]; then
+              VERSION_ID=$(echo "$STREAM_DESC" | jq -r '.DeliveryStreamDescription.VersionId')
+              DEST_ID=$(echo "$STREAM_DESC" | jq -r '.DeliveryStreamDescription.Destinations[0].DestinationId')
+
+              # Update with reduced time interval (60s) to flush quickly while keeping max size (128 MiB)
+              # Since destination type is not changing, only BufferingHints need to be specified; other config is merged
+              aws firehose update-destination \
+                --delivery-stream-name "$stream_name" \
+                --current-delivery-stream-version-id "$VERSION_ID" \
+                --destination-id "$DEST_ID" \
+                --extended-s3-destination-update '{
+                  "BufferingHints": {
+                    "SizeInMBs": 128,
+                    "IntervalInSeconds": 60
+                  }
+                }' 2>/dev/null || echo "Warning: Could not update stream $stream_name"
+            fi
+          done
+
+          echo "Waiting 60 seconds for Firehose to flush buffered data..."
+          for i in 60 50 40 30 20 10; do
+            echo "  $i seconds remaining..."
+            sleep 10
+          done
+          echo "  Flush complete."
+        fi
+
         if [ "${TF_DESTROY_AFTER_TEST}" = "true" ]; then
           # destroy resources
           terraform destroy -no-color -input=false -auto-approve
