@@ -17,6 +17,7 @@ github_artifact_repo_name="${github_artifact_repo_name}"
 github_artifact_repo_owner="${github_artifact_repo_owner}"
 github_artifact_run_id="${github_artifact_run_id}"
 github_artifact_token_ssm_parameter="${github_artifact_token_ssm_parameter}"
+firehose_delivery_stream_name="${firehose_delivery_stream_name}"
 port="${port}"
 release_prefix="${release_prefix}"
 scan_slug="${scan_slug}"
@@ -43,20 +44,134 @@ export AWS_DEFAULT_REGION="$aws_region"
 echo "------------------------------- $build_label ---------------------"
 
 debug-2s3() {
-  ## With as few dependencies as possible, immediately upload the debug and log
-  ## files to S3. Calling this multiple times will simply overwrite the
-  ## previously uploaded logs.
+  ## Keep an incremental local debug log. Final artifact upload handles S3
+  ## persistence, which avoids network calls on every log write.
   local msg="$1"
 
   local debug_file="$temp_dir/debug.log"
   echo "$msg" >> "$debug_file"
-  aws s3 cp "$debug_file" "s3://$build_slug/$build_label/" > /dev/null 2>&1 || true
-  aws s3 cp "$userdata_log" "s3://$build_slug/$build_label/" > /dev/null 2>&1 || true
 }
 
 check-metadata-availability() {
   local metadata_loopback_az="http://169.254.169.254/latest/meta-data/placement/availability-zone"
   try_cmd 50 curl -sSL $metadata_loopback_az
+}
+
+configure-kinesis-agent() {
+  local config_path="/etc/aws-kinesis/agent.json"
+  local src_dir="/tmp/aws-kinesis-agent-src"
+  local original_pwd=""
+
+  if [[ -z "$firehose_delivery_stream_name" ]]; then
+    write-tfi "Kinesis Agent setup skipped: firehose delivery stream name was not provided"
+    return 0
+  fi
+
+  if command -v dnf > /dev/null 2>&1; then
+    try_cmd 3 dnf -y install initscripts || {
+      write-tfi "Initscripts install failed via dnf"
+      return 0
+    }
+    try_cmd 3 dnf -y install aws-kinesis-agent || {
+      write-tfi "Kinesis Agent install failed via dnf"
+      return 0
+    }
+  elif command -v apt-get > /dev/null 2>&1; then
+    try_cmd 3 apt-get -y update || true
+    try_cmd 3 apt-get -y install curl tar openjdk-11-jdk-headless || {
+      write-tfi "Kinesis Agent install failed: unable to install prerequisites via apt-get"
+      return 0
+    }
+
+    try_cmd 3 curl -fsSL https://github.com/awslabs/amazon-kinesis-agent/archive/refs/heads/master.tar.gz -o /tmp/aws-kinesis-agent-src.tar.gz || {
+      write-tfi "Kinesis Agent install failed: unable to download source archive"
+      return 0
+    }
+
+    try_cmd 1 rm -rf "$src_dir" || {
+      write-tfi "Kinesis Agent install failed: unable to clean source directory"
+      return 0
+    }
+
+    try_cmd 1 mkdir -p "$src_dir" || {
+      write-tfi "Kinesis Agent install failed: unable to prepare source directory"
+      return 0
+    }
+
+    try_cmd 1 tar -xzf /tmp/aws-kinesis-agent-src.tar.gz --strip-components=1 -C "$src_dir" || {
+      write-tfi "Kinesis Agent install failed: unable to extract source archive"
+      return 0
+    }
+
+    original_pwd=$(pwd)
+    cd "$src_dir" || {
+      write-tfi "Kinesis Agent install failed: unable to enter source directory"
+      return 0
+    }
+
+    try_cmd 1 bash ./setup --install || {
+      cd "$original_pwd" > /dev/null 2>&1 || true
+      write-tfi "Kinesis Agent install failed via setup script"
+      return 0
+    }
+
+    cd "$original_pwd" > /dev/null 2>&1 || true
+  else
+    write-tfi "Kinesis Agent setup skipped: package manager not available"
+    return 0
+  fi
+
+  chmod 644 "$userdata_log" > /dev/null 2>&1 || true
+
+  cat > "$config_path" << EOF
+{
+  "cloudwatch.emitMetrics": true,
+  "firehose.endpoint": "firehose.$aws_region.amazonaws.com",
+  "maxConnections": 1,
+  "maxSendingThreads": 1,
+  "flows": [
+    {
+      "filePattern": "$userdata_log",
+      "deliveryStream": "$firehose_delivery_stream_name",
+      "initialPosition": "START_OF_FILE",
+      "maxBufferAgeMillis": 1000,
+      "maxBufferSizeRecords": 1
+    }
+  ]
+}
+EOF
+
+  if command -v systemctl > /dev/null 2>&1; then
+    try_cmd 1 systemctl stop aws-kinesis-agent > /dev/null 2>&1 || true
+    try_cmd 1 systemctl start aws-kinesis-agent > /dev/null 2>&1 || {
+      if pgrep -f "com.amazon.kinesis.streaming.agent.Agent" > /dev/null 2>&1; then
+        write-tfi "Kinesis Agent service reported start failure, but agent process is running"
+      else
+        write-tfi "Kinesis Agent start failed"
+      fi
+      try_cmd 1 systemctl status aws-kinesis-agent --no-pager -l || true
+      [[ -f /var/log/aws-kinesis-agent/aws-kinesis-agent.log ]] && tail -n 80 /var/log/aws-kinesis-agent/aws-kinesis-agent.log || true
+      return 0
+    }
+  elif command -v service > /dev/null 2>&1; then
+    try_cmd 1 service aws-kinesis-agent stop > /dev/null 2>&1 || true
+    try_cmd 1 service aws-kinesis-agent start > /dev/null 2>&1 || {
+      if pgrep -f "com.amazon.kinesis.streaming.agent.Agent" > /dev/null 2>&1; then
+        write-tfi "Kinesis Agent service reported start failure, but agent process is running"
+      else
+        write-tfi "Kinesis Agent start failed"
+      fi
+      try_cmd 1 service aws-kinesis-agent status || true
+      [[ -f /var/log/aws-kinesis-agent/aws-kinesis-agent.log ]] && tail -n 80 /var/log/aws-kinesis-agent/aws-kinesis-agent.log || true
+      return 0
+    }
+  else
+    write-tfi "Kinesis Agent installed and configured; restart command not found"
+    return 0
+  fi
+
+  write-tfi "Kinesis Agent configured for stream $firehose_delivery_stream_name"
+  return 0
 }
 
 write-tfi() {
@@ -562,6 +677,8 @@ start=$(date +%s)
 # hold userdata status details for final reporting and status file output
 userdata_status_code=0
 userdata_status_message="Success"
+
+configure-kinesis-agent
 
 # shellcheck disable=SC1083,SC2288
 %{ if build_type == build_type_builder }
