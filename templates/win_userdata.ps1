@@ -15,6 +15,7 @@ $GitHubArtifactRepoOwner = "${github_artifact_repo_owner}"
 $GitHubArtifactRepoName = "${github_artifact_repo_name}"
 $GitHubArtifactRunId = "${github_artifact_run_id}"
 $GitHubArtifactTokenSsmParameter = "${github_artifact_token_ssm_parameter}"
+$FirehoseDeliveryStream = "${firehose_delivery_stream_name}"
 $WinUser = "${user}"
 $PypiUrl = "${url_pypi}"
 $DebugMode = "${debug}"
@@ -41,8 +42,6 @@ function Debug-2S3 {
   $DebugFileName = "debug.log"
   $DebugFile = "$TempDir\$DebugFileName"
   "$(Get-Date): $Msg" | Out-File $DebugFile -Append -Encoding utf8
-  Write-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${BuildLabel}/$${DebugFileName}" -File "$DebugFile"
-  Write-S3Object -BucketName "$BuildBucket" -Key "$${BuildKeyPrefix}/$${BuildLabel}/$${UserdataLogFileName}" -File "$UserdataLogFile"
 }
 
 function Check-Metadata {
@@ -114,9 +113,7 @@ function Test-Command {
             [string]$CommandDescription,
             [int]$AttemptNumber,
             [int]$MaxAttempts,
-            [int]$IntervalSeconds,
-            [string]$S3Bucket,
-            [string]$S3Key
+            [int]$IntervalSeconds
           )
 
           # Use a FileStream append with shared read/write access to reduce cross-process contention.
@@ -158,16 +155,8 @@ function Test-Command {
             $SecondsRunning = $HeartbeatCount * $IntervalSeconds
 
             Add-HeartbeatLogLine -Path "$LogPath" -Message "$(Get-Date): Command still running at $${SecondsRunning}s (attempt $AttemptNumber/$MaxAttempts) [$CommandDescription]"
-
-            # Best effort: upload userdata log periodically so diagnostics survive instance termination.
-            try {
-              Write-S3Object -BucketName "$S3Bucket" -Key "$S3Key" -File "$LogPath" -ErrorAction Stop
-            }
-            catch {
-              # Intentionally continue heartbeat even when S3 sync is unavailable.
-            }
           }
-        } -ArgumentList "$UserdataLogFile", "$Description", $Attempt, $Tries, $HeartbeatSeconds, "$BuildBucket", "$BuildKeyPrefix/$BuildLabel/$UserdataLogFileName"
+        } -ArgumentList "$UserdataLogFile", "$Description", $Attempt, $Tries, $HeartbeatSeconds
       }
       catch {
         Write-Tfi ("Unable to start heartbeat logger for command [{0}]: {1}" -f $Description, [String]$_.Exception.Message)
@@ -646,6 +635,93 @@ function Install-WatchmakerFromGitHubArtifact {
   }
 }
 
+function Configure-KinesisAgent {
+  if ([string]::IsNullOrEmpty($FirehoseDeliveryStream)) {
+    Write-Tfi "Kinesis Agent setup skipped: firehose delivery stream name was not provided"
+    return
+  }
+
+  $KinesisTapService = Get-Service -Name "AWSKinesisTap" -ErrorAction SilentlyContinue
+  if ($null -eq $KinesisTapService) {
+    try {
+      $InstallerScript = Join-Path $TempDir "InstallKinesisAgent.ps1"
+      Test-Command -Description "Download InstallKinesisAgent.ps1" -Command {
+        Invoke-WebRequest -Uri "https://s3-us-west-2.amazonaws.com/kinesis-agent-windows/downloads/InstallKinesisAgent.ps1" -OutFile $InstallerScript -UseBasicParsing
+      }
+      Test-Command -Description "Run InstallKinesisAgent.ps1" -Command {
+        & $InstallerScript
+      }
+      $KinesisTapService = Get-Service -Name "AWSKinesisTap" -ErrorAction SilentlyContinue
+    }
+    catch {
+      Write-Tfi "Kinesis Agent install failed: $([String]$_.Exception.Message)"
+      return
+    }
+  }
+
+  if ($null -eq $KinesisTapService) {
+    Write-Tfi "Kinesis Agent setup skipped: AWSKinesisTap service is not available"
+    return
+  }
+
+  try {
+    $ConfigDir = Join-Path $Env:ProgramFiles "Amazon\AWSKinesisTap"
+    New-Item -Path $ConfigDir -ItemType Directory -Force | Out-Null
+    $ConfigPath = Join-Path $ConfigDir "appsettings.json"
+
+    $UserdataDir = Split-Path -Path $UserdataLogFile -Parent
+    $UserdataLeaf = Split-Path -Path $UserdataLogFile -Leaf
+
+    $KinesisConfig = [ordered]@{
+      Sources = @(
+        [ordered]@{
+          Id             = "UserdataLogSource"
+          SourceType     = "DirectorySource"
+          Directory      = $UserdataDir
+          FileNameFilter = $UserdataLeaf
+          RecordParser   = "SingleLine"
+          InitialPosition = "0"
+        }
+      )
+      Sinks = @(
+        [ordered]@{
+          Id                  = "UserdataFirehoseSink"
+          SinkType            = "KinesisFirehose"
+          StreamName          = $FirehoseDeliveryStream
+          Region              = "${aws_region}"
+          QueueType           = "file"
+          ParallelUploadCount = 1
+        }
+      )
+      Pipes = @(
+        [ordered]@{
+          Id        = "UserdataToFirehose"
+          SourceRef = "UserdataLogSource"
+          SinkRef   = "UserdataFirehoseSink"
+        }
+      )
+    }
+
+    $KinesisConfig | ConvertTo-Json -Depth 8 | Out-File $ConfigPath -Encoding utf8
+
+    if ($KinesisTapService.Status -eq "Running") {
+      Test-Command -Description "Restart AWSKinesisTap service" -Command {
+        Restart-Service -Name "AWSKinesisTap" -ErrorAction Stop
+      }
+    }
+    else {
+      Test-Command -Description "Start AWSKinesisTap service" -Command {
+        Start-Service -Name "AWSKinesisTap" -ErrorAction Stop
+      }
+    }
+
+    Write-Tfi "Kinesis Agent configured for stream $FirehoseDeliveryStream" $true
+  }
+  catch {
+    Write-Tfi "Kinesis Agent configuration failed: $([String]$_.Exception.Message)"
+  }
+}
+
 try {
   $ErrorActionPreference = "Stop"
   $StartDate = Get-Date
@@ -657,6 +733,7 @@ try {
   $UserdataStatus = New-UserdataStatus -Code 1 -Message "Error: Build not completed (should never see this error)"
   [Net.ServicePointManager]::SecurityProtocol = "Tls12, Tls13"
   Check-Metadata
+  Configure-KinesisAgent
   Write-Tfi "Start Build ============"
 
 %{~ if build_type == build_type_builder }

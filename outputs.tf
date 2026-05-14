@@ -43,3 +43,10 @@ output "public_key" {
 output "build_slug" {
   value = local.build_slug
 }
+
+output "firehose_delivery_stream_names" {
+  description = "Kinesis Firehose delivery stream names for flushing before destroy"
+  value = {
+    for key, stream in aws_kinesis_firehose_delivery_stream.userdata_logs : key => stream.name
+  }
+}

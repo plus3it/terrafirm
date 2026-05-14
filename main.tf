@@ -259,6 +259,12 @@ locals {
   source_builds        = toset(var.source_builds)
   builders             = local.standalone_source == "builder" ? toset([for s in local.standalone_builds : local.build_info[s].platform.builder]) : toset([])
   unique_builds_needed = setunion(local.standalone_builds, local.source_builds, local.builders)
+
+  firehose_stream_configs = merge(
+    { for os in local.builders : "builder-${os}" => { build_type = local.build_type_builder, os = os, short_type = "bld" } },
+    { for os in local.standalone_builds : "standalone_build-${os}" => { build_type = local.build_type_standalone, os = os, short_type = "sta" } },
+    { for os in local.source_builds : "source_build-${os}" => { build_type = local.build_type_source, os = os, short_type = "src" } }
+  )
 }
 
 data "aws_ami" "amis" {
@@ -286,6 +292,15 @@ data "aws_subnet" "tfi" {
 
 data "aws_vpc" "tfi" {
   id = data.aws_subnet.tfi.vpc_id
+}
+
+data "aws_partition" "current" {}
+
+data "aws_caller_identity" "current" {}
+
+data "aws_iam_instance_profile" "builds" {
+  count = var.instance_profile == "" ? 0 : 1
+  name  = var.instance_profile
 }
 
 data "http" "ip" {
@@ -349,6 +364,107 @@ resource "aws_security_group" "builds" {
   }
 }
 
+resource "aws_iam_role" "firehose" {
+  name = "${local.resource_name}-firehose"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowFirehoseServiceAssumeRole"
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "firehose.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "firehose_s3" {
+  name = "${local.resource_name}-firehose-s3"
+  role = aws_iam_role.firehose.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid = "AllowFirehoseS3Access"
+        Action = [
+          "s3:AbortMultipartUpload",
+          "s3:GetBucketLocation",
+          "s3:GetObject",
+          "s3:ListBucket",
+          "s3:ListBucketMultipartUploads",
+          "s3:PutObject"
+        ]
+        Effect = "Allow"
+        Resource = [
+          "arn:${data.aws_partition.current.partition}:s3:::${var.s3_bucket}",
+          "arn:${data.aws_partition.current.partition}:s3:::${var.s3_bucket}/*"
+        ]
+      },
+      {
+        Sid = "AllowFirehoseCloudWatchLogsPutEvents"
+        Action = [
+          "logs:PutLogEvents"
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_kinesis_firehose_delivery_stream" "userdata_logs" {
+  for_each = local.firehose_stream_configs
+
+  name        = "${local.resource_name}-${each.value.short_type}-${each.value.os}-logs"
+  destination = "extended_s3"
+
+  extended_s3_configuration {
+    role_arn            = "arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:role/${aws_iam_role_policy.firehose_s3.role}"
+    bucket_arn          = "arn:${data.aws_partition.current.partition}:s3:::${var.s3_bucket}"
+    prefix              = "!{timestamp:yyyyMMdd}/${local.date_hm}-${local.build_id}/${each.key}/kinesis/"
+    error_output_prefix = "!{timestamp:yyyyMMdd}/${local.date_hm}-${local.build_id}/${each.key}/kinesis_errors/!{firehose:error-output-type}/"
+    buffering_size      = 128
+    buffering_interval  = 900
+    compression_format  = "UNCOMPRESSED"
+    file_extension      = ".log"
+  }
+}
+
+resource "aws_iam_role_policy" "instance_profile_firehose_put" {
+  count = var.instance_profile == "" ? 0 : 1
+
+  name = "${local.resource_name}-firehose-put"
+  role = data.aws_iam_instance_profile.builds[0].role_name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid = "AllowInstanceFirehosePutRecords"
+        Action = [
+          "firehose:PutRecord",
+          "firehose:PutRecordBatch"
+        ]
+        Effect   = "Allow"
+        Resource = [for stream in aws_kinesis_firehose_delivery_stream.userdata_logs : stream.arn]
+      },
+      {
+        Sid = "AllowInstancePublishAgentMetrics"
+        Action = [
+          "cloudwatch:PutMetricData"
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 resource "aws_instance" "builder" {
   for_each = local.builders
 
@@ -371,10 +487,11 @@ resource "aws_instance" "builder" {
             local.template_vars.base,
             local.template_vars[local.build_info[each.key].platform.key],
             {
-              build_os    = each.key
-              build_type  = local.build_type_builder
-              build_label = format(local.format_str_build_label, local.build_type_builder, each.key)
-              password    = local.build_info[each.key].platform.connection_password
+              build_os                      = each.key
+              build_type                    = local.build_type_builder
+              build_label                   = format(local.format_str_build_label, local.build_type_builder, each.key)
+              firehose_delivery_stream_name = aws_kinesis_firehose_delivery_stream.userdata_logs["builder-${each.key}"].name
+              password                      = local.build_info[each.key].platform.connection_password
             }
           )
         ))
@@ -388,10 +505,11 @@ resource "aws_instance" "builder" {
         local.template_vars.base,
         local.template_vars[local.build_info[each.key].platform.key],
         {
-          build_os    = each.key
-          build_type  = local.build_type_builder
-          build_label = format(local.format_str_build_label, local.build_type_builder, each.key)
-          password    = local.build_info[each.key].platform.connection_password
+          build_os                      = each.key
+          build_type                    = local.build_type_builder
+          build_label                   = format(local.format_str_build_label, local.build_type_builder, each.key)
+          firehose_delivery_stream_name = aws_kinesis_firehose_delivery_stream.userdata_logs["builder-${each.key}"].name
+          password                      = local.build_info[each.key].platform.connection_password
         }
       )
     )
@@ -497,10 +615,11 @@ resource "aws_instance" "standalone_build" {
             local.template_vars.base,
             local.template_vars[local.build_info[each.key].platform.key],
             {
-              build_os    = each.key
-              build_type  = local.build_type_standalone
-              build_label = format(local.format_str_build_label, local.build_type_standalone, each.key)
-              password    = local.build_info[each.key].platform.connection_password
+              build_os                      = each.key
+              build_type                    = local.build_type_standalone
+              build_label                   = format(local.format_str_build_label, local.build_type_standalone, each.key)
+              firehose_delivery_stream_name = aws_kinesis_firehose_delivery_stream.userdata_logs["standalone_build-${each.key}"].name
+              password                      = local.build_info[each.key].platform.connection_password
             }
           )
         ))
@@ -514,10 +633,11 @@ resource "aws_instance" "standalone_build" {
         local.template_vars.base,
         local.template_vars[local.build_info[each.key].platform.key],
         {
-          build_os    = each.key
-          build_type  = local.build_type_standalone
-          build_label = format(local.format_str_build_label, local.build_type_standalone, each.key)
-          password    = local.build_info[each.key].platform.connection_password
+          build_os                      = each.key
+          build_type                    = local.build_type_standalone
+          build_label                   = format(local.format_str_build_label, local.build_type_standalone, each.key)
+          firehose_delivery_stream_name = aws_kinesis_firehose_delivery_stream.userdata_logs["standalone_build-${each.key}"].name
+          password                      = local.build_info[each.key].platform.connection_password
         }
       )
     )
@@ -629,10 +749,11 @@ resource "aws_instance" "source_build" {
             local.template_vars.base,
             local.template_vars[local.build_info[each.key].platform.key],
             {
-              build_os    = each.key
-              build_type  = local.build_type_source
-              build_label = format(local.format_str_build_label, local.build_type_source, each.key)
-              password    = local.build_info[each.key].platform.connection_password
+              build_os                      = each.key
+              build_type                    = local.build_type_source
+              build_label                   = format(local.format_str_build_label, local.build_type_source, each.key)
+              firehose_delivery_stream_name = aws_kinesis_firehose_delivery_stream.userdata_logs["source_build-${each.key}"].name
+              password                      = local.build_info[each.key].platform.connection_password
             }
           )
         ))
@@ -646,10 +767,11 @@ resource "aws_instance" "source_build" {
         local.template_vars.base,
         local.template_vars[local.build_info[each.key].platform.key],
         {
-          build_os    = each.key
-          build_type  = local.build_type_source
-          build_label = format(local.format_str_build_label, local.build_type_source, each.key)
-          password    = local.build_info[each.key].platform.connection_password
+          build_os                      = each.key
+          build_type                    = local.build_type_source
+          build_label                   = format(local.format_str_build_label, local.build_type_source, each.key)
+          firehose_delivery_stream_name = aws_kinesis_firehose_delivery_stream.userdata_logs["source_build-${each.key}"].name
+          password                      = local.build_info[each.key].platform.connection_password
         }
       )
     )
