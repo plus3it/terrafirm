@@ -45,12 +45,14 @@ function Debug-2S3 {
 }
 
 function Check-Metadata {
+  $MetadataApiToken = "http://169.254.169.254/latest/api/token"
   $MetadataLoopbackAZ = "http://169.254.169.254/latest/meta-data/placement/availability-zone"
   Test-Command -Description "Check metadata endpoint availability" -Tries 50 -Command {
-    Invoke-WebRequest -Uri $MetadataLoopbackAZ -UseBasicParsing | Out-Null
+    Invoke-RestMethod -Headers @{"X-aws-ec2-metadata-token-ttl-seconds" = "21600"} -Method PUT -Uri $MetadataApiToken | Out-Null
   }
 
-  $availability_zone = Invoke-WebRequest -Uri $MetadataLoopbackAZ -UseBasicParsing | Select-Object -ExpandProperty Content
+  $token = Invoke-RestMethod -Headers @{"X-aws-ec2-metadata-token-ttl-seconds" = "21600"} -Method PUT -Uri $MetadataApiToken
+  $availability_zone = Invoke-RestMethod -Headers @{"X-aws-ec2-metadata-token" = $token} -Method GET -Uri $MetadataLoopbackAZ
   Write-Tfi "Connect to EC2 metadata (Availability zone is $availability_zone)" $?
 }
 

@@ -53,8 +53,11 @@ debug-2s3() {
 }
 
 check-metadata-availability() {
-  local metadata_loopback_az="http://169.254.169.254/latest/meta-data/placement/availability-zone"
-  try_cmd 50 curl -sSL $metadata_loopback_az
+  local metadata_loopback_token="http://169.254.169.254/latest/api/token"
+  try_cmd 50 curl -fsSL -X $metadata_loopback_token -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" "$metadata_loopback_token" > /dev/null 2>&1 || {
+    write-tfi "Metadata check failed after 50 attempts"
+    return 1
+  }
 }
 
 configure-kinesis-agent() {
