@@ -53,8 +53,11 @@ debug-2s3() {
 }
 
 check-metadata-availability() {
-  local metadata_loopback_az="http://169.254.169.254/latest/meta-data/placement/availability-zone"
-  try_cmd 50 curl -sSL $metadata_loopback_az
+  local metadata_loopback_token="http://169.254.169.254/latest/api/token"
+  try_cmd 50 curl -fsSL -X PUT -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" $metadata_loopback_token || {
+    write-tfi "Metadata endpoint is not available"
+    catch 1 "$LINENO"
+  }
 }
 
 configure-kinesis-agent() {
