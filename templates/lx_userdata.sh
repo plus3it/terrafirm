@@ -256,12 +256,12 @@ try_cmd() {
 
 # shellcheck disable=SC2329
 open-ssh() {
-  # open firewall on rhel 7/8 and ubuntu, move ssh to non-standard
+  # open firewall on rhel-like distros and ubuntu, move ssh to non-standard
 
   local new_lx_port="$port"
 
-  if [[ -f /etc/redhat-release ]]; then
-    ## CentOS / RedHat / Oracle Linux
+  if [[ -f /etc/redhat-release ]] || { [[ -r /etc/os-release ]] && grep -qE '^(ID|ID_LIKE)=(".*(amzn|rhel|fedora).*"|.*(amzn|rhel|fedora).*)$' /etc/os-release; }; then
+    ## CentOS / RedHat / Oracle Linux / Amazon Linux 2023
 
     # allow ssh to be on non-standard port (SEL-enforced rule)
     try_cmd 1 setenforce 0
@@ -279,7 +279,7 @@ open-ssh() {
     try_cmd 1 systemctl restart sshd
 
   else
-    ## Not CentOS / RedHat (i.e., Ubuntu)
+    ## Not CentOS / RedHat / Amazon Linux 2023 (i.e., Ubuntu)
 
     # open firewall/put ssh on a new port
     try_cmd 1 ufw allow "$new_lx_port"/tcp

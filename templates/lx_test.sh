@@ -121,8 +121,8 @@ echo "Running Watchmaker Test: $build_label"
 echo "***************************************************************"
 
 # everything below this is the TRY
-if [[ -f "/etc/redhat-release" ]]; then
-  # this will only work for redhat and centos
+if [[ -f /etc/redhat-release ]] || { [[ -r /etc/os-release ]] && grep -qE '^(ID|ID_LIKE)=(".*(amzn|rhel|fedora).*"|.*(amzn|rhel|fedora).*)$' /etc/os-release; }; then
+  ## CentOS / RedHat / Oracle Linux / Amazon Linux 2023
   cat /etc/os-release
 else
   lsb_release -a
