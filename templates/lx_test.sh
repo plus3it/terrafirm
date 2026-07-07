@@ -81,6 +81,15 @@ parse_userdata_status() {
   fi
 }
 
+activate_watchmaker_venv() {
+  local venv_activate_script="/opt/wam/venv/bin/activate"
+
+  if [[ -f "$venv_activate_script" ]]; then
+    # shellcheck disable=SC1090
+    source "$venv_activate_script"
+  fi
+}
+
 finally() {
   local exit_code=0
   if [[ "$userdata_status_code" -ne 0 || "$test_status_code" -ne 0 ]]; then
@@ -136,6 +145,11 @@ if [[ "$build_type" != "$build_type_builder" && "$userdata_status_code" -eq 0 ]]
   if [[ "$build_type" == "$build_type_standalone" ]]; then
     sudo env PATH="$PATH" ./watchmaker --version
   else
+    activate_watchmaker_venv
+    if ! command -v watchmaker > /dev/null 2>&1; then
+      echo "watchmaker executable not found after activating /opt/wam/venv/bin/activate"
+      exit 1
+    fi
     sudo env PATH="$PATH" watchmaker --version
   fi
 

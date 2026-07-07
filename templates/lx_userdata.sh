@@ -30,6 +30,9 @@ url_pypi="${url_pypi}"
 userdata_log="${userdata_log}"
 userdata_status_file="${userdata_status_file}"
 userdata_log_s3_prefix="s3://$build_slug/$build_label"
+virtualenv_base=/opt/wam
+virtualenv_path="$virtualenv_base/venv"
+virtualenv_activate_script="$virtualenv_path/bin/activate"
 
 # Split args once and pass as a safe argv array where needed.
 read -r -a args <<< "${args}"
@@ -609,18 +612,34 @@ clone-watchmaker() {
   git clone "$GIT_REPO" --recursive
 }
 
+install-uv() {
+  if command -v uv > /dev/null 2>&1; then
+    return 0
+  fi
+
+  local uv_install_dir="$temp_dir/uv-install"
+
+  try_cmd 1 mkdir -p "$uv_install_dir"
+  try_cmd 3 curl -fsSL https://astral.sh/uv/install.sh -o "$uv_install_dir/install.sh"
+  try_cmd 1 sh "$uv_install_dir/install.sh"
+  # shellcheck source=/dev/null
+  source ~/.local/bin/env
+  try_cmd 1 uv --version
+}
+
 install-watchmaker-prereqs() {
   PYPI_URL="$url_pypi"
 
-  # Install pip
-  try_cmd 2 python3 -m ensurepip --upgrade --default-pip
+  install-uv
 
-  # Upgrade pip
-  try_cmd 2 python3 -m pip install --index-url="$PYPI_URL" --upgrade pip
-  try_cmd 1 python3 -m pip --version
+  # Create a dedicated virtualenv for Watchmaker installs and execution.
+  try_cmd 1 mkdir -p "$virtualenv_path"
+  try_cmd 1 uv venv --clear --python "$(command -v python3)" "$virtualenv_path"
+  # shellcheck disable=SC1090
+  source "$virtualenv_activate_script"
 
-  # Install boto3
-  try_cmd 1 python3 -m pip install --index-url="$PYPI_URL" --upgrade boto3
+  # Install boto3 into the venv so userdata does not mutate the RPM-owned system Python.
+  try_cmd 1 uv pip install --default-index="$PYPI_URL" --upgrade boto3
 }
 
 install-watchmaker() {
@@ -659,7 +678,7 @@ install-watchmaker-from-git() {
   try_cmd 1 git submodule update --init --recursive --force
 
   # Install watchmaker
-  try_cmd 1 python3 -m pip install --upgrade --index-url "$PYPI_URL" --editable .
+  try_cmd 1 uv pip install --upgrade --default-index "$PYPI_URL" --editable .
   try_cmd 1 watchmaker --version
 }
 
@@ -668,7 +687,7 @@ install-watchmaker-from-github-artifact() {
 
   install-watchmaker-prereqs
   wheel_path=$(install-source-wheel-from-github-artifact) || return 1
-  try_cmd 1 python3 -m pip install --upgrade --index-url "$url_pypi" "$wheel_path"
+  try_cmd 1 uv pip install --upgrade --default-index "$url_pypi" "$wheel_path"
   try_cmd 1 watchmaker --version
 }
 
@@ -688,9 +707,6 @@ configure-kinesis-agent
 
 # BUILDER INPUT -------------------------------------------
 export DEBIAN_FRONTEND=noninteractive
-virtualenv_base=/opt/wam
-virtualenv_path="$virtualenv_base/venv"
-virtualenv_activate_script="$virtualenv_path/bin/activate"
 # ---------------------------------------------------------
 
 # shellcheck disable=SC2317,SC2329
@@ -748,21 +764,11 @@ try_cmd 3 apt-get -y install \
   gnupg-agent \
   jq \
   software-properties-common \
-  python3-virtualenv \
-  python3-venv \
-  python3-pip \
   git
 
 # start the firewall
 try_cmd 1 ufw enable
 try_cmd 1 ufw allow ssh
-
-# virtualenv
-mkdir -p "$virtualenv_path"
-cd "$virtualenv_base"
-try_cmd 1 virtualenv --python=/usr/bin/python3 "$virtualenv_path"
-# shellcheck disable=SC1090
-source "$virtualenv_activate_script"
 
 install-watchmaker
 
