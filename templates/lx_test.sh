@@ -81,6 +81,15 @@ parse_userdata_status() {
   fi
 }
 
+activate_watchmaker_venv() {
+  local venv_activate_script="/opt/wam/venv/bin/activate"
+
+  if [[ -f "$venv_activate_script" ]]; then
+    # shellcheck disable=SC1090
+    source "$venv_activate_script"
+  fi
+}
+
 finally() {
   local exit_code=0
   if [[ "$userdata_status_code" -ne 0 || "$test_status_code" -ne 0 ]]; then
@@ -121,8 +130,8 @@ echo "Running Watchmaker Test: $build_label"
 echo "***************************************************************"
 
 # everything below this is the TRY
-if [[ -f "/etc/redhat-release" ]]; then
-  # this will only work for redhat and centos
+if [[ -f /etc/redhat-release ]] || { [[ -r /etc/os-release ]] && grep -qE '^(ID|ID_LIKE)=(".*(amzn|rhel|fedora).*"|.*(amzn|rhel|fedora).*)$' /etc/os-release; }; then
+  ## CentOS / RedHat / Oracle Linux / Amazon Linux 2023
   cat /etc/os-release
 else
   lsb_release -a
@@ -136,6 +145,11 @@ if [[ "$build_type" != "$build_type_builder" && "$userdata_status_code" -eq 0 ]]
   if [[ "$build_type" == "$build_type_standalone" ]]; then
     sudo env PATH="$PATH" ./watchmaker --version
   else
+    activate_watchmaker_venv
+    if ! command -v watchmaker > /dev/null 2>&1; then
+      echo "watchmaker executable not found after activating /opt/wam/venv/bin/activate"
+      exit 1
+    fi
     sudo env PATH="$PATH" watchmaker --version
   fi
 

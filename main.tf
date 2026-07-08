@@ -145,6 +145,12 @@ locals {
   }
 
   build_info = {
+    al2023 = {
+      ami_regex  = "spel-minimal-amzn-2023-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp3"
+      ami_search = "spel-minimal-amzn-2023-hvm-*.x86_64-gp3"
+      platform   = local.platform_info.lx
+    }
+
     centos8stream = {
       ami_regex  = "spel-minimal-centos-8stream-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp3"
       ami_search = "spel-minimal-centos-8stream-hvm-*.x86_64-gp3"
