@@ -26,6 +26,7 @@ standalone_builder="${standalone_builder}"
 standalone_error_signal_file="${standalone_error_signal_file}"
 standalone_source="${standalone_source}"
 temp_dir="${temp_dir}"
+user_formulas_json_base64="${user_formulas_json_base64}"
 url_pypi="${url_pypi}"
 userdata_log="${userdata_log}"
 userdata_status_file="${userdata_status_file}"
@@ -36,6 +37,12 @@ virtualenv_activate_script="$virtualenv_path/bin/activate"
 
 # Split args once and pass as a safe argv array where needed.
 read -r -a args <<< "${args}"
+
+# Decode user_formulas JSON and append as a single CLI argument when provided.
+user_formulas_json="$(printf '%s' "$user_formulas_json_base64" | base64 -d)"
+if [[ "$user_formulas_json" != "{}" ]]; then
+  args+=("--user-formulas=$user_formulas_json")
+fi
 
 # Default failure snippet for failures that occur outside try_cmd wrappers.
 fail_snippet="Unspecified command failure"

@@ -24,6 +24,8 @@ Several environment variables allow you to control what builds Terrafirm runs. E
 
 Use `TF_VAR_source_source` to choose how source builds install Watchmaker. The default is `git`, which clones the repository and installs it locally. Set it to `github_actions_artifact` to install the wheel from the `dists` artifact of a GitHub Actions run identified by the `TF_VAR_github_artifact_*` inputs.
 
+Use `TF_VAR_user_formulas` to provide Watchmaker user formulas as a first-class map input (for example, `{"ash-linux-formula":"https://github.com/plus3it/ash-linux-formula/archive/refs/heads/main.zip"}`). Terrafirm passes this through to Watchmaker as `--user-formulas`.
+
 ### TF_VAR_source_builds and TF_VAR_standalone_builds
 
 To pick specific operating system builds, set the `TF_VAR_source_builds` and `TF_VAR_standalone_builds` environment variables to one or more the following operating system values. In the variable names, `standalone`/`source` refers to the standalone package test or the from source test.
@@ -110,6 +112,7 @@ aws_instance.source_build["centos8stream"]: Still creating... [1m10s elapsed]
 | <a name="input_standalone_builder"></a> [standalone\_builder](#input\_standalone\_builder) | n/a | `string` | `"pyinstaller"` | no |
 | <a name="input_standalone_builds"></a> [standalone\_builds](#input\_standalone\_builds) | n/a | `list(string)` | <pre>[<br/>  "win16",<br/>  "win19",<br/>  "win22",<br/>  "rhel8",<br/>  "centos8stream",<br/>  "ol8",<br/>  "rhel9",<br/>  "centos9stream",<br/>  "ol9",<br/>  "al2023"<br/>]</pre> | no |
 | <a name="input_standalone_source"></a> [standalone\_source](#input\_standalone\_source) | n/a | `string` | `"builder"` | no |
+| <a name="input_user_formulas"></a> [user\_formulas](#input\_user\_formulas) | n/a | `map(string)` | `{}` | no |
 | <a name="input_win_args"></a> [win\_args](#input\_win\_args) | n/a | `string` | `"--log-dir=C:\\Watchmaker\\Logs"` | no |
 | <a name="input_win_instance_type"></a> [win\_instance\_type](#input\_win\_instance\_type) | n/a | `string` | `"t2.large"` | no |
 | <a name="input_win_user"></a> [win\_user](#input\_win\_user) | n/a | `string` | `"Administrator"` | no |
