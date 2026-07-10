@@ -72,6 +72,11 @@ variable "lx_args" {
   type    = string
 }
 
+variable "user_formulas" {
+  default = {}
+  type    = map(string)
+}
+
 variable "win_userdata_log" {
   default = "C:\\Temp\\userdata.log"
   type    = string

@@ -232,6 +232,7 @@ locals {
       source_source                       = local.source_source
       standalone_builder                  = var.standalone_builder
       standalone_source                   = local.standalone_source
+      user_formulas_json_base64           = base64encode(jsonencode(var.user_formulas))
       url_bootstrap                       = local.url_bootstrap
       url_pypi                            = local.url_pypi
     }

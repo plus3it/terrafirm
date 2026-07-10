@@ -18,6 +18,8 @@ $GitHubArtifactTokenSsmParameter = "${github_artifact_token_ssm_parameter}"
 $FirehoseDeliveryStream = "${firehose_delivery_stream_name}"
 $WinUser = "${user}"
 $PypiUrl = "${url_pypi}"
+$UserFormulasJsonBase64 = "${user_formulas_json_base64}"
+$UserFormulasJson = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($UserFormulasJsonBase64))
 $DebugMode = "${debug}"
 $UserdataLogS3Prefix = "s3://$BuildBucket/$BuildKeyPrefix/$BuildLabel"
 
@@ -874,8 +876,15 @@ try {
   }
   $ExecutablePath = "$${DownloadDir}\watchmaker.exe"
 %{~ endif }
-  Test-Command -Description "$ExecutablePath ${args}" -Command {
-    & "$ExecutablePath" ${args}
+  if ($UserFormulasJson -ne "{}") {
+    Test-Command -Description "$ExecutablePath ${args} --user-formulas=<json>" -Command {
+      & "$ExecutablePath" ${args} "--user-formulas=$UserFormulasJson"
+    }
+  }
+  else {
+    Test-Command -Description "$ExecutablePath ${args}" -Command {
+      & "$ExecutablePath" ${args}
+    }
   }
   $UserdataStatus = New-UserdataStatus -Code 0 -Message "Success"
 
@@ -891,8 +900,15 @@ try {
     Install-Watchmaker
   }
 
-  Test-Command -Description "watchmaker ${args}" -Command {
-    & watchmaker ${args}
+  if ($UserFormulasJson -ne "{}") {
+    Test-Command -Description "watchmaker ${args} --user-formulas=<json>" -Command {
+      & watchmaker ${args} "--user-formulas=$UserFormulasJson"
+    }
+  }
+  else {
+    Test-Command -Description "watchmaker ${args}" -Command {
+      & watchmaker ${args}
+    }
   }
   $UserdataStatus = New-UserdataStatus -Code 0 -Message "Success"
 
