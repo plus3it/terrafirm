@@ -157,12 +157,6 @@ locals {
       platform   = local.platform_info.lx
     }
 
-    centos8stream = {
-      ami_regex  = "spel-minimal-centos-8stream-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp3"
-      ami_search = "spel-minimal-centos-8stream-hvm-*.x86_64-gp3"
-      platform   = local.platform_info.lx
-    }
-
     ol8 = {
       ami_regex  = "spel-minimal-ol-8-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp3"
       ami_search = "spel-minimal-ol-8-hvm-*.x86_64-gp3"

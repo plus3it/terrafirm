@@ -36,7 +36,6 @@ jobs:
         source-build:
           - al2023
           - alma9
-          - centos8stream
           - centos9stream
           # fails due to lack of disk space in rootVol
           # - ol8

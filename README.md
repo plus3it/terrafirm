@@ -32,7 +32,6 @@ To pick specific operating system builds, set the `TF_VAR_source_builds` and `TF
 
 * `al2023`
 * `alma9`
-* `centos8stream`
 * `ol8`
 * `rl9`
 * `rhel8`
@@ -42,14 +41,14 @@ To pick specific operating system builds, set the `TF_VAR_source_builds` and `TF
 For example, to set the `TF_VAR_source_builds` environment variable in Bash-like shells, use this syntax:
 
 ```console
-export TF_VAR_source_builds='["centos8stream","win19"]'
+export TF_VAR_source_builds='["centos9stream","win19"]'
 ```
 
 You would expect Terraform's output to include lines like these if you run Terrafirm with these settings:
 
 ```console
 aws_instance.source_build["win19"]: Still creating... [1m10s elapsed]
-aws_instance.source_build["centos8stream"]: Still creating... [1m10s elapsed]
+aws_instance.source_build["centos9stream"]: Still creating... [1m10s elapsed]
 ```
 
 <!-- BEGIN TFDOCS -->
@@ -109,10 +108,10 @@ aws_instance.source_build["centos8stream"]: Still creating... [1m10s elapsed]
 | <a name="input_lx_userdata_log"></a> [lx\_userdata\_log](#input\_lx\_userdata\_log) | n/a | `string` | `"/var/log/userdata.log"` | no |
 | <a name="input_s3_bucket"></a> [s3\_bucket](#input\_s3\_bucket) | n/a | `string` | `"mybucket"` | no |
 | <a name="input_scan_s3_url"></a> [scan\_s3\_url](#input\_scan\_s3\_url) | n/a | `string` | `""` | no |
-| <a name="input_source_builds"></a> [source\_builds](#input\_source\_builds) | n/a | `list(string)` | <pre>[<br/>  "win16",<br/>  "win19",<br/>  "win22",<br/>  "rhel8",<br/>  "centos8stream",<br/>  "ol8",<br/>  "rhel9",<br/>  "centos9stream",<br/>  "ol9",<br/>  "al2023",<br/>  "alma9",<br/>  "rl9"<br/>]</pre> | no |
+| <a name="input_source_builds"></a> [source\_builds](#input\_source\_builds) | n/a | `list(string)` | <pre>[<br/>  "win16",<br/>  "win19",<br/>  "win22",<br/>  "rhel8",<br/>  "ol8",<br/>  "rhel9",<br/>  "centos9stream",<br/>  "ol9",<br/>  "al2023",<br/>  "alma9",<br/>  "rl9"<br/>]</pre> | no |
 | <a name="input_source_source"></a> [source\_source](#input\_source\_source) | n/a | `string` | `"git"` | no |
 | <a name="input_standalone_builder"></a> [standalone\_builder](#input\_standalone\_builder) | n/a | `string` | `"pyinstaller"` | no |
-| <a name="input_standalone_builds"></a> [standalone\_builds](#input\_standalone\_builds) | n/a | `list(string)` | <pre>[<br/>  "win16",<br/>  "win19",<br/>  "win22",<br/>  "rhel8",<br/>  "centos8stream",<br/>  "ol8",<br/>  "rhel9",<br/>  "centos9stream",<br/>  "ol9",<br/>  "al2023",<br/>  "alma9",<br/>  "rl9"<br/>]</pre> | no |
+| <a name="input_standalone_builds"></a> [standalone\_builds](#input\_standalone\_builds) | n/a | `list(string)` | <pre>[<br/>  "win16",<br/>  "win19",<br/>  "win22",<br/>  "rhel8",<br/>  "ol8",<br/>  "rhel9",<br/>  "centos9stream",<br/>  "ol9",<br/>  "al2023",<br/>  "alma9",<br/>  "rl9"<br/>]</pre> | no |
 | <a name="input_standalone_source"></a> [standalone\_source](#input\_standalone\_source) | n/a | `string` | `"builder"` | no |
 | <a name="input_user_formulas"></a> [user\_formulas](#input\_user\_formulas) | n/a | `map(string)` | `{}` | no |
 | <a name="input_win_args"></a> [win\_args](#input\_win\_args) | n/a | `string` | `"--log-dir=C:\\Watchmaker\\Logs"` | no |
