@@ -151,9 +151,9 @@ locals {
       platform   = local.platform_info.lx
     }
 
-    centos8stream = {
-      ami_regex  = "spel-minimal-centos-8stream-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp3"
-      ami_search = "spel-minimal-centos-8stream-hvm-*.x86_64-gp3"
+    alma9 = {
+      ami_regex  = "spel-minimal-alma-9-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp3"
+      ami_search = "spel-minimal-alma-9-hvm-*.x86_64-gp3"
       platform   = local.platform_info.lx
     }
 
@@ -184,6 +184,12 @@ locals {
     rhel9 = {
       ami_regex  = "spel-minimal-rhel-9-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp3"
       ami_search = "spel-minimal-rhel-9-hvm-*.x86_64-gp3"
+      platform   = local.platform_info.lx
+    }
+
+    rl9 = {
+      ami_regex  = "spel-minimal-rl-9-hvm-\\d{4}\\.\\d{2}\\.\\d{1}\\.x86_64-gp3"
+      ami_search = "spel-minimal-rl-9-hvm-*.x86_64-gp3"
       platform   = local.platform_info.lx
     }
 
