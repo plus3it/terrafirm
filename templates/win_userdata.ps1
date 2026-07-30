@@ -19,7 +19,7 @@ $FirehoseDeliveryStream = "${firehose_delivery_stream_name}"
 $WinUser = "${user}"
 $PypiUrl = "${url_pypi}"
 $UserFormulasJsonBase64 = "${user_formulas_json_base64}"
-$UserFormulasJson = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($UserFormulasJsonBase64))
+$UserFormulasJson = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($UserFormulasJsonBase64)) -replace '"', '\"'
 $DebugMode = "${debug}"
 $UserdataLogS3Prefix = "s3://$BuildBucket/$BuildKeyPrefix/$BuildLabel"
 
