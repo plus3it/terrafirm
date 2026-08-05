@@ -19,7 +19,7 @@ $FirehoseDeliveryStream = "${firehose_delivery_stream_name}"
 $WinUser = "${user}"
 $PypiUrl = "${url_pypi}"
 $UserFormulasJsonBase64 = "${user_formulas_json_base64}"
-$UserFormulasEscaped = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($UserFormulasJsonBase64)) -replace '"', '\"'
+$UserFormulasJson = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($UserFormulasJsonBase64))
 $DebugMode = "${debug}"
 $UserdataLogS3Prefix = "s3://$BuildBucket/$BuildKeyPrefix/$BuildLabel"
 
@@ -876,9 +876,9 @@ try {
   }
   $ExecutablePath = "$${DownloadDir}\watchmaker.exe"
 %{~ endif }
-  if ($UserFormulasEscaped -ne "{}") {
+  if ($UserFormulasJson -ne "{}") {
     Test-Command -Description "$ExecutablePath ${args} --user-formulas=<json>" -Command {
-      & "$ExecutablePath" ${args} "--user-formulas=$UserFormulasEscaped"
+      & "$ExecutablePath" ${args} "--user-formulas=$($UserFormulasJson.Replace('"', '\"'))"
     }
   }
   else {
@@ -900,9 +900,9 @@ try {
     Install-Watchmaker
   }
 
-  if ($UserFormulasEscaped -ne "{}") {
+  if ($UserFormulasJson -ne "{}") {
     Test-Command -Description "watchmaker ${args} --user-formulas=<json>" -Command {
-      & watchmaker ${args} "--user-formulas=$UserFormulasEscaped"
+      & watchmaker ${args} "--user-formulas=$($UserFormulasJson.Replace('"', '\"'))"
     }
   }
   else {
