@@ -878,7 +878,7 @@ try {
 %{~ endif }
   if ($UserFormulasJson -ne "{}") {
     Test-Command -Description "$ExecutablePath ${args} --user-formulas=<json>" -Command {
-      & "$ExecutablePath" ${args} "--user-formulas=$UserFormulasJson"
+      & "$ExecutablePath" ${args} "--user-formulas=$($UserFormulasJson.Replace('"', '\"'))"
     }
   }
   else {
@@ -902,7 +902,7 @@ try {
 
   if ($UserFormulasJson -ne "{}") {
     Test-Command -Description "watchmaker ${args} --user-formulas=<json>" -Command {
-      & watchmaker ${args} "--user-formulas=$UserFormulasJson"
+      & watchmaker ${args} "--user-formulas=$($UserFormulasJson.Replace('"', '\"'))"
     }
   }
   else {
