@@ -26,7 +26,7 @@ Terrafirm creates and destroys real AWS resources. Do not run:
 
 - `make` or `make again` (the default target): it runs `terraform apply` with `-auto-approve`.
 - `make clean` or `make fresh`: they run `terraform destroy` with `-auto-approve`, and `fresh` also deletes the local state files, the provider plugins, and the log.
-- The integration tests in `.github/workflows/test.yml`: they run against real AWS on CodeBuild runners. A person starts them, with `workflow_dispatch` or with a pull request review that contains `/build`.
+- The integration tests in `.github/workflows/test.yml`: they run against real AWS on CodeBuild runners. A person starts them, with `workflow_dispatch` or with a pull request review comment that contains `/build`.
 
 List these as steps for a person in your final report.
 
